@@ -1,30 +1,22 @@
-import { Assets as NavigationAssets } from '@react-navigation/elements';
-import { Asset } from 'expo-asset';
-import * as SplashScreen from 'expo-splash-screen';
-import * as React from 'react';
-import { Navigation } from './navigation';
+import React from "react";
+import { View, StyleSheet, Dimensions } from "react-native";
+import Game from "./components/Game";
 
-Asset.loadAsync([
-  ...NavigationAssets,
-  require('./assets/newspaper.png'),
-  require('./assets/bell.png'),
-]);
+const { width, height } = Dimensions.get("window");
 
-SplashScreen.preventAutoHideAsync();
-
-export function App() {
+const App = () => {
   return (
-    <Navigation
-      linking={{
-        enabled: 'auto',
-        prefixes: [
-          // Change the scheme to match your app's scheme defined in app.json
-          'helloworld://',
-        ],
-      }}
-      onReady={() => {
-        SplashScreen.hideAsync();
-      }}
-    />
+    <View style={styles.container}>
+      <Game screenWidth={width} screenHeight={height} />
+    </View>
   );
-}
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#9bbc0f", // Game Boy greenscale background
+  },
+});
+
+export default App;
