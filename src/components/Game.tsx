@@ -10,7 +10,6 @@ import {
   GameEngine,
   GameEngineSystem,
   GameEngineUpdateEventOptionType,
-  TouchEvent,
 } from "react-native-game-engine";
 import TileMap from "./TileMap";
 import Player from "./Player";
@@ -44,13 +43,6 @@ interface PlayerEntity {
   y: number;
   direction: "up" | "down" | "left" | "right";
   renderer: JSX.Element;
-}
-
-interface NPCProps {
-  x: number;
-  y: number;
-  tileSize: number;
-  camera: { x: number; y: number };
 }
 
 interface NPCEntity {
