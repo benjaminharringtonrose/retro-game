@@ -15,28 +15,28 @@ interface Frame {
 }
 
 const Player: React.FC<PlayerProps> = ({ tileSize, direction }) => {
-  // All frames for 4x4 sprite sheet (16x16 pixels per frame)
+  // All frames for 4x4 sprite sheet (32x32 pixels per frame)
   const allFrames: Frame[] = [
     // Down (row 1)
-    { filename: "down_0", frame: { x: 0, y: 0, w: 16, h: 16 } },
-    { filename: "down_1", frame: { x: 16, y: 0, w: 16, h: 16 } },
-    { filename: "down_2", frame: { x: 32, y: 0, w: 16, h: 16 } },
-    { filename: "down_3", frame: { x: 48, y: 0, w: 16, h: 16 } },
+    { filename: "down_0", frame: { x: 0, y: 0, w: 32, h: 32 } },
+    { filename: "down_1", frame: { x: 32, y: 0, w: 32, h: 32 } },
+    { filename: "down_2", frame: { x: 64, y: 0, w: 32, h: 32 } },
+    { filename: "down_3", frame: { x: 96, y: 0, w: 32, h: 32 } },
     // Up (row 2)
-    { filename: "up_0", frame: { x: 0, y: 16, w: 16, h: 16 } },
-    { filename: "up_1", frame: { x: 16, y: 16, w: 16, h: 16 } },
-    { filename: "up_2", frame: { x: 32, y: 16, w: 16, h: 16 } },
-    { filename: "up_3", frame: { x: 48, y: 16, w: 16, h: 16 } },
+    { filename: "up_0", frame: { x: 0, y: 32, w: 32, h: 32 } },
+    { filename: "up_1", frame: { x: 32, y: 32, w: 32, h: 32 } },
+    { filename: "up_2", frame: { x: 64, y: 32, w: 32, h: 32 } },
+    { filename: "up_3", frame: { x: 96, y: 32, w: 32, h: 32 } },
     // Left (row 3)
-    { filename: "left_0", frame: { x: 0, y: 32, w: 16, h: 16 } },
-    { filename: "left_1", frame: { x: 16, y: 32, w: 16, h: 16 } },
-    { filename: "left_2", frame: { x: 32, y: 32, w: 16, h: 16 } },
-    { filename: "left_3", frame: { x: 48, y: 32, w: 16, h: 16 } },
+    { filename: "left_0", frame: { x: 0, y: 64, w: 32, h: 32 } },
+    { filename: "left_1", frame: { x: 32, y: 64, w: 32, h: 32 } },
+    { filename: "left_2", frame: { x: 64, y: 64, w: 32, h: 32 } },
+    { filename: "left_3", frame: { x: 96, y: 64, w: 32, h: 32 } },
     // Right (row 4)
-    { filename: "right_0", frame: { x: 0, y: 48, w: 16, h: 16 } },
-    { filename: "right_1", frame: { x: 16, y: 48, w: 16, h: 16 } },
-    { filename: "right_2", frame: { x: 32, y: 48, w: 16, h: 16 } },
-    { filename: "right_3", frame: { x: 48, y: 48, w: 16, h: 16 } },
+    { filename: "right_0", frame: { x: 0, y: 96, w: 32, h: 32 } },
+    { filename: "right_1", frame: { x: 32, y: 96, w: 32, h: 32 } },
+    { filename: "right_2", frame: { x: 64, y: 96, w: 32, h: 32 } },
+    { filename: "right_3", frame: { x: 96, y: 96, w: 32, h: 32 } },
   ];
 
   // Animation frame indices for each direction
@@ -73,11 +73,11 @@ const Player: React.FC<PlayerProps> = ({ tileSize, direction }) => {
   return (
     <View style={[styles.container, { left: playerX, top: playerY }]}>
       <Sprite
-        source={require("../assets/sprites/bell.png")}
+        source={require("../assets/sprites/player.png")}
         width={tileSize}
         height={tileSize}
-        spriteSheetWidth={64} // 4 frames * 16 pixels
-        spriteSheetHeight={64} // 4 rows * 16 pixels
+        spriteSheetWidth={128} // 4 frames * 32 pixels
+        spriteSheetHeight={128} // 4 rows * 32 pixels
         frames={currentFrame}
       />
     </View>
