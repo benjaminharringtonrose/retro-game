@@ -1,0 +1,16 @@
+{
+  "frames": [
+    { "filename": "frame_0", "x": 0, "y": 0, "w": 96, "h": 128 },
+    { "filename": "frame_1", "x": 96, "y": 0, "w": 96, "h": 128 },
+    { "filename": "frame_2", "x": 192, "y": 0, "w": 96, "h": 128 },
+    { "filename": "frame_3", "x": 0, "y": 128, "w": 96, "h": 128 },
+    { "filename": "frame_4", "x": 96, "y": 128, "w": 96, "h": 128 },
+    { "filename": "frame_5", "x": 192, "y": 128, "w": 96, "h": 128 },
+    { "filename": "frame_6", "x": 0, "y": 256, "w": 96, "h": 128 },
+    { "filename": "frame_7", "x": 96, "y": 256, "w": 96, "h": 128 },
+    { "filename": "frame_8", "x": 192, "y": 256, "w": 96, "h": 128 },
+    { "filename": "frame_9", "x": 0, "y": 384, "w": 96, "h": 128 },
+    { "filename": "frame_10", "x": 96, "y": 384, "w": 96, "h": 128 },
+    { "filename": "frame_11", "x": 192, "y": 384, "w": 96, "h": 128 }
+  ]
+}

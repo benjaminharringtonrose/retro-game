@@ -1,40 +1,49 @@
 import React from "react";
 import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
+import { scale } from "react-native-size-matters"; // Optional: for responsive sizing
 
-const Controls = () => {
+interface ControlsProps {
+  dispatch: (event: { type: string; control: string }) => void;
+}
+
+const Controls: React.FC<ControlsProps> = ({ dispatch }) => {
+  const handlePress = (control: string) => {
+    dispatch({ type: "press", control });
+  };
+
   return (
     <View style={styles.controls}>
       <View style={styles.dpad}>
         <TouchableOpacity
           style={styles.button}
-          onPressIn={(e) => ({ type: "press", event: e.nativeEvent })}
+          onPressIn={() => handlePress("up")}
         >
           <Text>↑</Text>
         </TouchableOpacity>
         <View style={styles.horizontal}>
           <TouchableOpacity
             style={styles.button}
-            onPressIn={(e) => ({ type: "press", event: e.nativeEvent })}
+            onPressIn={() => handlePress("left")}
           >
             <Text>←</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.button}
-            onPressIn={(e) => ({ type: "press", event: e.nativeEvent })}
+            onPressIn={() => handlePress("right")}
           >
             <Text>→</Text>
           </TouchableOpacity>
         </View>
         <TouchableOpacity
           style={styles.button}
-          onPressIn={(e) => ({ type: "press", event: e.nativeEvent })}
+          onPressIn={() => handlePress("down")}
         >
           <Text>↓</Text>
         </TouchableOpacity>
       </View>
       <TouchableOpacity
         style={styles.interact}
-        onPressIn={(e) => ({ type: "press", event: e.nativeEvent })}
+        onPressIn={() => handlePress("interact")}
       >
         <Text>A</Text>
       </TouchableOpacity>
@@ -45,8 +54,8 @@ const Controls = () => {
 const styles = StyleSheet.create({
   controls: {
     position: "absolute",
-    bottom: 20,
-    right: 20,
+    bottom: scale(20),
+    right: scale(20),
     flexDirection: "row",
   },
   dpad: {
@@ -57,24 +66,24 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: "#8bac0f",
-    padding: 10,
-    margin: 5,
+    padding: scale(10),
+    margin: scale(5),
     borderWidth: 2,
     borderColor: "#0f380f",
-    width: 40,
-    height: 40,
+    width: scale(40),
+    height: scale(40),
     justifyContent: "center",
     alignItems: "center",
   },
   interact: {
     backgroundColor: "#8bac0f",
-    padding: 15,
-    margin: 5,
-    borderRadius: 20,
+    padding: scale(15),
+    margin: scale(5),
+    borderRadius: scale(20),
     borderWidth: 2,
     borderColor: "#0f380f",
-    width: 50,
-    height: 50,
+    width: scale(50),
+    height: scale(50),
     justifyContent: "center",
     alignItems: "center",
   },
