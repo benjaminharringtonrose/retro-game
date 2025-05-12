@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { StyleSheet, View } from "react-native";
-import {
+import Animated, {
   useSharedValue,
   useAnimatedStyle,
   cancelAnimation,
   runOnJS,
+  withTiming,
 } from "react-native-reanimated";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { Direction } from "./types";
@@ -26,6 +27,8 @@ export default function GameScreen() {
   const offsetY = useSharedValue(0);
   const playerCenterX = useSharedValue(WIDTH / 2);
   const playerCenterY = useSharedValue(HEIGHT / 2);
+  const padOffsetX = useSharedValue(0);
+  const padOffsetY = useSharedValue(0);
 
   const [direction, setDirection] = useState<Direction>(Direction.Down);
   const [isMoving, setIsMoving] = useState(false);
@@ -146,15 +149,37 @@ export default function GameScreen() {
     return () => clearInterval(id);
   }, [isMoving, direction]);
 
+  const padCenterAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: padOffsetX.value },
+      { translateY: padOffsetY.value },
+    ],
+  }));
+
+  const padRadius = 100; // half of pad width/height
+  const knobRadius = 25; // half of padCenter width/height
+  const maxKnobDistance = padRadius - knobRadius; // 100 - 25 = 75
+
   // Pan-gesture “joystick”
   const pan = Gesture.Pan()
     .onBegin(() => {
-      // run setIsMoving(true) on the JS thread
       runOnJS(setIsMoving)(true);
     })
     .onUpdate((e) => {
-      const { translationX: tx, translationY: ty } = e;
-      // compute newDirection on the UI thread
+      // raw translation
+      let tx = e.translationX;
+      let ty = e.translationY;
+      // clamp vector length so knob stays inside outer circle
+      const dist = Math.hypot(tx, ty);
+      if (dist > maxKnobDistance) {
+        const angle = Math.atan2(ty, tx);
+        tx = Math.cos(angle) * maxKnobDistance;
+        ty = Math.sin(angle) * maxKnobDistance;
+      }
+      padOffsetX.value = tx;
+      padOffsetY.value = ty;
+
+      // update direction as before
       const newDirection =
         Math.abs(tx) > Math.abs(ty)
           ? tx > 0
@@ -163,13 +188,18 @@ export default function GameScreen() {
           : ty > 0
           ? Direction.Down
           : Direction.Up;
-      // run setDirection(...) on the JS thread
       runOnJS(setDirection)(newDirection);
     })
     .onEnd(() => {
+      // snap knob back to center
+      padOffsetX.value = withTiming(0);
+      padOffsetY.value = withTiming(0);
       runOnJS(setIsMoving)(false);
     })
     .onFinalize(() => {
+      // ensure movement stops
+      padOffsetX.value = withTiming(0);
+      padOffsetY.value = withTiming(0);
       runOnJS(setIsMoving)(false);
     });
 
@@ -191,7 +221,7 @@ export default function GameScreen() {
 
       <GestureDetector gesture={pan}>
         <View style={styles.pad}>
-          <View style={styles.padCenter} />
+          <Animated.View style={[styles.padCenter, padCenterAnimatedStyle]} />
         </View>
       </GestureDetector>
     </View>
