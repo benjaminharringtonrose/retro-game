@@ -7,10 +7,9 @@ import { GameBoyButton } from "./components/GameBoyButton";
 import { staticMap } from "./maps/home";
 import { HEIGHT, WIDTH } from "./constants/window";
 
-const SPEED = 200; // pixels per second
+const SPEED = 200;
 const TILE_SIZE = 48;
 const WALKABLE_TILES = ["grass", "path"] as const;
-
 type WalkableTile = (typeof WALKABLE_TILES)[number];
 
 export default function App() {
@@ -18,33 +17,32 @@ export default function App() {
   const [mapY, setMapY] = useState(0);
   const [offsetX, setOffsetX] = useState(0);
   const [offsetY, setOffsetY] = useState(0);
+
   const [direction, setDirection] = useState<Direction>(Direction.Down);
   const [isMoving, setIsMoving] = useState(false);
+  const raf = useRef<number>(undefined);
+  const last = useRef<number>(undefined);
 
-  const rafId = useRef<number>(undefined);
-  const lastTime = useRef<number>(undefined);
-
-  const mapCols = staticMap[0].length;
-  const mapRows = staticMap.length;
+  const cols = staticMap[0].length;
+  const rows = staticMap.length;
   const maxMapX = 0;
-  const minMapX = WIDTH - mapCols * TILE_SIZE;
+  const minMapX = WIDTH - cols * TILE_SIZE;
   const maxMapY = 0;
-  const minMapY = HEIGHT - mapRows * TILE_SIZE;
-  const maxOffsetX = WIDTH / 2 - TILE_SIZE / 2;
-  const maxOffsetY = HEIGHT / 2 - TILE_SIZE / 2;
+  const minMapY = HEIGHT - rows * TILE_SIZE;
+  const maxOffX = WIDTH / 2 - TILE_SIZE / 2;
+  const maxOffY = HEIGHT / 2 - TILE_SIZE / 2;
 
   useEffect(() => {
     if (!isMoving) {
-      cancelAnimationFrame(rafId.current!);
-      lastTime.current = undefined;
+      cancelAnimationFrame(raf.current!);
+      last.current = undefined;
       return;
     }
-
-    const loop = (time: number) => {
-      if (lastTime.current != null) {
-        const dt = (time - lastTime.current) / 1000;
-        let moveX = 0;
-        let moveY = 0;
+    const step = (time: number) => {
+      if (last.current != null) {
+        const dt = (time - last.current) / 1000;
+        let moveX = 0,
+          moveY = 0;
         switch (direction) {
           case Direction.Left:
             moveX = -SPEED * dt;
@@ -59,61 +57,88 @@ export default function App() {
             moveY = SPEED * dt;
             break;
         }
-
-        // Compute current world position
-        const worldX = -mapX + WIDTH / 2 + offsetX + moveX;
-        const worldY = -mapY + HEIGHT / 2 + offsetY + moveY;
-        const col = Math.floor(worldX / TILE_SIZE);
-        const row = Math.floor(worldY / TILE_SIZE);
-        const tile = staticMap[row]?.[col] as WalkableTile | undefined;
-        // Only move if next tile is walkable
-        if (tile && WALKABLE_TILES.includes(tile)) {
-          // Map scroll delta
-          const dxMap = -moveX;
-          const dyMap = -moveY;
-
-          // Horizontal: decide map vs offset
-          if (moveX !== 0) {
-            const desiredMapX = mapX + dxMap;
-            if (desiredMapX <= maxMapX && desiredMapX >= minMapX) {
-              setMapX(desiredMapX);
-              setOffsetX(0);
-            } else {
-              setOffsetX((old) => {
-                const next = old + moveX;
-                return Math.max(-maxOffsetX, Math.min(maxOffsetX, next));
-              });
+        if (moveX !== 0 || moveY !== 0) {
+          // compute world tile position
+          const worldX = -mapX + WIDTH / 2 + offsetX + moveX;
+          const worldY = -mapY + HEIGHT / 2 + offsetY + moveY;
+          const col = Math.floor(worldX / TILE_SIZE);
+          const row = Math.floor(worldY / TILE_SIZE);
+          const tile = staticMap[row]?.[col] as WalkableTile | undefined;
+          if (tile && WALKABLE_TILES.includes(tile)) {
+            // X axis
+            if (moveX !== 0) {
+              // If offset active
+              if (offsetX !== 0) {
+                const remaining = Math.abs(offsetX) - Math.abs(moveX);
+                if (remaining > 0) {
+                  // just reduce offset
+                  setOffsetX((old) => old + moveX);
+                } else {
+                  // offset crosses zero: clear and apply extra to map
+                  const extra = moveX + offsetX * (moveX > 0 ? 1 : -1);
+                  setOffsetX(0);
+                  setMapX((old) => {
+                    const candidate = old - extra;
+                    return Math.max(minMapX, Math.min(maxMapX, candidate));
+                  });
+                }
+              } else {
+                // scroll map if possible, else start offset
+                setMapX((old) => {
+                  const candidate = old - moveX;
+                  if (candidate <= maxMapX && candidate >= minMapX) {
+                    return candidate;
+                  }
+                  // start offset
+                  setOffsetX((of) =>
+                    Math.max(-maxOffX, Math.min(maxOffX, of + moveX))
+                  );
+                  return old;
+                });
+              }
             }
-          }
-
-          // Vertical: decide map vs offset
-          if (moveY !== 0) {
-            const desiredMapY = mapY + dyMap;
-            if (desiredMapY <= maxMapY && desiredMapY >= minMapY) {
-              setMapY(desiredMapY);
-              setOffsetY(0);
-            } else {
-              setOffsetY((old) => {
-                const next = old + moveY;
-                return Math.max(-maxOffsetY, Math.min(maxOffsetY, next));
-              });
+            // Y axis (same logic)
+            if (moveY !== 0) {
+              if (offsetY !== 0) {
+                const remaining = Math.abs(offsetY) - Math.abs(moveY);
+                if (remaining > 0) {
+                  setOffsetY((old) => old + moveY);
+                } else {
+                  const extra = moveY + offsetY * (moveY > 0 ? 1 : -1);
+                  setOffsetY(0);
+                  setMapY((old) => {
+                    const candidate = old - extra;
+                    return Math.max(minMapY, Math.min(maxMapY, candidate));
+                  });
+                }
+              } else {
+                setMapY((old) => {
+                  const candidate = old - moveY;
+                  if (candidate <= maxMapY && candidate >= minMapY) {
+                    return candidate;
+                  }
+                  setOffsetY((of) =>
+                    Math.max(-maxOffY, Math.min(maxOffY, of + moveY))
+                  );
+                  return old;
+                });
+              }
             }
           }
         }
       }
-      lastTime.current = time;
-      rafId.current = requestAnimationFrame(loop);
+      last.current = time;
+      raf.current = requestAnimationFrame(step);
     };
-
-    rafId.current = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(rafId.current!);
+    raf.current = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf.current!);
   }, [isMoving, direction, mapX, mapY, offsetX, offsetY]);
 
-  const handlePressIn = (dir: Direction) => {
-    setDirection(dir);
+  const onPressIn = (d: Direction) => {
+    setDirection(d);
     setIsMoving(true);
   };
-  const handlePressOut = () => setIsMoving(false);
+  const onPressOut = () => setIsMoving(false);
 
   return (
     <View style={styles.container}>
@@ -127,33 +152,32 @@ export default function App() {
       <View style={styles.controls}>
         <GameBoyButton
           label="▲"
-          onPressIn={() => handlePressIn(Direction.Up)}
-          onPressOut={handlePressOut}
+          onPressIn={() => onPressIn(Direction.Up)}
+          onPressOut={onPressOut}
           style={styles.up}
         />
         <GameBoyButton
           label="◀"
-          onPressIn={() => handlePressIn(Direction.Left)}
-          onPressOut={handlePressOut}
+          onPressIn={() => onPressIn(Direction.Left)}
+          onPressOut={onPressOut}
           style={styles.left}
         />
         <GameBoyButton
           label="▶"
-          onPressIn={() => handlePressIn(Direction.Right)}
-          onPressOut={handlePressOut}
+          onPressIn={() => onPressIn(Direction.Right)}
+          onPressOut={onPressOut}
           style={styles.right}
         />
         <GameBoyButton
           label="▼"
-          onPressIn={() => handlePressIn(Direction.Down)}
-          onPressOut={handlePressOut}
+          onPressIn={() => onPressIn(Direction.Down)}
+          onPressOut={onPressOut}
           style={styles.down}
         />
       </View>
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#222" },
   controls: {
