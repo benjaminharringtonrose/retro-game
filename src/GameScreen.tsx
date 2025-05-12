@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, useWindowDimensions, View } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -12,7 +12,6 @@ import { Direction } from "./types";
 import { Map } from "./components/Map";
 import { Player } from "./components/Player";
 import { staticMap } from "./maps/home";
-import { HEIGHT, WIDTH } from "./constants/window";
 
 const SPEED = 200;
 const TILE_SIZE = 48;
@@ -20,13 +19,15 @@ const WALKABLE_TILES = ["grass", "path"] as const;
 type WalkableTile = (typeof WALKABLE_TILES)[number];
 
 export default function GameScreen() {
+  const { width: wWidth, height: wHeight } = useWindowDimensions();
+
   // animated values
   const mapX = useSharedValue(0);
   const mapY = useSharedValue(0);
   const offsetX = useSharedValue(0);
   const offsetY = useSharedValue(0);
-  const playerCenterX = useSharedValue(WIDTH / 2);
-  const playerCenterY = useSharedValue(HEIGHT / 2);
+  const playerCenterX = useSharedValue(wWidth / 2);
+  const playerCenterY = useSharedValue(wHeight / 2);
   const padOffsetX = useSharedValue(0);
   const padOffsetY = useSharedValue(0);
 
@@ -36,11 +37,11 @@ export default function GameScreen() {
   const cols = staticMap[0].length;
   const rows = staticMap.length;
   const maxMapX = 0;
-  const minMapX = WIDTH - cols * TILE_SIZE;
+  const minMapX = wWidth - cols * TILE_SIZE;
   const maxMapY = 0;
-  const minMapY = HEIGHT - rows * TILE_SIZE;
-  const maxOffX = WIDTH / 2 - TILE_SIZE / 2;
-  const maxOffY = HEIGHT / 2 - TILE_SIZE / 2;
+  const minMapY = wHeight - rows * TILE_SIZE;
+  const maxOffX = wWidth / 2 - TILE_SIZE / 2;
+  const maxOffY = wHeight / 2 - TILE_SIZE / 2;
 
   const mapAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: mapX.value }, { translateY: mapY.value }],
@@ -76,8 +77,8 @@ export default function GameScreen() {
       if (dx === 0 && dy === 0) return;
 
       // Figure out which tile we're moving into
-      const worldX = -mapX.value + WIDTH / 2 + offsetX.value + dx;
-      const worldY = -mapY.value + HEIGHT / 2 + offsetY.value + dy;
+      const worldX = -mapX.value + wWidth / 2 + offsetX.value + dx;
+      const worldY = -mapY.value + wHeight / 2 + offsetY.value + dy;
       const col = Math.floor(worldX / TILE_SIZE);
       const row = Math.floor(worldY / TILE_SIZE);
       const tile = staticMap[row]?.[col] as WalkableTile | undefined;
@@ -142,8 +143,8 @@ export default function GameScreen() {
       }
 
       // update player pos
-      playerCenterX.value = WIDTH / 2 + offsetX.value;
-      playerCenterY.value = HEIGHT / 2 + offsetY.value;
+      playerCenterX.value = wWidth / 2 + offsetX.value;
+      playerCenterY.value = wHeight / 2 + offsetY.value;
     }, 1000 / 60);
 
     return () => clearInterval(id);

@@ -1,9 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, Image } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-} from "react-native-reanimated";
+import { Image } from "react-native";
+import Animated, { useAnimatedStyle } from "react-native-reanimated";
 import { Direction } from "../types";
 
 const SPRITE_W = 32;
