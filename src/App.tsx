@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, RefObject } from "react";
 import {
   StyleSheet,
   View,
@@ -8,60 +8,84 @@ import {
   SafeAreaView,
   StatusBar,
 } from "react-native";
-import { GameEngine } from "react-native-game-engine";
+import { GameEngine, GameEngineSystem } from "react-native-game-engine";
 import { Asset } from "expo-asset";
 import * as SplashScreen from "expo-splash-screen";
-import { Sprites, SpritesMethods } from "react-native-sprites"; // Correct import
-
-// Keep the screen from going to sleep
+import { Sprites, SpritesMethods } from "react-native-sprites";
 import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 
 // Constants
-const SPRITE_SIZE = 128; // Adjust sprite size for visibility
+const SPRITE_WIDTH = 150;
+const SPRITE_HEIGHT = SPRITE_WIDTH * 1.7;
 const MOVE_SPEED = 2;
 const { width: WIDTH, height: HEIGHT } = Dimensions.get("window");
 
-// GameState interface
+// Interfaces
+interface Controls {
+  up: boolean;
+  down: boolean;
+  left: boolean;
+  right: boolean;
+  a: boolean;
+  b: boolean;
+  start: boolean;
+  select: boolean;
+}
+
 interface GameState {
-  controls: {
-    up: boolean;
-    down: boolean;
-    left: boolean;
-    right: boolean;
-    a: boolean;
-    b: boolean;
-    start: boolean;
-    select: boolean;
-  };
+  controls: Controls;
   health: number;
   rupees: number;
   hasItem: boolean;
 }
 
-// Player entity interface
 interface PlayerEntity {
-  direction: string;
-  spriteSheet: SpritesMethods | null;
-  renderer: React.FC<{
-    x: number;
-    y: number;
-    spriteSheet: SpritesMethods | null;
-  }>;
+  direction: "left" | "right" | "up" | "down";
+  spriteSheet: RefObject<SpritesMethods | null>;
+  renderer: React.FC<PlayerProps>;
   x: number;
   y: number;
 }
 
-// Map entity interface
 interface MapEntity {
   x: number;
   y: number;
   width: number;
   height: number;
-  renderer: React.FC<{ x: number; y: number; width: number; height: number }>;
+  renderer: React.FC<MapProps>;
 }
 
-// Game component to move player
-const MovePlayer = (entities: any, { touches, time, dispatch }: any) => {
+interface Entities {
+  player: PlayerEntity;
+  map: MapEntity;
+  gameState: GameState;
+}
+
+interface PlayerProps {
+  x: number;
+  y: number;
+  spriteSheet: RefObject<SpritesMethods | null>;
+}
+
+interface MapProps {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+interface GameBoyButtonProps {
+  onPressIn: () => void;
+  onPressOut: () => void;
+  label: string;
+  style: object;
+}
+
+// Game Systems
+const MovePlayer: GameEngineSystem = (
+  entities: Entities,
+  { time }: { time: any }
+) => {
   const { player, map, gameState } = entities;
   let movedX = 0;
   let movedY = 0;
@@ -81,65 +105,66 @@ const MovePlayer = (entities: any, { touches, time, dispatch }: any) => {
     player.direction = "right";
   }
 
-  // Update player position
-  player.x += movedX;
-  player.y += movedY;
+  // Calculate new position
+  const newX = player.x + movedX;
+  const newY = player.y + movedY;
 
-  // Update sprite animation based on direction
-  if (player.spriteSheet && typeof player.spriteSheet.play === "function") {
-    player.spriteSheet.play({
+  // Boundary checking
+  const minX = SPRITE_WIDTH / 2;
+  const maxX = map.width - SPRITE_WIDTH / 2;
+  const minY = SPRITE_HEIGHT / 2;
+  const maxY = map.height - SPRITE_HEIGHT / 2;
+
+  // Update position only if within bounds
+  player.x = Math.max(minX, Math.min(maxX, newX));
+  player.y = Math.max(minY, Math.min(maxY, newY));
+
+  // Update sprite animation
+  if (movedX !== 0 || movedY !== 0) {
+    player.spriteSheet.current?.play({
       type: player.direction,
       fps: 8,
       loop: true,
       resetAfterFinish: false,
       onFinish: () => {},
     });
+  } else {
+    player.spriteSheet.current?.stop();
   }
 
   return entities;
 };
 
-// Player component
-const Player: React.FC<{
-  x: number;
-  y: number;
-  spriteSheet: SpritesMethods | null;
-}> = ({ x, y, spriteSheet }) => {
+// Components
+const Player: React.FC<PlayerProps> = ({ x, y, spriteSheet }) => {
   return (
     <View
       style={{
         position: "absolute",
-        left: x - SPRITE_SIZE / 2, // Center the player on the x-axis
-        top: y - SPRITE_SIZE / 2, // Center the player on the y-axis
-        zIndex: 10, // Ensure player is above map elements
+        left: x - SPRITE_WIDTH / 2,
+        top: y - SPRITE_HEIGHT / 2,
+        zIndex: 10,
       }}
     >
       <Sprites
         ref={spriteSheet}
         source={require("./assets/character-spritesheet.png")}
-        columns={3} // Assuming 3 columns for movement (down, left, right, up)
-        rows={4} // Assuming 4 rows for the directions
+        columns={3}
+        rows={4}
         animations={{
           down: { row: 0, startFrame: 0, endFrame: 2 },
           left: { row: 1, startFrame: 0, endFrame: 2 },
-          right: { row: 2, startFrame: 0, endFrame: 2 },
-          up: { row: 3, startFrame: 0, endFrame: 2 },
+          up: { row: 2, startFrame: 0, endFrame: 2 },
+          right: { row: 3, startFrame: 0, endFrame: 2 },
         }}
-        offsetY={-50}
-        width={SPRITE_SIZE}
-        height={SPRITE_SIZE}
+        width={SPRITE_WIDTH}
+        height={SPRITE_HEIGHT}
       />
     </View>
   );
 };
 
-// Map component
-const Map: React.FC<{
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}> = ({ x, y, width, height }) => {
+const Map: React.FC<MapProps> = ({ x, y, width, height }) => {
   return (
     <View
       style={{
@@ -148,12 +173,11 @@ const Map: React.FC<{
         top: y,
         width,
         height,
-        backgroundColor: "#7cad6c", // Zelda-like grass color
+        backgroundColor: "#7cad6c",
       }}
     >
-      {/* Add trees */}
       {Array(20)
-        .fill()
+        .fill(0)
         .map((_, i) => (
           <View
             key={`tree-${i}`}
@@ -168,8 +192,6 @@ const Map: React.FC<{
             }}
           />
         ))}
-
-      {/* Add water */}
       <View
         style={{
           position: "absolute",
@@ -180,10 +202,8 @@ const Map: React.FC<{
           top: 300,
         }}
       />
-
-      {/* Add rocks */}
       {Array(8)
-        .fill()
+        .fill(0)
         .map((_, i) => (
           <View
             key={`rock-${i}`}
@@ -198,8 +218,6 @@ const Map: React.FC<{
             }}
           />
         ))}
-
-      {/* Add a cave */}
       <View
         style={{
           position: "absolute",
@@ -216,13 +234,12 @@ const Map: React.FC<{
   );
 };
 
-// GameBoy Button component
-const GameBoyButton: React.FC<{
-  onPressIn: () => void;
-  onPressOut: () => void;
-  label: string;
-  style: object;
-}> = ({ onPressIn, onPressOut, label, style }) => (
+const GameBoyButton: React.FC<GameBoyButtonProps> = ({
+  onPressIn,
+  onPressOut,
+  label,
+  style,
+}) => (
   <TouchableOpacity
     onPressIn={onPressIn}
     onPressOut={onPressOut}
@@ -232,41 +249,33 @@ const GameBoyButton: React.FC<{
   </TouchableOpacity>
 );
 
-// Main App component
-export default function App() {
+// Main App Component
+const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [gameStarted, setGameStarted] = useState<boolean>(false);
-  const gameEngine = useRef<GameEngine | null>(null);
-  const spriteRef = useRef<SpritesMethods | null>(null); // Correct type for the sprite ref
+  const gameEngine = useRef<GameEngine>(null);
+  const spriteRef = useRef<SpritesMethods>(null);
 
-  // Game entities
-  const [entities, setEntities] = useState<{
-    player: PlayerEntity;
-    map: MapEntity;
-    gameState: GameState;
-  } | null>(null);
+  const [entities, setEntities] = useState<Entities | null>(null);
 
-  // Initialize game
   useEffect(() => {
     async function prepare() {
       try {
-        await SplashScreen.hide();
+        await SplashScreen.hideAsync();
         await activateKeepAwakeAsync();
 
-        // Load assets
         await Asset.loadAsync([require("./assets/character-spritesheet.png")]);
 
-        // Set up game entities
         setEntities({
           player: {
             direction: "down",
             spriteSheet: spriteRef,
             renderer: Player,
-            x: WIDTH / 2, // Start at the center of the screen
-            y: HEIGHT / 2, // Start at the center of the screen
+            x: WIDTH / 2 + 60,
+            y: HEIGHT / 2,
           },
           map: {
-            x: 0, // Starting position of map
+            x: 0,
             y: 0,
             width: 1200,
             height: 1200,
@@ -283,9 +292,9 @@ export default function App() {
               start: false,
               select: false,
             },
-            health: 3, // Player starts with 3 hearts
-            rupees: 0, // Starting currency
-            hasItem: false, // If player has picked up an item
+            health: 3,
+            rupees: 0,
+            hasItem: false,
           },
         });
 
@@ -302,50 +311,39 @@ export default function App() {
     };
   }, []);
 
-  // Start game screen
   const startGame = () => {
     setGameStarted(true);
+    // Initialize sprite animation
+    spriteRef.current?.play({
+      type: "down",
+      fps: 8,
+      loop: true,
+      resetAfterFinish: false,
+    });
   };
 
-  // Handle button presses
-  const handlePressIn = (button: string) => {
-    if (
-      gameEngine.current &&
-      gameEngine.current.props &&
-      gameEngine.current.props.entities
-    ) {
-      const { gameState } = gameEngine.current.props.entities;
-      gameState.controls[button as keyof typeof gameState.controls] = true;
+  const handlePressIn = (button: keyof Controls) => {
+    if (entities) {
+      entities.gameState.controls[button] = true;
 
-      // Handle special actions
       if (button === "a") {
-        // Sword attack or interact based on player direction
         console.log("A button pressed - attack/interact");
       } else if (button === "b") {
-        // Use secondary item
         console.log("B button pressed - use item");
       } else if (button === "start") {
-        // Pause game
         console.log("Start button pressed - pause game");
       } else if (button === "select") {
-        // Open inventory
         console.log("Select button pressed - inventory");
       }
     }
   };
 
-  const handlePressOut = (button: string) => {
-    if (
-      gameEngine.current &&
-      gameEngine.current.props &&
-      gameEngine.current.props.entities
-    ) {
-      const { gameState } = gameEngine.current.props.entities;
-      gameState.controls[button as keyof typeof gameState.controls] = false;
+  const handlePressOut = (button: keyof Controls) => {
+    if (entities) {
+      entities.gameState.controls[button] = false;
     }
   };
 
-  // Render start screen
   if (!gameStarted) {
     return (
       <View style={styles.startContainer}>
@@ -357,8 +355,7 @@ export default function App() {
     );
   }
 
-  // Render loading screen
-  if (isLoading) {
+  if (isLoading || !entities) {
     return (
       <View style={styles.container}>
         <Text style={styles.loadingText}>Loading...</Text>
@@ -366,22 +363,22 @@ export default function App() {
     );
   }
 
-  // Main game render
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar hidden />
       <View style={styles.gameContainer}>
-        {/* Game HUD - Health and Rupees */}
         <View style={styles.hudContainer}>
           <View style={styles.heartContainer}>
-            {Array(3)
-              .fill()
+            {Array(entities.gameState.health)
+              .fill(0)
               .map((_, index) => (
                 <View key={`heart-${index}`} style={styles.heart} />
               ))}
           </View>
           <View style={styles.rupeesContainer}>
-            <Text style={styles.rupeesText}>Rupees: 0</Text>
+            <Text style={styles.rupeesText}>
+              Rupees: {entities.gameState.rupees}
+            </Text>
           </View>
         </View>
 
@@ -438,7 +435,6 @@ export default function App() {
               label="A"
             />
           </View>
-
           <View style={styles.menuButtons}>
             <GameBoyButton
               style={styles.selectButton}
@@ -457,13 +453,13 @@ export default function App() {
       </View>
     </SafeAreaView>
   );
-}
+};
 
-// Styles
+// Styles (unchanged)
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000", // Black background for authentic GameBoy feel
+    backgroundColor: "#000",
   },
   startContainer: {
     flex: 1,
@@ -626,3 +622,5 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 });
+
+export default App;
