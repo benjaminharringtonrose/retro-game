@@ -1,0 +1,220 @@
+import React, { useState, useEffect } from "react";
+import { StyleSheet, View } from "react-native";
+import {
+  useSharedValue,
+  useAnimatedStyle,
+  cancelAnimation,
+  runOnJS,
+} from "react-native-reanimated";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { Direction } from "./types";
+import { Map } from "./components/Map";
+import { Player } from "./components/Player";
+import { staticMap } from "./maps/home";
+import { HEIGHT, WIDTH } from "./constants/window";
+
+const SPEED = 200;
+const TILE_SIZE = 48;
+const WALKABLE_TILES = ["grass", "path"] as const;
+type WalkableTile = (typeof WALKABLE_TILES)[number];
+
+export default function GameScreen() {
+  // animated values
+  const mapX = useSharedValue(0);
+  const mapY = useSharedValue(0);
+  const offsetX = useSharedValue(0);
+  const offsetY = useSharedValue(0);
+  const playerCenterX = useSharedValue(WIDTH / 2);
+  const playerCenterY = useSharedValue(HEIGHT / 2);
+
+  const [direction, setDirection] = useState<Direction>(Direction.Down);
+  const [isMoving, setIsMoving] = useState(false);
+
+  const cols = staticMap[0].length;
+  const rows = staticMap.length;
+  const maxMapX = 0;
+  const minMapX = WIDTH - cols * TILE_SIZE;
+  const maxMapY = 0;
+  const minMapY = HEIGHT - rows * TILE_SIZE;
+  const maxOffX = WIDTH / 2 - TILE_SIZE / 2;
+  const maxOffY = HEIGHT / 2 - TILE_SIZE / 2;
+
+  const mapAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: mapX.value }, { translateY: mapY.value }],
+  }));
+
+  // Movement loop
+  useEffect(() => {
+    if (!isMoving) {
+      cancelAnimation(mapX);
+      cancelAnimation(mapY);
+      cancelAnimation(offsetX);
+      cancelAnimation(offsetY);
+      return;
+    }
+    const id = setInterval(() => {
+      const step = SPEED / 60;
+      let dx = 0,
+        dy = 0;
+      switch (direction) {
+        case Direction.Left:
+          dx = -step;
+          break;
+        case Direction.Right:
+          dx = step;
+          break;
+        case Direction.Up:
+          dy = -step;
+          break;
+        case Direction.Down:
+          dy = step;
+          break;
+      }
+      if (dx === 0 && dy === 0) return;
+
+      // Figure out which tile we're moving into
+      const worldX = -mapX.value + WIDTH / 2 + offsetX.value + dx;
+      const worldY = -mapY.value + HEIGHT / 2 + offsetY.value + dy;
+      const col = Math.floor(worldX / TILE_SIZE);
+      const row = Math.floor(worldY / TILE_SIZE);
+      const tile = staticMap[row]?.[col] as WalkableTile | undefined;
+      if (!tile || !WALKABLE_TILES.includes(tile)) return;
+
+      // --- X axis ---
+      if (dx !== 0) {
+        // precompute for both branches
+        const absOff = Math.abs(offsetX.value);
+        const absDx = Math.abs(dx);
+        const offSign = Math.sign(offsetX.value);
+        const mvSign = Math.sign(dx);
+
+        if (offsetX.value !== 0) {
+          if (offSign !== mvSign) {
+            if (absOff <= absDx) {
+              const extra = dx + offsetX.value;
+              offsetX.value = 0;
+              const cand = mapX.value - extra;
+              if (cand <= maxMapX && cand >= minMapX) mapX.value = cand;
+              else offsetX.value = extra;
+            } else {
+              offsetX.value += dx;
+            }
+          } else {
+            // same direction, clamp by half-screen
+            offsetX.value = offSign * Math.min(absOff + absDx, maxOffX);
+          }
+        } else {
+          const cand = mapX.value - dx;
+          if (cand <= maxMapX && cand >= minMapX) mapX.value = cand;
+          else offsetX.value += dx;
+        }
+      }
+
+      // --- Y axis (identical) ---
+      if (dy !== 0) {
+        const absOffY = Math.abs(offsetY.value);
+        const absDy = Math.abs(dy);
+        const offSignY = Math.sign(offsetY.value);
+        const mvSignY = Math.sign(dy);
+
+        if (offsetY.value !== 0) {
+          if (offSignY !== mvSignY) {
+            if (absOffY <= absDy) {
+              const extra = dy + offsetY.value;
+              offsetY.value = 0;
+              const cand = mapY.value - extra;
+              if (cand <= maxMapY && cand >= minMapY) mapY.value = cand;
+              else offsetY.value = extra;
+            } else {
+              offsetY.value += dy;
+            }
+          } else {
+            offsetY.value = offSignY * Math.min(absOffY + absDy, maxOffY);
+          }
+        } else {
+          const cand = mapY.value - dy;
+          if (cand <= maxMapY && cand >= minMapY) mapY.value = cand;
+          else offsetY.value += dy;
+        }
+      }
+
+      // update player pos
+      playerCenterX.value = WIDTH / 2 + offsetX.value;
+      playerCenterY.value = HEIGHT / 2 + offsetY.value;
+    }, 1000 / 60);
+
+    return () => clearInterval(id);
+  }, [isMoving, direction]);
+
+  // Pan-gesture “joystick”
+  const pan = Gesture.Pan()
+    .onBegin(() => {
+      // run setIsMoving(true) on the JS thread
+      runOnJS(setIsMoving)(true);
+    })
+    .onUpdate((e) => {
+      const { translationX: tx, translationY: ty } = e;
+      // compute newDirection on the UI thread
+      const newDirection =
+        Math.abs(tx) > Math.abs(ty)
+          ? tx > 0
+            ? Direction.Right
+            : Direction.Left
+          : ty > 0
+          ? Direction.Down
+          : Direction.Up;
+      // run setDirection(...) on the JS thread
+      runOnJS(setDirection)(newDirection);
+    })
+    .onEnd(() => {
+      runOnJS(setIsMoving)(false);
+    })
+    .onFinalize(() => {
+      runOnJS(setIsMoving)(false);
+    });
+
+  return (
+    <View style={styles.container}>
+      <Map
+        mapX={mapX}
+        mapY={mapY}
+        tiles={staticMap}
+        tileSize={TILE_SIZE}
+        mapAnimatedStyle={mapAnimatedStyle}
+      />
+      <Player
+        direction={direction}
+        isMoving={isMoving}
+        centerX={playerCenterX}
+        centerY={playerCenterY}
+      />
+
+      <GestureDetector gesture={pan}>
+        <View style={styles.pad}>
+          <View style={styles.padCenter} />
+        </View>
+      </GestureDetector>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#222" },
+  pad: {
+    position: "absolute",
+    bottom: 40,
+    left: 20,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  padCenter: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "rgba(255,255,255,0.2)",
+  },
+});
