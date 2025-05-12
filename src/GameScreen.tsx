@@ -8,14 +8,14 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import { Direction } from "./types";
+import { Direction, Tile } from "./types";
 import { Map } from "./components/Map";
 import { Player } from "./components/Player";
-import { staticMap } from "./maps/home";
+import { DEFAULT_MAPS } from "./maps/home";
 
 const SPEED = 200;
 const TILE_SIZE = 48;
-const WALKABLE_TILES = ["grass", "path"] as const;
+const WALKABLE_TILES = [Tile.Grass, Tile.Path] as const;
 type WalkableTile = (typeof WALKABLE_TILES)[number];
 
 export default function GameScreen() {
@@ -34,8 +34,8 @@ export default function GameScreen() {
   const [direction, setDirection] = useState<Direction>(Direction.Down);
   const [isMoving, setIsMoving] = useState(false);
 
-  const cols = staticMap[0].length;
-  const rows = staticMap.length;
+  const cols = DEFAULT_MAPS.FOREST.mapData[0].length;
+  const rows = DEFAULT_MAPS.FOREST.mapData.length;
   const maxMapX = 0;
   const minMapX = wWidth - cols * TILE_SIZE;
   const maxMapY = 0;
@@ -81,8 +81,13 @@ export default function GameScreen() {
       const worldY = -mapY.value + wHeight / 2 + offsetY.value + dy;
       const col = Math.floor(worldX / TILE_SIZE);
       const row = Math.floor(worldY / TILE_SIZE);
-      const tile = staticMap[row]?.[col] as WalkableTile | undefined;
-      if (!tile || !WALKABLE_TILES.includes(tile)) return;
+      const tile = DEFAULT_MAPS.FOREST.mapData[row]?.[col] as
+        | WalkableTile
+        | undefined;
+      if (tile === undefined || !WALKABLE_TILES.includes(tile)) {
+        console.log("NOPE");
+        return;
+      }
 
       // --- X axis ---
       if (dx !== 0) {
@@ -209,7 +214,7 @@ export default function GameScreen() {
       <Map
         mapX={mapX}
         mapY={mapY}
-        tiles={staticMap}
+        tiles={DEFAULT_MAPS.FOREST.mapData}
         tileSize={TILE_SIZE}
         mapAnimatedStyle={mapAnimatedStyle}
       />

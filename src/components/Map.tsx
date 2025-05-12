@@ -15,11 +15,11 @@ export interface MapProps {
 }
 
 const tileStyles: Record<Tile, any> = {
-  grass: { backgroundColor: "#6C9A0A" },
-  path: { backgroundColor: "#C2B280" },
-  water: { backgroundColor: "#4A90E2" },
-  tree: { backgroundColor: "#2E7D32" },
-  rock: { backgroundColor: "#757575" },
+  [Tile.Grass]: { backgroundColor: "#6C9A0A" },
+  [Tile.Path]: { backgroundColor: "#C2B280" },
+  [Tile.Water]: { backgroundColor: "#4A90E2" },
+  [Tile.Tree]: { backgroundColor: "#2E7D32" },
+  [Tile.Rock]: { backgroundColor: "#757575" },
 };
 
 export const Map: React.FC<MapProps> = ({

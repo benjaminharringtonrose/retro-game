@@ -54,9 +54,9 @@ export enum Direction {
 }
 
 export enum Tile {
-  Grass = "grass",
-  Path = "path",
-  Water = "water",
-  Tree = "tree",
-  Rock = "rock",
+  Grass = 0,
+  Path = 1,
+  Water = 2,
+  Tree = 3,
+  Rock = 4,
 }
