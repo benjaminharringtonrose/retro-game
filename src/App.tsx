@@ -1,14 +1,20 @@
+// App.tsx
 import React, { useState, useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   cancelAnimation,
+  runOnJS,
 } from "react-native-reanimated";
+import {
+  Gesture,
+  GestureDetector,
+  GestureHandlerRootView,
+} from "react-native-gesture-handler";
 import { Direction } from "./types";
 import { Map } from "./components/Map";
 import { Player } from "./components/Player";
-import { GameBoyButton } from "./components/GameBoyButton";
 import { staticMap } from "./maps/home";
 import { HEIGHT, WIDTH } from "./constants/window";
 
@@ -18,7 +24,7 @@ const WALKABLE_TILES = ["grass", "path"] as const;
 type WalkableTile = (typeof WALKABLE_TILES)[number];
 
 export default function App() {
-  // Use shared values for animation
+  // animated values
   const mapX = useSharedValue(0);
   const mapY = useSharedValue(0);
   const offsetX = useSharedValue(0);
@@ -38,173 +44,139 @@ export default function App() {
   const maxOffX = WIDTH / 2 - TILE_SIZE / 2;
   const maxOffY = HEIGHT / 2 - TILE_SIZE / 2;
 
-  // Animation styles
-  const mapAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ translateX: mapX.value }, { translateY: mapY.value }],
-    };
-  });
+  const mapAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: mapX.value }, { translateY: mapY.value }],
+  }));
 
-  // Handle movement with Reanimated
+  // Movement loop
   useEffect(() => {
     if (!isMoving) {
-      // Cancel any ongoing animations when not moving
       cancelAnimation(mapX);
       cancelAnimation(mapY);
       cancelAnimation(offsetX);
       cancelAnimation(offsetY);
       return;
     }
-
-    const interval = setInterval(() => {
-      const moveStep = SPEED / 60; // Simulate 60fps movement steps
-
-      let moveX = 0;
-      let moveY = 0;
-
+    const id = setInterval(() => {
+      const step = SPEED / 60;
+      let dx = 0,
+        dy = 0;
       switch (direction) {
         case Direction.Left:
-          moveX = -moveStep;
+          dx = -step;
           break;
         case Direction.Right:
-          moveX = moveStep;
+          dx = step;
           break;
         case Direction.Up:
-          moveY = -moveStep;
+          dy = -step;
           break;
         case Direction.Down:
-          moveY = moveStep;
+          dy = step;
           break;
       }
+      if (dx === 0 && dy === 0) return;
 
-      if (moveX !== 0 || moveY !== 0) {
-        // Calculate world position for collision detection
-        const worldX = -mapX.value + WIDTH / 2 + offsetX.value + moveX;
-        const worldY = -mapY.value + HEIGHT / 2 + offsetY.value + moveY;
-        const col = Math.floor(worldX / TILE_SIZE);
-        const row = Math.floor(worldY / TILE_SIZE);
+      // Figure out which tile we're moving into
+      const worldX = -mapX.value + WIDTH / 2 + offsetX.value + dx;
+      const worldY = -mapY.value + HEIGHT / 2 + offsetY.value + dy;
+      const col = Math.floor(worldX / TILE_SIZE);
+      const row = Math.floor(worldY / TILE_SIZE);
+      const tile = staticMap[row]?.[col] as WalkableTile | undefined;
+      if (!tile || !WALKABLE_TILES.includes(tile)) return;
 
-        // Check if the tile is walkable
-        const tile = staticMap[row]?.[col] as WalkableTile | undefined;
-        if (tile && WALKABLE_TILES.includes(tile)) {
-          // X axis movement
-          if (moveX !== 0) {
-            // If offset is active, handle it first
-            if (offsetX.value !== 0) {
-              const offsetSign = Math.sign(offsetX.value);
-              const moveSign = Math.sign(moveX);
+      // --- X axis ---
+      if (dx !== 0) {
+        // precompute for both branches
+        const absOff = Math.abs(offsetX.value);
+        const absDx = Math.abs(dx);
+        const offSign = Math.sign(offsetX.value);
+        const mvSign = Math.sign(dx);
 
-              // If moving toward center (offset and movement in opposite directions)
-              if (offsetSign !== moveSign) {
-                const absOffset = Math.abs(offsetX.value);
-                const absMoveX = Math.abs(moveX);
-
-                // If this movement will cross zero offset
-                if (absOffset <= absMoveX) {
-                  // Extra movement after crossing zero
-                  const extra = moveX + offsetX.value;
-                  offsetX.value = 0;
-
-                  // Apply extra movement to map if possible
-                  const candidate = mapX.value - extra;
-                  if (candidate <= maxMapX && candidate >= minMapX) {
-                    mapX.value = candidate;
-                  } else {
-                    // Map at boundary, start offset in opposite direction
-                    offsetX.value = extra;
-                  }
-                } else {
-                  // Won't cross zero yet, just reduce offset
-                  offsetX.value += moveX;
-                }
-              } else {
-                // Moving away from center, just increase offset up to max
-                offsetX.value =
-                  Math.sign(offsetX.value) *
-                  Math.min(Math.abs(offsetX.value + moveX), maxOffX);
-              }
+        if (offsetX.value !== 0) {
+          if (offSign !== mvSign) {
+            if (absOff <= absDx) {
+              const extra = dx + offsetX.value;
+              offsetX.value = 0;
+              const cand = mapX.value - extra;
+              if (cand <= maxMapX && cand >= minMapX) mapX.value = cand;
+              else offsetX.value = extra;
             } else {
-              // No offset active, try to move map
-              const candidate = mapX.value - moveX;
-              if (candidate <= maxMapX && candidate >= minMapX) {
-                // Move map
-                mapX.value = candidate;
-              } else {
-                // Map at boundary, start offset
-                offsetX.value += moveX;
-              }
+              offsetX.value += dx;
             }
+          } else {
+            // same direction, clamp by half-screen
+            offsetX.value = offSign * Math.min(absOff + absDx, maxOffX);
           }
-
-          // Y axis movement (similar logic)
-          if (moveY !== 0) {
-            // If offset is active, handle it first
-            if (offsetY.value !== 0) {
-              const offsetSign = Math.sign(offsetY.value);
-              const moveSign = Math.sign(moveY);
-
-              // If moving toward center (offset and movement in opposite directions)
-              if (offsetSign !== moveSign) {
-                const absOffset = Math.abs(offsetY.value);
-                const absMoveY = Math.abs(moveY);
-
-                // If this movement will cross zero offset
-                if (absOffset <= absMoveY) {
-                  // Extra movement after crossing zero
-                  const extra = moveY + offsetY.value;
-                  offsetY.value = 0;
-
-                  // Apply extra movement to map if possible
-                  const candidate = mapY.value - extra;
-                  if (candidate <= maxMapY && candidate >= minMapY) {
-                    mapY.value = candidate;
-                  } else {
-                    // Map at boundary, start offset in opposite direction
-                    offsetY.value = extra;
-                  }
-                } else {
-                  // Won't cross zero yet, just reduce offset
-                  offsetY.value += moveY;
-                }
-              } else {
-                // Moving away from center, just increase offset up to max
-                offsetY.value =
-                  Math.sign(offsetY.value) *
-                  Math.min(Math.abs(offsetY.value + moveY), maxOffY);
-              }
-            } else {
-              // No offset active, try to move map
-              const candidate = mapY.value - moveY;
-              if (candidate <= maxMapY && candidate >= minMapY) {
-                // Move map
-                mapY.value = candidate;
-              } else {
-                // Map at boundary, start offset
-                offsetY.value += moveY;
-              }
-            }
-          }
-
-          // Update player position based on offset
-          playerCenterX.value = WIDTH / 2 + offsetX.value;
-          playerCenterY.value = HEIGHT / 2 + offsetY.value;
+        } else {
+          const cand = mapX.value - dx;
+          if (cand <= maxMapX && cand >= minMapX) mapX.value = cand;
+          else offsetX.value += dx;
         }
       }
-    }, 1000 / 60); // Update at 60fps
 
-    return () => {
-      clearInterval(interval);
-    };
+      // --- Y axis (identical) ---
+      if (dy !== 0) {
+        const absOffY = Math.abs(offsetY.value);
+        const absDy = Math.abs(dy);
+        const offSignY = Math.sign(offsetY.value);
+        const mvSignY = Math.sign(dy);
+
+        if (offsetY.value !== 0) {
+          if (offSignY !== mvSignY) {
+            if (absOffY <= absDy) {
+              const extra = dy + offsetY.value;
+              offsetY.value = 0;
+              const cand = mapY.value - extra;
+              if (cand <= maxMapY && cand >= minMapY) mapY.value = cand;
+              else offsetY.value = extra;
+            } else {
+              offsetY.value += dy;
+            }
+          } else {
+            offsetY.value = offSignY * Math.min(absOffY + absDy, maxOffY);
+          }
+        } else {
+          const cand = mapY.value - dy;
+          if (cand <= maxMapY && cand >= minMapY) mapY.value = cand;
+          else offsetY.value += dy;
+        }
+      }
+
+      // update player pos
+      playerCenterX.value = WIDTH / 2 + offsetX.value;
+      playerCenterY.value = HEIGHT / 2 + offsetY.value;
+    }, 1000 / 60);
+
+    return () => clearInterval(id);
   }, [isMoving, direction]);
 
-  const onPressIn = (d: Direction) => {
-    setDirection(d);
-    setIsMoving(true);
-  };
-
-  const onPressOut = () => {
-    setIsMoving(false);
-  };
+  // Pan-gesture “joystick”
+  const pan = Gesture.Pan()
+    .onBegin(() => {
+      // run setIsMoving(true) on the JS thread
+      runOnJS(setIsMoving)(true);
+    })
+    .onUpdate((e) => {
+      const { translationX: tx, translationY: ty } = e;
+      // compute newDirection on the UI thread
+      const newDirection =
+        Math.abs(tx) > Math.abs(ty)
+          ? tx > 0
+            ? Direction.Right
+            : Direction.Left
+          : ty > 0
+          ? Direction.Down
+          : Direction.Up;
+      // run setDirection(...) on the JS thread
+      runOnJS(setDirection)(newDirection);
+    })
+    .onEnd(() => {
+      runOnJS(setIsMoving)(false);
+    })
+    .onFinalize(() => {
+      runOnJS(setIsMoving)(false);
+    });
 
   return (
     <View style={styles.container}>
@@ -221,47 +193,33 @@ export default function App() {
         centerX={playerCenterX}
         centerY={playerCenterY}
       />
-      <View style={styles.controls}>
-        <GameBoyButton
-          label="▲"
-          onPressIn={() => onPressIn(Direction.Up)}
-          onPressOut={onPressOut}
-          style={styles.up}
-        />
-        <GameBoyButton
-          label="◀"
-          onPressIn={() => onPressIn(Direction.Left)}
-          onPressOut={onPressOut}
-          style={styles.left}
-        />
-        <GameBoyButton
-          label="▶"
-          onPressIn={() => onPressIn(Direction.Right)}
-          onPressOut={onPressOut}
-          style={styles.right}
-        />
-        <GameBoyButton
-          label="▼"
-          onPressIn={() => onPressIn(Direction.Down)}
-          onPressOut={onPressOut}
-          style={styles.down}
-        />
-      </View>
+
+      <GestureDetector gesture={pan}>
+        <View style={styles.pad}>
+          <View style={styles.padCenter} />
+        </View>
+      </GestureDetector>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#222" },
-  controls: {
+  pad: {
     position: "absolute",
     bottom: 40,
     left: 20,
     width: 200,
     height: 200,
+    borderRadius: 100,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  up: { position: "absolute", top: 0, left: 70 },
-  left: { position: "absolute", top: 70, left: 0 },
-  right: { position: "absolute", top: 70, left: 140 },
-  down: { position: "absolute", top: 140, left: 70 },
+  padCenter: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "rgba(255,255,255,0.2)",
+  },
 });
