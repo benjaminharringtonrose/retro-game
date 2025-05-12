@@ -3,28 +3,29 @@ import { MOVE_SPEED } from "../constants/sprites";
 import { WIDTH, HEIGHT } from "../constants/window";
 import { Entities } from "../types";
 
-// MovePlayer now shifts the map opposite to input, keeping the player centered
-export const MovePlayer: GameEngineSystem = (
-  entities: Entities,
-  { time }: { time: any }
-) => {
+export const MovePlayer: GameEngineSystem = (entities: Entities) => {
   const { player, map, gameState } = entities;
   let movedX = 0;
   let movedY = 0;
 
-  // Determine input and update animation direction
   if (gameState.controls.up) {
     movedY = -MOVE_SPEED;
     player.direction = "up";
+    player.isMoving = true;
   } else if (gameState.controls.down) {
     movedY = MOVE_SPEED;
     player.direction = "down";
+    player.isMoving = true;
   } else if (gameState.controls.left) {
     movedX = -MOVE_SPEED;
     player.direction = "left";
+    player.isMoving = true;
   } else if (gameState.controls.right) {
     movedX = MOVE_SPEED;
     player.direction = "right";
+    player.isMoving = true;
+  } else {
+    player.isMoving = false;
   }
 
   // Shift map inversely
