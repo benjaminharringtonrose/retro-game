@@ -1,56 +1,62 @@
-import React, { FC, useEffect, useRef } from "react";
-import { useWindowDimensions, View } from "react-native";
-import { Sprites, SpritesMethods } from "react-native-sprites";
-import { SPRITE_HEIGHT, SPRITE_WIDTH } from "../constants/sprites";
+import React, { useState, useEffect, useRef } from "react";
+import { View, Image } from "react-native";
 import { Direction } from "../types";
+
+const SPRITE_W = 32;
+const SPRITE_H = 40;
+const ROWS = { down: 0, left: 1, up: 2, right: 3 };
+const FRAMES = 3;
+const ANIM_INTERVAL = 100; // ms
 
 export interface PlayerProps {
   direction: Direction;
-  x: number;
-  y: number;
   isMoving: boolean;
+  centerX: number;
+  centerY: number;
 }
 
-export const Player: FC<PlayerProps> = ({ direction, x, y, isMoving }) => {
-  const { width, height } = useWindowDimensions();
-  const spriteRef = useRef<SpritesMethods>(null);
+export const Player: React.FC<PlayerProps> = ({
+  direction,
+  isMoving,
+  centerX,
+  centerY,
+}) => {
+  const [frame, setFrame] = useState(0);
+  const intervalRef = useRef<NodeJS.Timeout>(undefined);
 
   useEffect(() => {
     if (isMoving) {
-      spriteRef.current?.play({
-        type: direction,
-        fps: 12,
-        loop: true,
-        resetAfterFinish: false,
-      });
+      intervalRef.current = setInterval(() => {
+        setFrame((f) => (f + 1) % FRAMES);
+      }, ANIM_INTERVAL);
     } else {
-      spriteRef.current?.stop();
+      clearInterval(intervalRef.current);
+      setFrame(0);
     }
-  }, [direction, isMoving]);
+    return () => clearInterval(intervalRef.current);
+  }, [isMoving]);
 
   return (
     <View
       style={{
         position: "absolute",
-        left: x,
-        top: y,
+        left: centerX - SPRITE_W / 2,
+        top: centerY - SPRITE_H / 2,
+        width: SPRITE_W,
+        height: SPRITE_H,
+        overflow: "hidden",
         zIndex: 10,
       }}
     >
-      <Sprites
-        ref={spriteRef}
+      <Image
         source={require("../assets/character-spritesheet.png")}
-        columns={3}
-        rows={4}
-        animations={{
-          down: { row: 0, startFrame: 0, endFrame: 2 },
-          left: { row: 1, startFrame: 0, endFrame: 2 },
-          up: { row: 2, startFrame: 0, endFrame: 2 },
-          right: { row: 3, startFrame: 0, endFrame: 2 },
+        style={{
+          position: "absolute",
+          width: SPRITE_W * FRAMES,
+          height: SPRITE_H * 4,
+          left: -frame * SPRITE_W,
+          top: -ROWS[direction] * SPRITE_H,
         }}
-        width={SPRITE_WIDTH}
-        height={SPRITE_HEIGHT}
-        onLoad={() => console.log("Sprite sheet loaded")}
       />
     </View>
   );

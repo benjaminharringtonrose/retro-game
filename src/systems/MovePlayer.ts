@@ -1,7 +1,8 @@
-import { WIDTH, HEIGHT } from "../constants/window";
+import { HEIGHT, WIDTH } from "../constants/window";
 import { Direction, Entities, Tile } from "../types";
 
 export function MovePlayer(entities: Entities) {
+  "worklet";
   const { player, map, gameState } = entities;
   const speed = player.speed;
   let dx = 0,
@@ -27,24 +28,21 @@ export function MovePlayer(entities: Entities) {
     player.isMoving = false;
   }
 
-  // Define impassable tiles
   const impassableTiles = [Tile.Water, Tile.Tree, Tile.Rock];
-
-  // Calculate desired positions
   const desiredPlayerX = player.x + dx;
   const desiredPlayerY = player.y + dy;
   const desiredMapX = map.x - dx;
   const desiredMapY = map.y - dy;
 
-  // Check collisions for player's bounding box
   const canMoveX = dx !== 0 ? checkCollision(dx, 0) : true;
   const canMoveY = dy !== 0 ? checkCollision(0, dy) : true;
 
-  // Horizontal movement
+  console.log("MovePlayer collision:", { canMoveX, canMoveY, dx, dy });
+
   const minMapX = WIDTH - map.width;
   const maxMapX = 0;
   const centerX = WIDTH / 2 - player.width / 2;
-  const edgeThreshold = map.tileSize / 2; // Smaller threshold for smoother transition
+  const edgeThreshold = map.tileSize / 2;
 
   if (canMoveX && dx !== 0) {
     const isNearLeftScreenEdge = player.x < edgeThreshold;
@@ -54,26 +52,16 @@ export function MovePlayer(entities: Entities) {
     if (
       desiredMapX >= minMapX &&
       desiredMapX <= maxMapX &&
-      // Prevent map scroll and centering if near screen edge
-      !(
-        (
-          (isNearLeftScreenEdge && dx > 0) || // Moving right from left
-          (isNearRightScreenEdge && dx < 0)
-        ) // Moving left from right
-      )
+      !((isNearLeftScreenEdge && dx > 0) || (isNearRightScreenEdge && dx < 0))
     ) {
-      // Scroll map and center player
       map.x = desiredMapX;
       player.x = centerX;
     } else {
-      // Move player sprite only, clamp to screen bounds
       player.x = Math.max(0, Math.min(WIDTH - player.width, desiredPlayerX));
-      // Clamp map to edges
       map.x = Math.max(minMapX, Math.min(maxMapX, map.x));
     }
   }
 
-  // Vertical movement
   const minMapY = HEIGHT - map.height;
   const maxMapY = 0;
   const centerY = HEIGHT / 2 - player.height / 2;
@@ -86,47 +74,41 @@ export function MovePlayer(entities: Entities) {
     if (
       desiredMapY >= minMapY &&
       desiredMapY <= maxMapY &&
-      // Prevent map scroll and centering if near screen edge
-      !(
-        (
-          (isNearTopScreenEdge && dy > 0) || // Moving down from top
-          (isNearBottomScreenEdge && dy < 0)
-        ) // Moving up from bottom
-      )
+      !((isNearTopScreenEdge && dy > 0) || (isNearBottomScreenEdge && dy < 0))
     ) {
-      // Scroll map and center player
       map.y = desiredMapY;
       player.y = centerY;
     } else {
-      // Move player sprite only, clamp to screen bounds
       player.y = Math.max(0, Math.min(HEIGHT - player.height, desiredPlayerY));
-      // Clamp map to edges
       map.y = Math.max(minMapY, Math.min(maxMapY, map.y));
     }
   }
 
+  console.log("MovePlayer result:", {
+    playerX: player.x,
+    playerY: player.y,
+    mapX: map.x,
+    mapY: map.y,
+  });
+
   return entities;
 
-  // Helper function to check collisions for the player's bounding box
   function checkCollision(dx: number, dy: number): boolean {
-    // Calculate the player's bounding box at the desired position
+    "worklet";
     const nextPlayerX = player.x + dx;
     const nextPlayerY = player.y + dy;
 
-    // Convert bounding box corners to tile coordinates
     const tileSize = map.tileSize;
     const left = nextPlayerX - map.x;
     const right = nextPlayerX + player.width - map.x;
     const top = nextPlayerY - map.y;
     const bottom = nextPlayerY + player.height - map.y;
 
-    // Get tile coordinates for all four corners
     const tileLeft = Math.floor(left / tileSize);
     const tileRight = Math.floor(right / tileSize);
     const tileTop = Math.floor(top / tileSize);
     const tileBottom = Math.floor(bottom / tileSize);
 
-    // Check if any corner is outside map bounds or on an impassable tile
     for (let tileY = tileTop; tileY <= tileBottom; tileY++) {
       for (let tileX = tileLeft; tileX <= tileRight; tileX++) {
         if (
@@ -135,14 +117,14 @@ export function MovePlayer(entities: Entities) {
           tileY < 0 ||
           tileY >= map.tiles.length
         ) {
-          return false; // Outside map bounds
+          return false;
         }
         if (impassableTiles.includes(map.tiles[tileY][tileX])) {
-          return false; // Impassable tile
+          return false;
         }
       }
     }
 
-    return true; // No collisions
+    return true;
   }
 }

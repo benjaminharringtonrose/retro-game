@@ -1,10 +1,12 @@
-import { TouchableOpacity, Text, StyleSheet } from "react-native";
+// components/GameBoyButton.tsx
+import React from "react";
+import { TouchableOpacity, Text, StyleSheet, ViewStyle } from "react-native";
 
 export interface GameBoyButtonProps {
   onPressIn: () => void;
   onPressOut: () => void;
   label: string;
-  style: object;
+  style?: ViewStyle;
 }
 
 export const GameBoyButton: React.FC<GameBoyButtonProps> = ({
@@ -14,26 +16,26 @@ export const GameBoyButton: React.FC<GameBoyButtonProps> = ({
   style,
 }) => (
   <TouchableOpacity
+    activeOpacity={0.6}
     onPressIn={onPressIn}
     onPressOut={onPressOut}
-    style={[styles.button, style]}
+    style={[styles.btn, style]}
   >
-    <Text style={styles.buttonText}>{label}</Text>
+    <Text style={styles.lbl}>{label}</Text>
   </TouchableOpacity>
 );
 
 const styles = StyleSheet.create({
-  button: {
-    width: 36,
-    height: 36,
-    backgroundColor: "#444",
+  btn: {
+    width: 50,
+    height: 50,
+    backgroundColor: "#555",
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 18,
+    borderRadius: 8,
   },
-  buttonText: {
+  lbl: {
     color: "#fff",
-    fontSize: 12,
-    fontWeight: "bold",
+    fontSize: 18,
   },
 });
