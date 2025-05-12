@@ -24,15 +24,12 @@ export default function App() {
   const rafId = useRef<number>(undefined);
   const lastTime = useRef<number>(undefined);
 
-  // Map dimensions and bounds
   const mapCols = staticMap[0].length;
   const mapRows = staticMap.length;
-  const maxX = 0;
-  const minX = WIDTH - mapCols * TILE_SIZE;
-  const maxY = 0;
-  const minY = HEIGHT - mapRows * TILE_SIZE;
-
-  // Player offset limits when at map edge
+  const maxMapX = 0;
+  const minMapX = WIDTH - mapCols * TILE_SIZE;
+  const maxMapY = 0;
+  const minMapY = HEIGHT - mapRows * TILE_SIZE;
   const maxOffsetX = WIDTH / 2 - TILE_SIZE / 2;
   const maxOffsetY = HEIGHT / 2 - TILE_SIZE / 2;
 
@@ -46,55 +43,62 @@ export default function App() {
     const loop = (time: number) => {
       if (lastTime.current != null) {
         const dt = (time - lastTime.current) / 1000;
-        let dx = 0,
-          dy = 0;
+        let moveX = 0;
+        let moveY = 0;
         switch (direction) {
           case Direction.Left:
-            dx = SPEED * dt;
+            moveX = -SPEED * dt;
             break;
           case Direction.Right:
-            dx = -SPEED * dt;
+            moveX = SPEED * dt;
             break;
           case Direction.Up:
-            dy = SPEED * dt;
+            moveY = -SPEED * dt;
             break;
           case Direction.Down:
-            dy = -SPEED * dt;
+            moveY = SPEED * dt;
             break;
         }
 
-        // Horizontal movement
-        if (dx !== 0) {
-          setMapX((oldX) => {
-            const newX = oldX + dx;
-            // If within map scroll bounds, move map
-            if (newX <= maxX && newX >= minX) {
-              setOffsetX(0);
-              return newX;
-            }
-            // At edge: lock map, move player offset in correct direction
-            setOffsetX((old) => {
-              const next = old - dx;
-              return Math.max(-maxOffsetX, Math.min(maxOffsetX, next));
-            });
-            return oldX;
-          });
-        }
+        // Compute current world position
+        const worldX = -mapX + WIDTH / 2 + offsetX + moveX;
+        const worldY = -mapY + HEIGHT / 2 + offsetY + moveY;
+        const col = Math.floor(worldX / TILE_SIZE);
+        const row = Math.floor(worldY / TILE_SIZE);
+        const tile = staticMap[row]?.[col] as WalkableTile | undefined;
+        // Only move if next tile is walkable
+        if (tile && WALKABLE_TILES.includes(tile)) {
+          // Map scroll delta
+          const dxMap = -moveX;
+          const dyMap = -moveY;
 
-        // Vertical movement
-        if (dy !== 0) {
-          setMapY((oldY) => {
-            const newY = oldY + dy;
-            if (newY <= maxY && newY >= minY) {
-              setOffsetY(0);
-              return newY;
+          // Horizontal: decide map vs offset
+          if (moveX !== 0) {
+            const desiredMapX = mapX + dxMap;
+            if (desiredMapX <= maxMapX && desiredMapX >= minMapX) {
+              setMapX(desiredMapX);
+              setOffsetX(0);
+            } else {
+              setOffsetX((old) => {
+                const next = old + moveX;
+                return Math.max(-maxOffsetX, Math.min(maxOffsetX, next));
+              });
             }
-            setOffsetY((old) => {
-              const next = old - dy;
-              return Math.max(-maxOffsetY, Math.min(maxOffsetY, next));
-            });
-            return oldY;
-          });
+          }
+
+          // Vertical: decide map vs offset
+          if (moveY !== 0) {
+            const desiredMapY = mapY + dyMap;
+            if (desiredMapY <= maxMapY && desiredMapY >= minMapY) {
+              setMapY(desiredMapY);
+              setOffsetY(0);
+            } else {
+              setOffsetY((old) => {
+                const next = old + moveY;
+                return Math.max(-maxOffsetY, Math.min(maxOffsetY, next));
+              });
+            }
+          }
         }
       }
       lastTime.current = time;
@@ -103,27 +107,23 @@ export default function App() {
 
     rafId.current = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(rafId.current!);
-  }, [isMoving, direction, mapX, mapY]);
+  }, [isMoving, direction, mapX, mapY, offsetX, offsetY]);
 
   const handlePressIn = (dir: Direction) => {
     setDirection(dir);
     setIsMoving(true);
   };
-  const handlePressOut = () => {
-    setIsMoving(false);
-  };
+  const handlePressOut = () => setIsMoving(false);
 
   return (
     <View style={styles.container}>
       <Map x={mapX} y={mapY} tiles={staticMap} tileSize={TILE_SIZE} />
-
       <Player
         direction={direction}
         isMoving={isMoving}
         centerX={WIDTH / 2 + offsetX}
         centerY={HEIGHT / 2 + offsetY}
       />
-
       <View style={styles.controls}>
         <GameBoyButton
           label="▲"
