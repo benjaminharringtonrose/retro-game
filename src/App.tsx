@@ -18,6 +18,7 @@ import { MovePlayer } from "./systems/MovePlayer";
 import { GameBoyButton } from "./components/GameBoyButton";
 import { staticMap } from "./maps/home";
 import { MOVE_SPEED, SPRITE_HEIGHT, SPRITE_WIDTH } from "./constants/sprites";
+import { HEIGHT, WIDTH } from "./constants/window";
 
 const App: React.FC = () => {
   const gameEngine = useRef<GameEngine>(null);
@@ -38,8 +39,8 @@ const App: React.FC = () => {
           player: {
             isMoving: false,
             speed: MOVE_SPEED,
-            x: 0,
-            y: 0,
+            x: WIDTH / 2,
+            y: HEIGHT / 2,
             width: 50,
             height: 63,
             direction: Direction.Down,

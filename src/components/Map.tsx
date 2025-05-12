@@ -2,6 +2,7 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import { Tile } from "../types";
+import Animated from "react-native-reanimated";
 
 export interface MapProps {
   x: number;
@@ -27,27 +28,31 @@ export const Map: React.FC<MapProps> = ({
   tileSize,
   width,
   height,
-}) => (
-  <View style={[styles.container, { left: x, top: y, width, height }]}>
-    {tiles.map((row, ry) =>
-      row.map((tile, cx) => (
-        <View
-          key={`${ry}-${cx}`}
-          style={[
-            styles.tile,
-            tileStyles[tile],
-            {
-              width: tileSize,
-              height: tileSize,
-              left: cx * tileSize,
-              top: ry * tileSize,
-            },
-          ]}
-        />
-      ))
-    )}
-  </View>
-);
+}) => {
+  return (
+    <Animated.View
+      style={[styles.container, { left: x, top: y, width, height }]}
+    >
+      {tiles.map((row, ry) =>
+        row.map((tile, cx) => (
+          <View
+            key={`${ry}-${cx}`}
+            style={[
+              styles.tile,
+              tileStyles[tile],
+              {
+                width: tileSize,
+                height: tileSize,
+                left: cx * tileSize,
+                top: ry * tileSize,
+              },
+            ]}
+          />
+        ))
+      )}
+    </Animated.View>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
