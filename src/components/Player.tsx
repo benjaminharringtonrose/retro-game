@@ -1,5 +1,5 @@
 import React, { forwardRef, useEffect, useRef } from "react";
-import { View } from "react-native";
+import { useWindowDimensions, View } from "react-native";
 import { Sprites, SpritesMethods } from "react-native-sprites";
 import { SPRITE_HEIGHT, SPRITE_WIDTH } from "../constants/sprites";
 
@@ -11,6 +11,7 @@ export interface PlayerProps {
 
 export const Player = forwardRef<SpritesMethods, PlayerProps>(
   ({ x, y, direction }, ref) => {
+    const { width, height } = useWindowDimensions();
     useEffect(() => {
       console.log("DIRECTIONNNNN", direction);
     }, [direction]);
@@ -43,8 +44,8 @@ export const Player = forwardRef<SpritesMethods, PlayerProps>(
       <View
         style={{
           position: "absolute",
-          left: x - SPRITE_WIDTH / 2,
-          top: y - SPRITE_HEIGHT / 2,
+          left: width / 2 - 20,
+          top: height / 2 - 80,
           zIndex: 10,
         }}
       >

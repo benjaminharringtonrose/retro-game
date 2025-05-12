@@ -1,7 +1,9 @@
 import { GameEngineSystem } from "react-native-game-engine";
-import { MOVE_SPEED, SPRITE_HEIGHT, SPRITE_WIDTH } from "../constants/sprites";
+import { MOVE_SPEED } from "../constants/sprites";
+import { WIDTH, HEIGHT } from "../constants/window";
 import { Entities } from "../types";
 
+// MovePlayer now shifts the map opposite to input, keeping the player centered
 export const MovePlayer: GameEngineSystem = (
   entities: Entities,
   { time }: { time: any }
@@ -10,7 +12,7 @@ export const MovePlayer: GameEngineSystem = (
   let movedX = 0;
   let movedY = 0;
 
-  // Update player position based on controls
+  // Determine input and update animation direction
   if (gameState.controls.up) {
     movedY = -MOVE_SPEED;
     player.direction = "up";
@@ -25,21 +27,18 @@ export const MovePlayer: GameEngineSystem = (
     player.direction = "right";
   }
 
-  // Calculate new position
-  const newX = player.x + movedX;
-  const newY = player.y + movedY;
+  // Shift map inversely
+  const newMapX = map.x - movedX;
+  const newMapY = map.y - movedY;
 
-  // Boundary checking
-  const minX = SPRITE_WIDTH / 2;
-  const maxX = map.width - SPRITE_WIDTH / 2;
-  const minY = SPRITE_HEIGHT / 2;
-  const maxY = map.height - SPRITE_HEIGHT / 2;
+  // Clamp map within its boundaries
+  const minMapX = WIDTH - map.width;
+  const maxMapX = 0;
+  const minMapY = HEIGHT - map.height;
+  const maxMapY = 0;
 
-  // Update position only if within bounds
-  player.x = Math.max(minX, Math.min(maxX, newX));
-  player.y = Math.max(minY, Math.min(maxY, newY));
-
-  // Update sprite animation
+  map.x = Math.max(minMapX, Math.min(maxMapX, newMapX));
+  map.y = Math.max(minMapY, Math.min(maxMapY, newMapY));
 
   return entities;
 };
