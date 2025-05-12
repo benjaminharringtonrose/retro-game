@@ -2,9 +2,10 @@ import React, { FC, useEffect, useRef } from "react";
 import { useWindowDimensions, View } from "react-native";
 import { Sprites, SpritesMethods } from "react-native-sprites";
 import { SPRITE_HEIGHT, SPRITE_WIDTH } from "../constants/sprites";
+import { Direction } from "../types";
 
 export interface PlayerProps {
-  direction: "up" | "down" | "left" | "right";
+  direction: Direction;
   isMoving: boolean;
 }
 

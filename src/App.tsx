@@ -11,7 +11,7 @@ import { GameEngine } from "react-native-game-engine";
 import { Asset } from "expo-asset";
 import * as SplashScreen from "expo-splash-screen";
 import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
-import { Controls, Entities } from "./types";
+import { Controls, Direction, Entities } from "./types";
 import { Player } from "./components/Player";
 import { Map } from "./components/Map";
 import { MovePlayer } from "./systems/MovePlayer";
@@ -35,7 +35,7 @@ const App: React.FC = () => {
         setEntities({
           player: {
             isMoving: false,
-            direction: "down",
+            direction: Direction.Down,
             renderer: Player,
           },
           map: {
@@ -92,40 +92,6 @@ const App: React.FC = () => {
       } else if (button === "select") {
         console.log("Select button pressed - inventory");
       }
-
-      // else if (button === "down") {
-      //   spriteRef.current?.play({
-      //     type: "down",
-      //     fps: 12,
-      //     loop: true,
-      //     resetAfterFinish: false,
-      //     onFinish: () => console.log(`Animation 'down finished`),
-      //   });
-      // } else if (button === "up") {
-      //   spriteRef.current?.play({
-      //     type: "up",
-      //     fps: 12,
-      //     loop: true,
-      //     resetAfterFinish: false,
-      //     onFinish: () => console.log(`Animation 'down finished`),
-      //   });
-      // } else if (button === "left") {
-      //   spriteRef.current?.play({
-      //     type: "left",
-      //     fps: 12,
-      //     loop: true,
-      //     resetAfterFinish: false,
-      //     onFinish: () => console.log(`Animation 'down finished`),
-      //   });
-      // } else if (button === "right") {
-      //   spriteRef.current?.play({
-      //     type: "right",
-      //     fps: 12,
-      //     loop: true,
-      //     resetAfterFinish: false,
-      //     onFinish: () => console.log(`Animation 'down finished`),
-      //   });
-      // }
     }
   };
 
@@ -185,29 +151,29 @@ const App: React.FC = () => {
           <View style={styles.dpad}>
             <GameBoyButton
               style={styles.upButton}
-              onPressIn={() => handlePressIn("up")}
-              onPressOut={() => handlePressOut("up")}
+              onPressIn={() => handlePressIn(Direction.Up)}
+              onPressOut={() => handlePressOut(Direction.Up)}
               label="▲"
             />
             <View style={styles.dpadMiddle}>
               <GameBoyButton
                 style={styles.leftButton}
-                onPressIn={() => handlePressIn("left")}
-                onPressOut={() => handlePressOut("left")}
+                onPressIn={() => handlePressIn(Direction.Left)}
+                onPressOut={() => handlePressOut(Direction.Left)}
                 label="◀"
               />
               <View style={styles.dpadCenter} />
               <GameBoyButton
                 style={styles.rightButton}
-                onPressIn={() => handlePressIn("right")}
-                onPressOut={() => handlePressOut("right")}
+                onPressIn={() => handlePressIn(Direction.Right)}
+                onPressOut={() => handlePressOut(Direction.Right)}
                 label="▶"
               />
             </View>
             <GameBoyButton
               style={styles.downButton}
-              onPressIn={() => handlePressIn("down")}
-              onPressOut={() => handlePressOut("down")}
+              onPressIn={() => handlePressIn(Direction.Down)}
+              onPressOut={() => handlePressOut(Direction.Down)}
               label="▼"
             />
           </View>

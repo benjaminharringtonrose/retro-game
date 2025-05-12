@@ -1,7 +1,7 @@
 import { GameEngineSystem } from "react-native-game-engine";
 import { MOVE_SPEED } from "../constants/sprites";
 import { WIDTH, HEIGHT } from "../constants/window";
-import { Entities } from "../types";
+import { Direction, Entities } from "../types";
 
 export const MovePlayer: GameEngineSystem = (entities: Entities) => {
   const { player, map, gameState } = entities;
@@ -10,19 +10,19 @@ export const MovePlayer: GameEngineSystem = (entities: Entities) => {
 
   if (gameState.controls.up) {
     movedY = -MOVE_SPEED;
-    player.direction = "up";
+    player.direction = Direction.Up;
     player.isMoving = true;
   } else if (gameState.controls.down) {
     movedY = MOVE_SPEED;
-    player.direction = "down";
+    player.direction = Direction.Down;
     player.isMoving = true;
   } else if (gameState.controls.left) {
     movedX = -MOVE_SPEED;
-    player.direction = "left";
+    player.direction = Direction.Left;
     player.isMoving = true;
   } else if (gameState.controls.right) {
     movedX = MOVE_SPEED;
-    player.direction = "right";
+    player.direction = Direction.Right;
     player.isMoving = true;
   } else {
     player.isMoving = false;

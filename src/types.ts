@@ -20,7 +20,7 @@ export interface GameState {
 }
 
 export interface PlayerEntity {
-  direction: "left" | "right" | "up" | "down";
+  direction: Direction;
   isMoving: boolean;
   renderer: React.FC<PlayerProps>;
 }
@@ -37,4 +37,11 @@ export interface Entities {
   player: PlayerEntity;
   map: MapEntity;
   gameState: GameState;
+}
+
+export enum Direction {
+  Left = "left",
+  Right = "right",
+  Up = "up",
+  Down = "down",
 }
