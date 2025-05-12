@@ -16,6 +16,7 @@ import { Player } from "./components/Player";
 import { Map } from "./components/Map";
 import { MovePlayer } from "./systems/MovePlayer";
 import { GameBoyButton } from "./components/GameBoyButton";
+import { staticMap } from "./maps/home";
 
 const App: React.FC = () => {
   const gameEngine = useRef<GameEngine>(null);
@@ -41,8 +42,10 @@ const App: React.FC = () => {
           map: {
             x: 0,
             y: 0,
-            width: 1200,
-            height: 1200,
+            width: staticMap[0].length * 48,
+            height: staticMap.length * 48,
+            tileSize: 48,
+            tiles: staticMap,
             renderer: Map,
           },
           gameState: {

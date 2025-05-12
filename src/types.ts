@@ -30,6 +30,8 @@ export interface MapEntity {
   y: number;
   width: number;
   height: number;
+  tileSize: number;
+  tiles: Tile[][];
   renderer: React.FC<MapProps>;
 }
 
@@ -44,4 +46,12 @@ export enum Direction {
   Right = "right",
   Up = "up",
   Down = "down",
+}
+
+export enum Tile {
+  Grass = "grass",
+  Path = "path",
+  Water = "water",
+  Tree = "tree",
+  Rock = "rock",
 }
