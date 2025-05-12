@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { View, Image } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+} from "react-native-reanimated";
 import { Direction } from "../types";
 
 const SPRITE_W = 32;
@@ -11,8 +15,8 @@ const ANIM_INTERVAL = 100; // ms
 export interface PlayerProps {
   direction: Direction;
   isMoving: boolean;
-  centerX: number;
-  centerY: number;
+  centerX: Animated.SharedValue<number>;
+  centerY: Animated.SharedValue<number>;
 }
 
 export const Player: React.FC<PlayerProps> = ({
@@ -36,18 +40,21 @@ export const Player: React.FC<PlayerProps> = ({
     return () => clearInterval(intervalRef.current);
   }, [isMoving]);
 
+  // Create animated styles based on centerX and centerY shared values
+  const playerAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      position: "absolute",
+      left: centerX.value - SPRITE_W / 2,
+      top: centerY.value - SPRITE_H / 2,
+      width: SPRITE_W,
+      height: SPRITE_H,
+      overflow: "hidden",
+      zIndex: 10,
+    };
+  });
+
   return (
-    <View
-      style={{
-        position: "absolute",
-        left: centerX - SPRITE_W / 2,
-        top: centerY - SPRITE_H / 2,
-        width: SPRITE_W,
-        height: SPRITE_H,
-        overflow: "hidden",
-        zIndex: 10,
-      }}
-    >
+    <Animated.View style={playerAnimatedStyle}>
       <Image
         source={require("../assets/character-spritesheet.png")}
         style={{
@@ -58,6 +65,6 @@ export const Player: React.FC<PlayerProps> = ({
           top: -ROWS[direction] * SPRITE_H,
         }}
       />
-    </View>
+    </Animated.View>
   );
 };

@@ -1,13 +1,15 @@
 // components/Map.tsx
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
+import Animated from "react-native-reanimated";
 import { Tile } from "../types";
 
 export interface MapProps {
-  x: number;
-  y: number;
+  mapX: Animated.SharedValue<number>;
+  mapY: Animated.SharedValue<number>;
   tiles: Tile[][];
   tileSize: number;
+  mapAnimatedStyle: any;
 }
 
 const tileStyles: Record<Tile, any> = {
@@ -18,11 +20,15 @@ const tileStyles: Record<Tile, any> = {
   rock: { backgroundColor: "#757575" },
 };
 
-export const Map: React.FC<MapProps> = ({ x, y, tiles, tileSize }) => (
-  <View style={[styles.container, { left: x, top: y }]}>
+export const Map: React.FC<MapProps> = ({
+  tiles,
+  tileSize,
+  mapAnimatedStyle,
+}) => (
+  <Animated.View style={[styles.container, mapAnimatedStyle]}>
     {tiles.map((row, r) =>
       row.map((tile, c) => (
-        <View
+        <Animated.View
           key={`${r}-${c}`}
           style={[
             styles.tile,
@@ -37,10 +43,14 @@ export const Map: React.FC<MapProps> = ({ x, y, tiles, tileSize }) => (
         />
       ))
     )}
-  </View>
+  </Animated.View>
 );
 
 const styles = StyleSheet.create({
-  container: { position: "absolute", width: "100%", height: "100%" },
+  container: {
+    position: "absolute",
+    width: "100%",
+    height: "100%",
+  },
   tile: { position: "absolute" },
 });
