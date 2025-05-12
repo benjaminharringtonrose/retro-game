@@ -2,7 +2,10 @@ import { GameEngineSystem } from "react-native-game-engine";
 import { MOVE_SPEED, SPRITE_HEIGHT, SPRITE_WIDTH } from "../constants/sprites";
 import { Entities } from "../types";
 
-export const MovePlayer: GameEngineSystem = (entities: Entities) => {
+export const MovePlayer: GameEngineSystem = (
+  entities: Entities,
+  { time }: { time: any }
+) => {
   const { player, map, gameState } = entities;
   let movedX = 0;
   let movedY = 0;
@@ -37,17 +40,6 @@ export const MovePlayer: GameEngineSystem = (entities: Entities) => {
   player.y = Math.max(minY, Math.min(maxY, newY));
 
   // Update sprite animation
-  if (movedX !== 0 || movedY !== 0) {
-    player.spriteSheet.current?.play({
-      type: player.direction,
-      fps: 8,
-      loop: true,
-      resetAfterFinish: false,
-      onFinish: () => {},
-    });
-  } else {
-    player.spriteSheet.current?.stop();
-  }
 
   return entities;
 };

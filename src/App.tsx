@@ -17,14 +17,14 @@ import { Player } from "./components/Player";
 import { Map } from "./components/Map";
 import { HEIGHT, WIDTH } from "./constants/window";
 import { MovePlayer } from "./systems/MovePlayer";
-import { GameBoyButton } from "./components/GameboyButton";
+import { GameBoyButton } from "./components/GameBoyButton";
 
 const App: React.FC = () => {
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [gameStarted, setGameStarted] = useState<boolean>(false);
   const gameEngine = useRef<GameEngine>(null);
   const spriteRef = useRef<SpritesMethods>(null);
 
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [gameStarted, setGameStarted] = useState<boolean>(false);
   const [entities, setEntities] = useState<Entities | null>(null);
 
   useEffect(() => {
@@ -38,10 +38,17 @@ const App: React.FC = () => {
         setEntities({
           player: {
             direction: "down",
-            spriteSheet: spriteRef,
-            renderer: Player,
-            x: WIDTH / 2 + 60,
+            x: WIDTH / 2,
             y: HEIGHT / 2,
+            ref: spriteRef,
+            renderer: (
+              <Player
+                x={WIDTH / 2}
+                y={HEIGHT / 2}
+                direction="down"
+                ref={spriteRef}
+              />
+            ),
           },
           map: {
             x: 0,
@@ -82,13 +89,6 @@ const App: React.FC = () => {
 
   const startGame = () => {
     setGameStarted(true);
-    // Initialize sprite animation
-    spriteRef.current?.play({
-      type: "down",
-      fps: 8,
-      loop: true,
-      resetAfterFinish: false,
-    });
   };
 
   const handlePressIn = (button: keyof Controls) => {
@@ -103,6 +103,38 @@ const App: React.FC = () => {
         console.log("Start button pressed - pause game");
       } else if (button === "select") {
         console.log("Select button pressed - inventory");
+      } else if (button === "down") {
+        spriteRef.current?.play({
+          type: "down",
+          fps: 12,
+          loop: true,
+          resetAfterFinish: false,
+          onFinish: () => console.log(`Animation 'down finished`),
+        });
+      } else if (button === "up") {
+        spriteRef.current?.play({
+          type: "up",
+          fps: 12,
+          loop: true,
+          resetAfterFinish: false,
+          onFinish: () => console.log(`Animation 'down finished`),
+        });
+      } else if (button === "left") {
+        spriteRef.current?.play({
+          type: "left",
+          fps: 12,
+          loop: true,
+          resetAfterFinish: false,
+          onFinish: () => console.log(`Animation 'down finished`),
+        });
+      } else if (button === "right") {
+        spriteRef.current?.play({
+          type: "right",
+          fps: 12,
+          loop: true,
+          resetAfterFinish: false,
+          onFinish: () => console.log(`Animation 'down finished`),
+        });
       }
     }
   };
@@ -110,6 +142,13 @@ const App: React.FC = () => {
   const handlePressOut = (button: keyof Controls) => {
     if (entities) {
       entities.gameState.controls[button] = false;
+    }
+    switch (button) {
+      case "down":
+      case "left":
+      case "right":
+      case "up":
+        return spriteRef.current?.stop();
     }
   };
 

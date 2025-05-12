@@ -1,38 +1,69 @@
-import { RefObject } from "react";
+import React, { forwardRef, useEffect, useRef } from "react";
 import { View } from "react-native";
 import { Sprites, SpritesMethods } from "react-native-sprites";
 import { SPRITE_HEIGHT, SPRITE_WIDTH } from "../constants/sprites";
 
-interface PlayerProps {
+export interface PlayerProps {
   x: number;
   y: number;
-  spriteSheet: RefObject<SpritesMethods | null>;
+  direction: "up" | "down" | "left" | "right";
 }
 
-export const Player: React.FC<PlayerProps> = ({ x, y, spriteSheet }) => {
-  return (
-    <View
-      style={{
-        position: "absolute",
-        left: x - SPRITE_WIDTH / 2,
-        top: y - SPRITE_HEIGHT / 2,
-        zIndex: 10,
-      }}
-    >
-      <Sprites
-        ref={spriteSheet}
-        source={require("../assets/character-spritesheet.png")}
-        columns={3}
-        rows={4}
-        animations={{
-          down: { row: 0, startFrame: 0, endFrame: 2 },
-          left: { row: 1, startFrame: 0, endFrame: 2 },
-          up: { row: 2, startFrame: 0, endFrame: 2 },
-          right: { row: 3, startFrame: 0, endFrame: 2 },
+export const Player = forwardRef<SpritesMethods, PlayerProps>(
+  ({ x, y, direction }, ref) => {
+    useEffect(() => {
+      console.log("DIRECTIONNNNN", direction);
+    }, [direction]);
+    // useEffect(() => {
+    //   console.log(
+    //     `Player rendered with direction: ${direction}, x: ${x}, y: ${y}`
+    //   );
+    //   if (spriteRef.current) {
+    //     console.log(`Playing animation for direction: ${direction}`);
+    //     spriteRef.current.play({
+    //       type: direction,
+    //       fps: 12,
+    //       loop: true,
+    //       resetAfterFinish: false,
+    //       onFinish: () => console.log(`Animation ${direction} finished`),
+    //     });
+    //   }
+    // }, [direction]);
+
+    // useEffect(() => {
+    //   // Stop animation and set idle frame when component unmounts
+    //   return () => {
+    //     if (spriteRef.current) {
+    //       spriteRef.current.stop();
+    //     }
+    //   };
+    // }, []);
+
+    return (
+      <View
+        style={{
+          position: "absolute",
+          left: x - SPRITE_WIDTH / 2,
+          top: y - SPRITE_HEIGHT / 2,
+          zIndex: 10,
         }}
-        width={SPRITE_WIDTH}
-        height={SPRITE_HEIGHT}
-      />
-    </View>
-  );
-};
+      >
+        <Sprites
+          ref={ref}
+          source={require("../assets/character-spritesheet.png")}
+          columns={3}
+          rows={4}
+          animations={{
+            down: { row: 0, startFrame: 0, endFrame: 2 },
+            left: { row: 1, startFrame: 0, endFrame: 2 },
+            up: { row: 2, startFrame: 0, endFrame: 2 },
+            right: { row: 3, startFrame: 0, endFrame: 2 },
+          }}
+          width={SPRITE_WIDTH}
+          height={SPRITE_HEIGHT}
+          onLoad={() => console.log("Sprite sheet loaded")}
+        />
+      </View>
+    );
+  }
+);

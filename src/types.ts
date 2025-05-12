@@ -1,5 +1,6 @@
-import { RefObject } from "react";
+import { JSX } from "react";
 import { SpritesMethods } from "react-native-sprites";
+import { MapProps } from "./components/Map";
 
 export interface Controls {
   up: boolean;
@@ -21,8 +22,8 @@ export interface GameState {
 
 export interface PlayerEntity {
   direction: "left" | "right" | "up" | "down";
-  spriteSheet: RefObject<SpritesMethods | null>;
-  renderer: React.FC<PlayerProps>;
+  ref: React.RefObject<SpritesMethods | null>;
+  renderer: JSX.Element;
   x: number;
   y: number;
 }
