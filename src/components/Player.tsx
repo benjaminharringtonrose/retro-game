@@ -1,43 +1,38 @@
-import React from "react";
-import { View, StyleSheet } from "react-native";
+import { RefObject } from "react";
+import { View } from "react-native";
+import { Sprites, SpritesMethods } from "react-native-sprites";
+import { SPRITE_HEIGHT, SPRITE_WIDTH } from "../constants/sprites";
 
 interface PlayerProps {
-  size?: number;
-  x?: number;
-  y?: number;
+  x: number;
+  y: number;
+  spriteSheet: RefObject<SpritesMethods | null>;
 }
 
-const Player: React.FC<PlayerProps> = ({ size = 30 }) => {
+export const Player: React.FC<PlayerProps> = ({ x, y, spriteSheet }) => {
   return (
-    <View style={[styles.player, { width: size, height: size }]}>
-      <View style={styles.playerBody} />
-      <View style={styles.playerHead} />
+    <View
+      style={{
+        position: "absolute",
+        left: x - SPRITE_WIDTH / 2,
+        top: y - SPRITE_HEIGHT / 2,
+        zIndex: 10,
+      }}
+    >
+      <Sprites
+        ref={spriteSheet}
+        source={require("../assets/character-spritesheet.png")}
+        columns={3}
+        rows={4}
+        animations={{
+          down: { row: 0, startFrame: 0, endFrame: 2 },
+          left: { row: 1, startFrame: 0, endFrame: 2 },
+          up: { row: 2, startFrame: 0, endFrame: 2 },
+          right: { row: 3, startFrame: 0, endFrame: 2 },
+        }}
+        width={SPRITE_WIDTH}
+        height={SPRITE_HEIGHT}
+      />
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  player: {
-    position: "absolute",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  playerBody: {
-    width: "70%",
-    height: "70%",
-    backgroundColor: "#59bf40", // Green for Link-like character
-    borderRadius: 4,
-    zIndex: 1,
-  },
-  playerHead: {
-    position: "absolute",
-    top: 0,
-    width: "50%",
-    height: "50%",
-    backgroundColor: "#ffdbac", // Skin tone
-    borderRadius: 5,
-    zIndex: 2,
-  },
-});
-
-export default Player;
