@@ -3,12 +3,12 @@ import {
   StaticParamList,
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { Home } from "./screens/Home";
+import { HomeScreen } from "./screens/HomeScreen";
 
 const RootStack = createNativeStackNavigator({
   screens: {
     Home: {
-      screen: Home,
+      screen: HomeScreen,
       options: {
         title: "Home",
         headerShown: false,
