@@ -17,6 +17,7 @@ import { Map } from "./components/Map";
 import { MovePlayer } from "./systems/MovePlayer";
 import { GameBoyButton } from "./components/GameBoyButton";
 import { staticMap } from "./maps/home";
+import { MOVE_SPEED, SPRITE_HEIGHT, SPRITE_WIDTH } from "./constants/sprites";
 
 const App: React.FC = () => {
   const gameEngine = useRef<GameEngine>(null);
@@ -36,6 +37,11 @@ const App: React.FC = () => {
         setEntities({
           player: {
             isMoving: false,
+            speed: MOVE_SPEED,
+            x: 0,
+            y: 0,
+            width: 50,
+            height: 63,
             direction: Direction.Down,
             renderer: Player,
           },

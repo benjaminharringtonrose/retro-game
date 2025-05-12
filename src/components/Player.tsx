@@ -6,10 +6,12 @@ import { Direction } from "../types";
 
 export interface PlayerProps {
   direction: Direction;
+  x: number;
+  y: number;
   isMoving: boolean;
 }
 
-export const Player: FC<PlayerProps> = ({ direction, isMoving }) => {
+export const Player: FC<PlayerProps> = ({ direction, x, y, isMoving }) => {
   const { width, height } = useWindowDimensions();
   const spriteRef = useRef<SpritesMethods>(null);
 
@@ -30,8 +32,8 @@ export const Player: FC<PlayerProps> = ({ direction, isMoving }) => {
     <View
       style={{
         position: "absolute",
-        left: width / 2 - 20,
-        top: height / 2 - 80,
+        left: x,
+        top: y,
         zIndex: 10,
       }}
     >

@@ -22,6 +22,11 @@ export interface GameState {
 export interface PlayerEntity {
   direction: Direction;
   isMoving: boolean;
+  speed: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
   renderer: React.FC<PlayerProps>;
 }
 
