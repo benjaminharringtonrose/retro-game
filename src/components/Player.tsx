@@ -1,6 +1,10 @@
+// components/Player.tsx
 import React, { useState, useEffect, useRef } from "react";
-import { Image } from "react-native";
-import Animated, { useAnimatedStyle } from "react-native-reanimated";
+import { Image as ExpoImage, ImageRef } from "expo-image";
+import Animated, {
+  useAnimatedStyle,
+  SharedValue,
+} from "react-native-reanimated";
 import { Direction } from "../types";
 
 const SPRITE_W = 32;
@@ -12,9 +16,12 @@ const ANIM_INTERVAL = 100; // ms
 export interface PlayerProps {
   direction: Direction;
   isMoving: boolean;
-  centerX: Animated.SharedValue<number>;
-  centerY: Animated.SharedValue<number>;
+  centerX: SharedValue<number>;
+  centerY: SharedValue<number>;
 }
+
+// wrap ExpoImage so we can animate its container if needed
+const AnimatedImage = Animated.createAnimatedComponent(ExpoImage);
 
 export const Player: React.FC<PlayerProps> = ({
   direction,
@@ -24,6 +31,7 @@ export const Player: React.FC<PlayerProps> = ({
 }) => {
   const [frame, setFrame] = useState(0);
   const intervalRef = useRef<NodeJS.Timeout>(undefined);
+  const imgRef = useRef<ImageRef>(null);
 
   useEffect(() => {
     if (isMoving) {
@@ -37,23 +45,25 @@ export const Player: React.FC<PlayerProps> = ({
     return () => clearInterval(intervalRef.current);
   }, [isMoving]);
 
-  // Create animated styles based on centerX and centerY shared values
-  const playerAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      position: "absolute",
-      left: centerX.value - SPRITE_W / 2,
-      top: centerY.value - SPRITE_H / 2,
-      width: SPRITE_W,
-      height: SPRITE_H,
-      overflow: "hidden",
-      zIndex: 10,
-    };
-  });
+  // if you ever need to force-reload in dev:
+  // useEffect(() => { imgRef.current?.reloadAsync(); }, [direction, frame]);
+
+  const playerStyle = useAnimatedStyle(() => ({
+    position: "absolute",
+    left: centerX.value - SPRITE_W / 2,
+    top: centerY.value - SPRITE_H / 2,
+    width: SPRITE_W,
+    height: SPRITE_H,
+    overflow: "hidden",
+    zIndex: 10,
+  }));
 
   return (
-    <Animated.View style={playerAnimatedStyle}>
-      <Image
+    <Animated.View style={playerStyle}>
+      <AnimatedImage
+        ref={imgRef as any}
         source={require("../assets/character-spritesheet.png")}
+        cachePolicy="memory-disk"
         style={{
           position: "absolute",
           width: SPRITE_W * FRAMES,
