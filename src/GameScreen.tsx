@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import * as ScreenOrientation from "expo-screen-orientation";
 import { StyleSheet, useWindowDimensions, View } from "react-native";
 import Animated, {
   useSharedValue,
@@ -43,10 +42,6 @@ export default function GameScreen() {
   const minMapY = wHeight - rows * TILE_SIZE;
   const maxOffX = wWidth / 2 - TILE_SIZE / 2;
   const maxOffY = wHeight / 2 - TILE_SIZE / 2;
-
-  useEffect(() => {
-    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
-  }, []);
 
   const mapAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: mapX.value }, { translateY: mapY.value }],
