@@ -19,18 +19,20 @@ export interface PlayerProps {
   centerX: SharedValue<number>;
   centerY: SharedValue<number>;
   currentFrame: SharedValue<number>;
+  offsetX: SharedValue<number>;
+  offsetY: SharedValue<number>;
 }
 
 // wrap ExpoImage so we can animate its container if needed
 const AnimatedImage = Animated.createAnimatedComponent(ExpoImage);
 
-export const Player: React.FC<PlayerProps> = ({ direction, isMoving, centerX, centerY, currentFrame }) => {
+export const Player: React.FC<PlayerProps> = ({ direction, isMoving, centerX, centerY, currentFrame, offsetX, offsetY }) => {
   const imgRef = useRef<ImageRef>(null);
 
   const containerStyle = useAnimatedStyle(() => ({
     position: "absolute",
-    left: centerX.value - SPRITE_W / 2,
-    top: centerY.value - SPRITE_H / 2,
+    left: centerX.value - SPRITE_W / 2 + offsetX.value,
+    top: centerY.value - SPRITE_H / 2 + offsetY.value,
     width: SPRITE_W,
     height: SPRITE_H,
     overflow: "hidden",

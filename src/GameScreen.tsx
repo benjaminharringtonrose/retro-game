@@ -114,7 +114,7 @@ export default function GameScreen() {
   return (
     <View style={styles.container}>
       <Map mapX={mapX} mapY={mapY} tiles={DEFAULT_MAPS[CURRENT_MAP].mapData} tileSize={48} />
-      <Player direction={direction} isMoving={isMoving} centerX={playerCenterX} centerY={playerCenterY} currentFrame={currentFrame} />
+      <Player direction={direction} isMoving={isMoving} centerX={playerCenterX} centerY={playerCenterY} currentFrame={currentFrame} offsetX={offsetX} offsetY={offsetY} />
       <Pad
         setDirection={(newDirection) => {
           setDirection(newDirection);

@@ -5,7 +5,8 @@ import { Tile } from "../../types";
 import { MOVE_SPEED } from "../../constants/sprites";
 import { runOnJS, withTiming } from "react-native-reanimated";
 
-const BASE_SPEED = MOVE_SPEED; // Use the consistent speed from constants
+const BASE_SPEED = MOVE_SPEED;
+const SCREEN_MARGIN = 100; // Distance from screen edge before map scrolls
 
 export class MovementSystem implements System {
   private readonly WALKABLE_TILES = [Tile.Grass, Tile.Path] as const;
@@ -38,36 +39,79 @@ export class MovementSystem implements System {
       const dx = input.direction.x * speed;
       const dy = input.direction.y * speed;
 
-      // Calculate next position
-      const nextMapX = movement.mapX.value + dx;
-      const nextMapY = movement.mapY.value + dy;
-
-      // Calculate world position for collision detection
-      const worldX = -nextMapX + transform.position.x;
-      const worldY = -nextMapY + transform.position.y;
-
-      // Get tile coordinates
-      const nextTileCol = Math.floor(worldX / TILE_SIZE);
-      const nextTileRow = Math.floor(worldY / TILE_SIZE);
-
-      // Check if the next tile is walkable
-      const nextTile = this.getTileAt(nextTileRow, nextTileCol);
-      if (nextTile === undefined || !this.WALKABLE_TILES.includes(nextTile as Tile.Grass | Tile.Path)) {
-        continue;
-      }
-
-      // Calculate bounds
+      // Calculate map bounds
       const maxX = 0;
       const minX = -(this.cols * TILE_SIZE - transform.position.x * 2);
       const maxY = 0;
       const minY = -(this.rows * TILE_SIZE - transform.position.y * 2);
 
-      // Update map position with bounds checking using Reanimated
-      const targetX = Math.min(maxX, Math.max(minX, nextMapX));
-      const targetY = Math.min(maxY, Math.max(minY, nextMapY));
+      // Calculate next positions
+      const nextMapX = movement.mapX.value + dx;
+      const nextMapY = movement.mapY.value + dy;
+      const nextOffsetX = movement.offsetX.value;
+      const nextOffsetY = movement.offsetY.value;
 
-      movement.mapX.value = targetX;
-      movement.mapY.value = targetY;
+      // Check if we're at map boundaries
+      const atLeftBound = nextMapX >= maxX && dx > 0;
+      const atRightBound = nextMapX <= minX && dx < 0;
+      const atTopBound = nextMapY >= maxY && dy > 0;
+      const atBottomBound = nextMapY <= minY && dy < 0;
+
+      // Calculate world position for collision detection
+      const worldX = -nextMapX + transform.position.x + nextOffsetX + (atLeftBound || atRightBound ? -dx : 0);
+      const worldY = -nextMapY + transform.position.y + nextOffsetY + (atTopBound || atBottomBound ? -dy : 0);
+
+      // Get tile coordinates for the next position
+      const nextTileCol = Math.floor(worldX / TILE_SIZE);
+      const nextTileRow = Math.floor(worldY / TILE_SIZE);
+
+      // Check if the next tile is walkable
+      const nextTile = this.getTileAt(nextTileRow, nextTileCol);
+
+      if (nextTile === undefined || !this.WALKABLE_TILES.includes(nextTile as Tile.Grass | Tile.Path)) {
+        continue;
+      }
+
+      // Handle movement separately for X and Y to prevent diagonal drift
+      if (dx !== 0) {
+        // Handle X movement
+        if (atLeftBound || atRightBound) {
+          // Move character in the opposite direction of the map movement
+          movement.offsetX.value -= dx;
+        } else if (movement.offsetX.value !== 0) {
+          // Moving back from edge, first return character to center
+          const newOffsetX = movement.offsetX.value + (movement.offsetX.value > 0 ? -speed : speed);
+          // Check if we've returned to center
+          if (Math.abs(newOffsetX) <= speed) {
+            movement.offsetX.value = 0;
+          } else {
+            movement.offsetX.value = newOffsetX;
+          }
+        } else {
+          // Normal map movement
+          movement.mapX.value = Math.min(maxX, Math.max(minX, nextMapX));
+        }
+      }
+
+      if (dy !== 0) {
+        // Handle Y movement
+        if (atTopBound || atBottomBound) {
+          // Move character in the opposite direction of the map movement
+          movement.offsetY.value -= dy;
+        } else if (movement.offsetY.value !== 0) {
+          // Moving back from edge, first return character to center
+          const newOffsetY = movement.offsetY.value + (movement.offsetY.value > 0 ? -speed : speed);
+          // Check if we've returned to center
+          if (Math.abs(newOffsetY) <= speed) {
+            movement.offsetY.value = 0;
+          } else {
+            movement.offsetY.value = newOffsetY;
+          }
+        } else {
+          // Normal map movement
+          movement.mapY.value = Math.min(maxY, Math.max(minY, nextMapY));
+        }
+      }
     }
   }
 
