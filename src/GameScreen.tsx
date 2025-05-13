@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { StyleSheet, useWindowDimensions, View } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
 import { Direction } from "./types";
@@ -17,9 +17,13 @@ export default function GameScreen() {
   const { width: wWidth, height: wHeight } = useWindowDimensions();
   const { engine, entityManager } = useGameEngine();
 
-  // animated values
-  const mapX = useSharedValue(DEFAULT_MAPS[CURRENT_MAP].initialPosition.x);
-  const mapY = useSharedValue(DEFAULT_MAPS[CURRENT_MAP].initialPosition.y);
+  // Memoize initial position values
+  const initialMapX = useMemo(() => DEFAULT_MAPS[CURRENT_MAP].initialPosition.x, []);
+  const initialMapY = useMemo(() => DEFAULT_MAPS[CURRENT_MAP].initialPosition.y, []);
+
+  // Create shared values with memoized initial values
+  const mapX = useSharedValue(initialMapX);
+  const mapY = useSharedValue(initialMapY);
   const offsetX = useSharedValue(0);
   const offsetY = useSharedValue(0);
   const playerCenterX = useSharedValue(wWidth / 2);
@@ -31,43 +35,65 @@ export default function GameScreen() {
   const [direction, setDirection] = useState(Direction.Down);
   const [isMoving, setIsMoving] = useState(false);
 
-  // Create player entity
-  entityManager.createPlayer(
-    {
-      position: { x: wWidth / 2, y: wHeight / 2 },
-      spritesheet: require("./assets/character-spritesheet.png"),
-      type: EntityType.PLAYER,
-    },
-    {
-      mapX,
-      mapY,
-      offsetX,
-      offsetY,
-    }
-  );
+  // Memoize the player creation to prevent recreation on every render
+  useEffect(() => {
+    entityManager.createPlayer(
+      {
+        position: { x: wWidth / 2, y: wHeight / 2 },
+        spritesheet: require("./assets/character-spritesheet.png"),
+        type: EntityType.PLAYER,
+      },
+      {
+        mapX,
+        mapY,
+        offsetX,
+        offsetY,
+      }
+    );
+  }, [entityManager, wWidth, wHeight]);
 
   // Use custom hooks for animation and input
   usePlayerAnimation(isMoving, direction, currentFrame, directionValue, isMovingValue);
   usePlayerInput(engine, direction, isMoving);
 
+  // Memoize direction and movement handlers
+  const handleDirectionChange = useCallback(
+    (newDirection: Direction) => {
+      setDirection(newDirection);
+      directionValue.value = newDirection;
+    },
+    [directionValue]
+  );
+
+  const handleMovingChange = useCallback(
+    (value: boolean) => {
+      setIsMoving(value);
+      isMovingValue.value = value;
+    },
+    [isMovingValue]
+  );
+
+  // Memoize map data to prevent unnecessary re-renders
+  const mapData = useMemo(
+    () => ({
+      tiles: DEFAULT_MAPS[CURRENT_MAP].mapData,
+      tileSize: 48,
+    }),
+    []
+  );
+
   return (
     <View style={styles.container}>
-      <Map mapX={mapX} mapY={mapY} tiles={DEFAULT_MAPS[CURRENT_MAP].mapData} tileSize={48} />
+      <Map mapX={mapX} mapY={mapY} tiles={mapData.tiles} tileSize={mapData.tileSize} />
       <Player direction={direction} isMoving={isMoving} centerX={playerCenterX} centerY={playerCenterY} currentFrame={currentFrame} offsetX={offsetX} offsetY={offsetY} />
-      <Pad
-        setDirection={(newDirection) => {
-          setDirection(newDirection);
-          directionValue.value = newDirection;
-        }}
-        setIsMoving={(value) => {
-          setIsMoving(value);
-          isMovingValue.value = value;
-        }}
-      />
+      <Pad setDirection={handleDirectionChange} setIsMoving={handleMovingChange} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#222" },
+  container: {
+    flex: 1,
+    backgroundColor: "#222",
+  },
 });
