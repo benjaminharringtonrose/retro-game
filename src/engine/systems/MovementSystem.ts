@@ -4,8 +4,10 @@ import { ComponentType, MovementComponent, InputComponent, TransformComponent } 
 import { TILE_SIZE } from "../../constants/map";
 import { Tile } from "../../types";
 import { MOVE_SPEED } from "../../constants/sprites";
+import { Dimensions } from "react-native";
 
 const BASE_SPEED = MOVE_SPEED;
+const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get("window");
 
 interface EntityComponents {
   movement: MovementComponent;
@@ -18,6 +20,8 @@ export class MovementSystem implements System {
   private mapData: Tile[][];
   private cols: number;
   private rows: number;
+  private mapWidth: number;
+  private mapHeight: number;
   private entityComponents: Map<number, EntityComponents> = new Map();
   private lastProcessedEntities: number[] = [];
   private debugFrameCount = 0;
@@ -26,6 +30,8 @@ export class MovementSystem implements System {
     this.mapData = mapData;
     this.rows = mapData.length;
     this.cols = mapData[0]?.length || 0;
+    this.mapWidth = this.cols * TILE_SIZE;
+    this.mapHeight = this.rows * TILE_SIZE;
   }
 
   update(engine: GameEngine, deltaTime: number): void {
@@ -79,11 +85,11 @@ export class MovementSystem implements System {
         });
       }
 
-      // Calculate map bounds
-      const maxX = transform.position.x; // Allow map to move right until player reaches screen edge
-      const minX = -(this.cols * TILE_SIZE - transform.position.x); // Allow map to move left until last tile
-      const maxY = transform.position.y;
-      const minY = -(this.rows * TILE_SIZE - transform.position.y);
+      // Calculate map bounds considering window size
+      const maxX = 0; // Don't allow scrolling right past initial position
+      const minX = Math.min(0, -(this.mapWidth - WINDOW_WIDTH)); // Don't scroll left past map width minus window
+      const maxY = 0; // Don't allow scrolling down past initial position
+      const minY = Math.min(0, -(this.mapHeight - WINDOW_HEIGHT)); // Don't scroll up past map height minus window
 
       if (shouldLog) {
         console.log("Map Bounds:", {
@@ -91,16 +97,22 @@ export class MovementSystem implements System {
           minX,
           maxY,
           minY,
+          mapWidth: this.mapWidth,
+          mapHeight: this.mapHeight,
+          windowWidth: WINDOW_WIDTH,
+          windowHeight: WINDOW_HEIGHT,
         });
       }
 
       // Try X movement
       if (dx !== 0) {
         const nextMapX = movement.mapX.value + dx;
-        const atMapBoundX = nextMapX > maxX || nextMapX < minX;
+        // Clamp the next position to the bounds
+        const clampedNextMapX = Math.max(minX, Math.min(maxX, nextMapX));
+        const atMapBoundX = clampedNextMapX !== nextMapX;
 
         // Calculate world position after potential move
-        const nextWorldX = -nextMapX + transform.position.x + movement.offsetX.value + (atMapBoundX ? -dx : 0);
+        const nextWorldX = -clampedNextMapX + transform.position.x + movement.offsetX.value + (atMapBoundX ? -dx : 0);
         const currentWorldY = -movement.mapY.value + transform.position.y + movement.offsetY.value;
 
         // Calculate tile positions
@@ -111,7 +123,7 @@ export class MovementSystem implements System {
 
         if (shouldLog && dx !== 0) {
           console.log("X Movement:", {
-            nextMapX: nextMapX.toFixed(2),
+            nextMapX: clampedNextMapX.toFixed(2),
             atMapBoundX,
             currentWorldX: currentWorldX.toFixed(2),
             nextWorldX: nextWorldX.toFixed(2),
@@ -169,7 +181,7 @@ export class MovementSystem implements System {
             }
           } else {
             if (shouldLog) console.log("Moving map X");
-            movement.mapX.value = nextMapX;
+            movement.mapX.value = clampedNextMapX;
           }
         } else {
           if (shouldLog) console.log("X Movement blocked by collision");
@@ -179,11 +191,13 @@ export class MovementSystem implements System {
       // Try Y movement
       if (dy !== 0) {
         const nextMapY = movement.mapY.value + dy;
-        const atMapBoundY = nextMapY > maxY || nextMapY < minY;
+        // Clamp the next position to the bounds
+        const clampedNextMapY = Math.max(minY, Math.min(maxY, nextMapY));
+        const atMapBoundY = clampedNextMapY !== nextMapY;
 
         // Calculate world position after potential move
         const currentWorldX = -movement.mapX.value + transform.position.x + movement.offsetX.value;
-        const nextWorldY = -nextMapY + transform.position.y + movement.offsetY.value + (atMapBoundY ? -dy : 0);
+        const nextWorldY = -clampedNextMapY + transform.position.y + movement.offsetY.value + (atMapBoundY ? -dy : 0);
 
         // Calculate tile positions
         const currentWorldY = -movement.mapY.value + transform.position.y + movement.offsetY.value;
@@ -193,7 +207,7 @@ export class MovementSystem implements System {
 
         if (shouldLog && dy !== 0) {
           console.log("Y Movement:", {
-            nextMapY: nextMapY.toFixed(2),
+            nextMapY: clampedNextMapY.toFixed(2),
             atMapBoundY,
             currentWorldY: currentWorldY.toFixed(2),
             nextWorldY: nextWorldY.toFixed(2),
@@ -251,7 +265,7 @@ export class MovementSystem implements System {
             }
           } else {
             if (shouldLog) console.log("Moving map Y");
-            movement.mapY.value = nextMapY;
+            movement.mapY.value = clampedNextMapY;
           }
         } else {
           if (shouldLog) console.log("Y Movement blocked by collision");
