@@ -9,10 +9,10 @@ const SPRITE_H = 40;
 const SPRITE_SCALE = 1.2;
 
 const ROWS = {
-  up: 0,
-  right: 1,
-  down: 2,
-  left: 3,
+  [Direction.Down]: 0,
+  [Direction.Right]: 1,
+  [Direction.Up]: 2,
+  [Direction.Left]: 3,
 };
 
 // Memoize the sprite image

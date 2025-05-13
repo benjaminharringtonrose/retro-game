@@ -6,7 +6,7 @@ export const DEFAULT_MAPS: MapConfig = {
   [MapType.FOREST]: {
     name: "Forest Path",
     initialPosition: {
-      x: -1152.0,
+      x: -800.0,
       y: -184.0,
     },
     mapData: [

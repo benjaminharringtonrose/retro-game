@@ -56,11 +56,11 @@ export const Pad: FC<PadProps> = ({ setDirection, setIsMoving }) => {
       if (angle > -45 && angle <= 45) {
         newDirection = Direction.Left;
       } else if (angle > 45 && angle <= 135) {
-        newDirection = Direction.Up;
+        newDirection = Direction.Down;
       } else if (angle > 135 || angle <= -135) {
         newDirection = Direction.Right;
       } else {
-        newDirection = Direction.Down;
+        newDirection = Direction.Up;
       }
 
       runOnJS(setIsMoving)(true);

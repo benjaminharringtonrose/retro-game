@@ -18,7 +18,7 @@ export class ComponentFactory {
   static createInputComponent(isControlled: boolean = false): InputComponent {
     return {
       type: ComponentType.Input,
-      direction: { x: 0, y: 0 },
+      direction: { x: 0, y: 1 },
       isMoving: false,
       isControlled,
     };
@@ -38,7 +38,7 @@ export class ComponentFactory {
       type: ComponentType.Render,
       spritesheet,
       currentFrame: 0,
-      direction: initialDirection,
+      direction: { x: 0, y: 1 },
     };
   }
 

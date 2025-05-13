@@ -21,10 +21,10 @@ export function usePlayerInput(engine: GameEngine, direction: Direction, isMovin
           dx = 1;
           break;
         case Direction.Up:
-          dy = -1;
+          dy = 1;
           break;
         case Direction.Down:
-          dy = 1;
+          dy = -1;
           break;
       }
 

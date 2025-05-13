@@ -13,6 +13,7 @@ import { usePlayerInput } from "./hooks/usePlayerInput";
 import { LoadingScreen } from "./components/LoadingScreen";
 import { Asset } from "expo-asset";
 import { useFonts } from "expo-font";
+import { ComponentType, InputComponent } from "./engine/types/components";
 
 const CURRENT_MAP = MapType.FOREST;
 
@@ -95,8 +96,17 @@ export default function GameScreen() {
           offsetY,
         }
       );
+
+      // Force initial direction update
+      const entities = engine.getEntitiesWithComponents([ComponentType.Input]);
+      for (const entity of entities) {
+        const input = engine.getComponent<InputComponent>(entity, ComponentType.Input);
+        if (input) {
+          input.direction = { x: 0, y: 1 }; // Set initial direction to down
+        }
+      }
     }
-  }, [entityManager, wWidth, wHeight, isLoading]);
+  }, [entityManager, wWidth, wHeight, isLoading, engine]);
 
   // Use custom hooks for animation and input
   usePlayerAnimation(isMoving, direction, currentFrame, directionValue, isMovingValue);
