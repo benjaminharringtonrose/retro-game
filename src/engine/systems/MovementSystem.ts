@@ -4,10 +4,8 @@ import { ComponentType, MovementComponent, InputComponent, TransformComponent } 
 import { TILE_SIZE } from "../../constants/map";
 import { Tile } from "../../types";
 import { MOVE_SPEED } from "../../constants/sprites";
-import { runOnJS, withTiming } from "react-native-reanimated";
 
 const BASE_SPEED = MOVE_SPEED;
-const SCREEN_MARGIN = 100; // Distance from screen edge before map scrolls
 
 interface EntityComponents {
   movement: MovementComponent;
@@ -16,12 +14,13 @@ interface EntityComponents {
 }
 
 export class MovementSystem implements System {
-  private readonly WALKABLE_TILES = [Tile.Grass, Tile.Path] as const;
+  private readonly WALKABLE_TILES = [Tile.Grass] as const;
   private mapData: Tile[][];
   private cols: number;
   private rows: number;
   private entityComponents: Map<number, EntityComponents> = new Map();
   private lastProcessedEntities: number[] = [];
+  private debugFrameCount = 0;
 
   constructor(mapData: Tile[][]) {
     this.mapData = mapData;
@@ -30,54 +29,229 @@ export class MovementSystem implements System {
   }
 
   update(engine: GameEngine, deltaTime: number): void {
+    // Only log every 30 frames to keep console readable
+    const shouldLog = this.debugFrameCount % 30 === 0;
+    this.debugFrameCount++;
+
     const entities = engine.getEntitiesWithComponents([ComponentType.Movement, ComponentType.Input, ComponentType.Transform]);
 
-    // Check if we need to update our cached components
-    const entitiesChanged = this.haveEntitiesChanged(entities);
-    if (entitiesChanged) {
+    if (this.haveEntitiesChanged(entities)) {
       this.updateEntityComponents(engine, entities);
     }
 
-    // Process movement for each entity
     for (const entityId of entities) {
       const components = this.entityComponents.get(entityId);
       if (!components) continue;
 
       const { movement, input, transform } = components;
+      if (!input.isMoving) continue;
 
-      if (!input.isMoving) {
-        continue;
-      }
-
-      // Calculate movement speed
       const speed = BASE_SPEED;
       const dx = input.direction.x * speed;
       const dy = input.direction.y * speed;
 
-      // Calculate next positions
-      const nextMapX = movement.mapX.value + dx;
-      const nextMapY = movement.mapY.value + dy;
-      const nextOffsetX = movement.offsetX.value;
-      const nextOffsetY = movement.offsetY.value;
-
-      // Calculate map bounds once
-      const bounds = this.calculateBounds(transform);
-
-      // Check if we're at map boundaries
-      const atBounds = this.checkBoundaries(nextMapX, nextMapY, dx, dy, bounds);
-
-      // Calculate world position for collision detection
-      const worldPos = this.calculateWorldPosition(nextMapX, nextMapY, transform, nextOffsetX, nextOffsetY, dx, dy, atBounds);
-
-      // Get tile coordinates for the next position
-      const nextTile = this.getTileAtWorldPos(worldPos.x, worldPos.y);
-
-      if (nextTile === undefined || !this.WALKABLE_TILES.includes(nextTile as Tile.Grass | Tile.Path)) {
-        continue;
+      if (shouldLog) {
+        console.log("\n--- Movement Debug ---");
+        console.log("Current Position:", {
+          mapX: movement.mapX.value.toFixed(2),
+          mapY: movement.mapY.value.toFixed(2),
+          offsetX: movement.offsetX.value.toFixed(2),
+          offsetY: movement.offsetY.value.toFixed(2),
+        });
+        console.log("Movement Input:", {
+          dx: dx.toFixed(2),
+          dy: dy.toFixed(2),
+          direction: input.direction,
+        });
       }
 
-      // Handle movement
-      this.processMovement(movement, dx, dy, nextMapX, nextMapY, bounds, atBounds);
+      // Calculate map bounds
+      const maxX = 0;
+      const minX = -(this.cols * TILE_SIZE - transform.position.x * 2);
+      const maxY = 0;
+      const minY = -(this.rows * TILE_SIZE - transform.position.y * 2);
+
+      if (shouldLog) {
+        console.log("Map Bounds:", {
+          maxX,
+          minX,
+          maxY,
+          minY,
+        });
+      }
+
+      // Try X movement
+      if (dx !== 0) {
+        const nextMapX = movement.mapX.value + dx;
+        const atMapBoundX = nextMapX > maxX || nextMapX < minX;
+
+        // Calculate world position after potential move
+        const nextWorldX = -nextMapX + transform.position.x + movement.offsetX.value + (atMapBoundX ? -dx : 0);
+        const currentWorldY = -movement.mapY.value + transform.position.y + movement.offsetY.value;
+
+        // Calculate tile positions
+        const currentWorldX = -movement.mapX.value + transform.position.x + movement.offsetX.value;
+        const currentTileCol = Math.floor(currentWorldX / TILE_SIZE);
+        const currentTileRow = Math.floor(currentWorldY / TILE_SIZE);
+        const nextTileCol = Math.floor(nextWorldX / TILE_SIZE);
+
+        if (shouldLog && dx !== 0) {
+          console.log("X Movement:", {
+            nextMapX: nextMapX.toFixed(2),
+            atMapBoundX,
+            currentWorldX: currentWorldX.toFixed(2),
+            nextWorldX: nextWorldX.toFixed(2),
+            currentTile: { col: currentTileCol, row: currentTileRow },
+            nextTile: { col: nextTileCol, row: currentTileRow },
+          });
+        }
+
+        // Prevent offset from pushing player too far left
+        const maxOffset = transform.position.x - TILE_SIZE;
+        const minOffset = -maxOffset;
+        const wouldExceedOffset = dx < 0 && movement.offsetX.value + dx < minOffset;
+        const isAtOffsetLimit = movement.offsetX.value <= minOffset || movement.offsetX.value >= maxOffset;
+        const movingAwayFromEdge = (movement.offsetX.value < 0 && dx > 0) || (movement.offsetX.value > 0 && dx < 0);
+
+        // Check if move is valid
+        const nextTile = this.getTileAtWorldPos(nextWorldX, currentWorldY);
+        const canMove = nextTile !== undefined && this.WALKABLE_TILES.includes(nextTile as Tile.Grass);
+
+        if (shouldLog && dx !== 0) {
+          console.log("X Movement Check:", {
+            nextTile,
+            canMove,
+            offsetX: movement.offsetX.value.toFixed(2),
+            wouldExceedOffset,
+            minOffset,
+            isAtOffsetLimit,
+            movingAwayFromEdge,
+          });
+        }
+
+        if (canMove) {
+          if (atMapBoundX && !movingAwayFromEdge) {
+            if (shouldLog) console.log("At X bound, moving player offset");
+            const newOffsetX = movement.offsetX.value - dx;
+            // Clamp the offset value
+            movement.offsetX.value = Math.max(minOffset, Math.min(maxOffset, newOffsetX));
+          } else if (movement.offsetX.value !== 0) {
+            // Moving away from edge or recentering
+            const newOffsetX = movement.offsetX.value - dx;
+            const centeringDistance = Math.abs(newOffsetX);
+            const movementDistance = Math.abs(dx);
+
+            if (centeringDistance <= movementDistance) {
+              if (shouldLog) console.log("Recentering X - split movement");
+              // Calculate remaining movement after reaching center
+              const remaining = dx > 0 ? movementDistance - Math.abs(movement.offsetX.value) : -(movementDistance - Math.abs(movement.offsetX.value));
+              movement.offsetX.value = 0;
+              if (Math.abs(remaining) > 0) {
+                movement.mapX.value += remaining;
+              }
+            } else {
+              if (shouldLog) console.log("Recentering X - moving toward center");
+              movement.offsetX.value = newOffsetX;
+            }
+          } else {
+            if (shouldLog) console.log("Moving map X");
+            movement.mapX.value = nextMapX;
+          }
+        } else {
+          if (shouldLog) console.log("X Movement blocked by collision");
+        }
+      }
+
+      // Try Y movement
+      if (dy !== 0) {
+        const nextMapY = movement.mapY.value + dy;
+        const atMapBoundY = nextMapY > maxY || nextMapY < minY;
+
+        // Calculate world position after potential move
+        const currentWorldX = -movement.mapX.value + transform.position.x + movement.offsetX.value;
+        const nextWorldY = -nextMapY + transform.position.y + movement.offsetY.value + (atMapBoundY ? -dy : 0);
+
+        // Calculate tile positions
+        const currentWorldY = -movement.mapY.value + transform.position.y + movement.offsetY.value;
+        const currentTileCol = Math.floor(currentWorldX / TILE_SIZE);
+        const currentTileRow = Math.floor(currentWorldY / TILE_SIZE);
+        const nextTileRow = Math.floor(nextWorldY / TILE_SIZE);
+
+        if (shouldLog && dy !== 0) {
+          console.log("Y Movement:", {
+            nextMapY: nextMapY.toFixed(2),
+            atMapBoundY,
+            currentWorldY: currentWorldY.toFixed(2),
+            nextWorldY: nextWorldY.toFixed(2),
+            currentTile: { col: currentTileCol, row: currentTileRow },
+            nextTile: { col: currentTileCol, row: nextTileRow },
+          });
+        }
+
+        // Prevent offset from pushing player too far up/down
+        const maxOffsetY = transform.position.y - TILE_SIZE;
+        const minOffsetY = -maxOffsetY;
+        const wouldExceedOffset = dy < 0 && movement.offsetY.value + dy < minOffsetY;
+        const isAtOffsetLimit = movement.offsetY.value <= minOffsetY || movement.offsetY.value >= maxOffsetY;
+        const movingAwayFromEdge = (movement.offsetY.value < 0 && dy > 0) || (movement.offsetY.value > 0 && dy < 0);
+
+        // Check if move is valid
+        const nextTile = this.getTileAtWorldPos(currentWorldX, nextWorldY);
+        const canMove = nextTile !== undefined && this.WALKABLE_TILES.includes(nextTile as Tile.Grass);
+
+        if (shouldLog && dy !== 0) {
+          console.log("Y Movement Check:", {
+            nextTile,
+            canMove,
+            offsetY: movement.offsetY.value.toFixed(2),
+            wouldExceedOffset,
+            minOffsetY,
+            isAtOffsetLimit,
+            movingAwayFromEdge,
+          });
+        }
+
+        if (canMove) {
+          if (atMapBoundY && !movingAwayFromEdge) {
+            if (shouldLog) console.log("At Y bound, moving player offset");
+            const newOffsetY = movement.offsetY.value - dy;
+            // Clamp the offset value
+            movement.offsetY.value = Math.max(minOffsetY, Math.min(maxOffsetY, newOffsetY));
+          } else if (movement.offsetY.value !== 0) {
+            // Moving away from edge or recentering
+            const newOffsetY = movement.offsetY.value - dy;
+            const centeringDistance = Math.abs(newOffsetY);
+            const movementDistance = Math.abs(dy);
+
+            if (centeringDistance <= movementDistance) {
+              if (shouldLog) console.log("Recentering Y - split movement");
+              // Calculate remaining movement after reaching center
+              const remaining = dy > 0 ? movementDistance - Math.abs(movement.offsetY.value) : -(movementDistance - Math.abs(movement.offsetY.value));
+              movement.offsetY.value = 0;
+              if (Math.abs(remaining) > 0) {
+                movement.mapY.value += remaining;
+              }
+            } else {
+              if (shouldLog) console.log("Recentering Y - moving toward center");
+              movement.offsetY.value = newOffsetY;
+            }
+          } else {
+            if (shouldLog) console.log("Moving map Y");
+            movement.mapY.value = nextMapY;
+          }
+        } else {
+          if (shouldLog) console.log("Y Movement blocked by collision");
+        }
+      }
+
+      if (shouldLog) {
+        console.log("Final Position:", {
+          mapX: movement.mapX.value.toFixed(2),
+          mapY: movement.mapY.value.toFixed(2),
+          offsetX: movement.offsetX.value.toFixed(2),
+          offsetY: movement.offsetY.value.toFixed(2),
+        });
+      }
     }
 
     this.lastProcessedEntities = entities;
@@ -101,63 +275,16 @@ export class MovementSystem implements System {
     }
   }
 
-  private calculateBounds(transform: TransformComponent) {
-    return {
-      maxX: 0,
-      minX: -(this.cols * TILE_SIZE - transform.position.x * 2),
-      maxY: 0,
-      minY: -(this.rows * TILE_SIZE - transform.position.y * 2),
-    };
-  }
-
-  private checkBoundaries(nextMapX: number, nextMapY: number, dx: number, dy: number, bounds: any) {
-    return {
-      atLeftBound: nextMapX >= bounds.maxX && dx > 0,
-      atRightBound: nextMapX <= bounds.minX && dx < 0,
-      atTopBound: nextMapY >= bounds.maxY && dy > 0,
-      atBottomBound: nextMapY <= bounds.minY && dy < 0,
-    };
-  }
-
-  private calculateWorldPosition(nextMapX: number, nextMapY: number, transform: TransformComponent, nextOffsetX: number, nextOffsetY: number, dx: number, dy: number, atBounds: any) {
-    return {
-      x: -nextMapX + transform.position.x + nextOffsetX + (atBounds.atLeftBound || atBounds.atRightBound ? -dx : 0),
-      y: -nextMapY + transform.position.y + nextOffsetY + (atBounds.atTopBound || atBounds.atBottomBound ? -dy : 0),
-    };
-  }
-
   private getTileAtWorldPos(worldX: number, worldY: number): Tile | undefined {
-    const nextTileCol = Math.floor(worldX / TILE_SIZE);
-    const nextTileRow = Math.floor(worldY / TILE_SIZE);
-    return this.getTileAt(nextTileRow, nextTileCol);
-  }
+    const tileCol = Math.floor(worldX / TILE_SIZE);
+    const tileRow = Math.floor(worldY / TILE_SIZE);
 
-  private processMovement(movement: MovementComponent, dx: number, dy: number, nextMapX: number, nextMapY: number, bounds: any, atBounds: any): void {
-    const speed = BASE_SPEED;
-
-    // Handle X movement
-    if (dx !== 0) {
-      if (atBounds.atLeftBound || atBounds.atRightBound) {
-        movement.offsetX.value -= dx;
-      } else if (movement.offsetX.value !== 0) {
-        const newOffsetX = movement.offsetX.value + (movement.offsetX.value > 0 ? -speed : speed);
-        movement.offsetX.value = Math.abs(newOffsetX) <= speed ? 0 : newOffsetX;
-      } else {
-        movement.mapX.value = Math.min(bounds.maxX, Math.max(bounds.minX, nextMapX));
-      }
+    // Check if position is within map bounds
+    if (tileCol < 0 || tileCol >= this.cols || tileRow < 0 || tileRow >= this.rows) {
+      return undefined;
     }
 
-    // Handle Y movement
-    if (dy !== 0) {
-      if (atBounds.atTopBound || atBounds.atBottomBound) {
-        movement.offsetY.value -= dy;
-      } else if (movement.offsetY.value !== 0) {
-        const newOffsetY = movement.offsetY.value + (movement.offsetY.value > 0 ? -speed : speed);
-        movement.offsetY.value = Math.abs(newOffsetY) <= speed ? 0 : newOffsetY;
-      } else {
-        movement.mapY.value = Math.min(bounds.maxY, Math.max(bounds.minY, nextMapY));
-      }
-    }
+    return this.mapData[tileRow][tileCol];
   }
 
   private getTileAt(row: number, col: number): Tile | undefined {

@@ -1,6 +1,6 @@
 // components/Map.tsx
 import React, { useMemo } from "react";
-import { StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
 import Animated, { SharedValue, useAnimatedStyle } from "react-native-reanimated";
 import { Image } from "expo-image";
 
@@ -22,158 +22,121 @@ const tileStyles: Record<Tile, any> = {
   [Tile.Rock]: { backgroundColor: "#757575" },
 };
 
-const TREE_SCALE = 1.5;
+const TREE_SCALE = 2.0;
 
-export const Map = React.memo(
-  ({ mapX, mapY, tiles, tileSize, mapType }: MapProps) => {
-    const mapAnimatedStyle = useAnimatedStyle(() => ({
-      transform: [{ translateX: mapX.value }, { translateY: mapY.value }],
-    }));
+export const Map = React.memo(({ mapX, mapY, tiles, tileSize, mapType }: MapProps) => {
+  const mapAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: mapX.value }, { translateY: mapY.value }],
+  }));
 
-    // Calculate padding needed for the container to prevent tree cutoff
-    const padding = useMemo(() => Math.ceil((TREE_SCALE - 1) * tileSize), [tileSize]);
+  // Calculate padding needed for the container
+  const padding = useMemo(() => Math.ceil((TREE_SCALE - 1) * tileSize), [tileSize]);
 
-    // Memoize the images
-    const treeImage = useMemo(() => require("../assets/tree.png"), []);
-    const backgroundImage = useMemo(() => (mapType === MapType.FOREST ? require("../assets/forest-background.png") : null), [mapType]);
+  // Calculate map dimensions
+  const mapWidth = useMemo(() => tiles[0].length * tileSize, [tiles, tileSize]);
+  const mapHeight = useMemo(() => tiles.length * tileSize, [tiles, tileSize]);
 
-    // Calculate map dimensions
-    const mapWidth = useMemo(() => tiles[0].length * tileSize, [tiles, tileSize]);
-    const mapHeight = useMemo(() => tiles.length * tileSize, [tiles, tileSize]);
-
-    // First render the background if it's a forest map
-    const background = useMemo(() => {
-      if (backgroundImage) {
-        return (
-          <Image
-            source={backgroundImage}
-            style={[
-              styles.background,
-              {
-                width: mapWidth,
-                height: mapHeight,
-              },
-            ]}
-            contentFit="cover"
-            cachePolicy="memory-disk"
-          />
-        );
-      }
-      return null;
-    }, [backgroundImage, mapWidth, mapHeight]);
-
-    // Then render the base tiles
-    const baseTiles = useMemo(() => {
-      return tiles.map((row, r) =>
-        row.map((tile, c) => {
-          if (tile !== Tile.Tree) {
-            return (
-              <Animated.View
-                key={`${r}-${c}`}
-                style={[
-                  styles.tile,
-                  tileStyles[tile],
-                  {
-                    width: tileSize,
-                    height: tileSize,
-                    left: c * tileSize,
-                    top: r * tileSize,
-                    zIndex: 0,
-                    // Make grass tiles transparent when we have a background
-                    ...(tile === Tile.Grass && backgroundImage ? { backgroundColor: "transparent" } : {}),
-                  },
-                ]}
-              />
-            );
-          }
-          // For tree tiles, render transparent background when we have forest background
+  // Render base tiles and trees together
+  const renderTiles = useMemo(() => {
+    return tiles.map((row, r) =>
+      row.map((tile, c) => {
+        const key = `tile-${r}-${c}`;
+        if (tile === Tile.Tree) {
+          const scaledSize = tileSize * TREE_SCALE;
+          const offset = (scaledSize - tileSize) / 2;
           return (
-            <Animated.View
-              key={`${r}-${c}`}
-              style={[
-                styles.tile,
-                {
-                  width: tileSize,
-                  height: tileSize,
-                  left: c * tileSize,
-                  top: r * tileSize,
-                  backgroundColor: backgroundImage ? "transparent" : "#6C9A0A",
-                  zIndex: 0,
-                },
-              ]}
-            />
-          );
-        })
-      );
-    }, [tiles, tileSize, backgroundImage]);
-
-    // Then render trees separately to ensure proper layering
-    const treeTiles = useMemo(() => {
-      return tiles.map((row, r) =>
-        row.map((tile, c) => {
-          if (tile === Tile.Tree) {
-            const scaledSize = tileSize * TREE_SCALE;
-            const offset = (scaledSize - tileSize) / 2;
-            return (
+            <View key={key} style={[styles.tileWrapper, { top: r * tileSize, left: c * tileSize }]}>
+              <View style={[styles.tile, tileStyles[tile], { width: tileSize, height: tileSize }]} />
               <Image
-                key={`tree-${r}-${c}`}
-                source={treeImage}
-                cachePolicy="memory-disk"
-                contentFit="cover"
+                source={require("../assets/tree.png")}
                 style={[
-                  styles.tile,
+                  styles.tree,
                   {
                     width: scaledSize,
                     height: scaledSize,
-                    left: c * tileSize - offset,
-                    top: r * tileSize - offset,
-                    zIndex: r * tiles[0].length + c,
+                    left: -offset,
+                    top: -offset,
+                    zIndex: 2, // Ensure trees render above tiles
                   },
                 ]}
+                contentFit="contain"
+                cachePolicy="memory"
+                transition={200}
               />
-            );
-          }
-          return null;
-        })
-      );
-    }, [tiles, tileSize, treeImage]);
-
-    return (
-      <Animated.View
-        style={[
-          styles.container,
-          mapAnimatedStyle,
-          {
-            padding: padding,
-            margin: -padding,
-          },
-        ]}
-      >
-        {background}
-        {baseTiles}
-        {treeTiles}
-      </Animated.View>
+            </View>
+          );
+        }
+        return (
+          <View
+            key={key}
+            style={[
+              styles.tile,
+              tileStyles[tile],
+              {
+                width: tileSize,
+                height: tileSize,
+                left: c * tileSize,
+                top: r * tileSize,
+              },
+            ]}
+          />
+        );
+      })
     );
-  },
-  (prevProps, nextProps) => {
-    // Custom comparison function for memo
-    return prevProps.mapX === nextProps.mapX && prevProps.mapY === nextProps.mapY && prevProps.tileSize === nextProps.tileSize && prevProps.tiles === nextProps.tiles && prevProps.mapType === nextProps.mapType;
-  }
-);
+  }, [tiles, tileSize]);
+
+  return (
+    <Animated.View
+      style={[
+        styles.container,
+        mapAnimatedStyle,
+        {
+          width: mapWidth + padding * 2,
+          height: mapHeight + padding * 2,
+          padding,
+          backgroundColor: "#1a472a", // Fallback background color
+        },
+      ]}
+    >
+      {mapType === MapType.FOREST && (
+        <View style={[styles.background, { width: mapWidth, height: mapHeight }]}>
+          <Image source={require("../assets/forest-background.png")} style={[StyleSheet.absoluteFill, { width: mapWidth, height: mapHeight }]} contentFit="cover" cachePolicy="memory" />
+        </View>
+      )}
+      <View style={styles.tilesContainer}>{renderTiles}</View>
+    </Animated.View>
+  );
+});
 
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    width: "100%",
-    height: "100%",
     overflow: "visible",
-  },
-  tile: {
-    position: "absolute",
   },
   background: {
     position: "absolute",
     left: 0,
     top: 0,
+    overflow: "hidden",
+    backgroundColor: "transparent", // Remove debug tint
+  },
+  tilesContainer: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    right: 0,
+    bottom: 0,
+  },
+  tileWrapper: {
+    position: "absolute",
+    width: 48,
+    height: 48,
+  },
+  tile: {
+    position: "absolute",
+  },
+  tree: {
+    position: "absolute",
+    backgroundColor: "transparent", // Remove debug color
   },
 });

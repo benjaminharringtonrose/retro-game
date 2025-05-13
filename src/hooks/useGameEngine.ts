@@ -4,9 +4,9 @@ import { EntityManager } from "../engine/EntityManager";
 import { MovementSystem } from "../engine/systems/MovementSystem";
 import { AnimationSystem } from "../engine/systems/AnimationSystem";
 import { RenderSystem } from "../engine/systems/RenderSystem";
-import { DEFAULT_MAPS } from "../maps/home";
+import { DEFAULT_MAPS } from "../constants/map";
 
-const CURRENT_MAP = "TOWN";
+const CURRENT_MAP = "FOREST";
 
 export function useGameEngine() {
   const gameEngine = useRef<GameEngine>(new GameEngine());
