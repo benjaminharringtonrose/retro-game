@@ -14,6 +14,7 @@ import { LoadingScreen } from "./components/LoadingScreen";
 import { Asset } from "expo-asset";
 import { useFonts } from "expo-font";
 import { ComponentType, InputComponent } from "./engine/types/components";
+import { Image } from "expo-image";
 
 const CURRENT_MAP = MapType.FOREST;
 
@@ -35,6 +36,8 @@ export default function GameScreen() {
   const { engine, entityManager } = useGameEngine();
   const [isLoading, setIsLoading] = useState(true);
   const [assetsLoaded, setAssetsLoaded] = useState(false);
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const [playerLoaded, setPlayerLoaded] = useState(false);
 
   const [fontsLoaded] = useFonts({
     PressStart2P: require("./assets/fonts/PressStart2P-Regular.ttf"),
@@ -47,14 +50,26 @@ export default function GameScreen() {
         const imageAssets = Object.values(GAME_ASSETS);
         await Asset.loadAsync(imageAssets);
         setAssetsLoaded(true);
-        setIsLoading(false);
       } catch (error) {
         console.error("Failed to load assets:", error);
-        setIsLoading(false);
       }
     }
 
     loadAssets();
+  }, []);
+
+  // Update loading state when all assets are ready
+  const isAllLoaded = useMemo(() => assetsLoaded && mapLoaded && playerLoaded && fontsLoaded, [assetsLoaded, mapLoaded, playerLoaded, fontsLoaded]);
+
+  useEffect(() => {
+    if (isAllLoaded && isLoading) {
+      console.log("✨ All components loaded, ready to start");
+    }
+  }, [isAllLoaded, isLoading]);
+
+  const handleGameStart = useCallback(() => {
+    console.log("🎮 Starting game");
+    setIsLoading(false);
   }, []);
 
   // Get initial position from map config
@@ -82,7 +97,7 @@ export default function GameScreen() {
 
   // Memoize the player creation to prevent recreation on every render
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && mapLoaded) {
       entityManager.createPlayer(
         {
           position: { x: wWidth / 2, y: wHeight / 2 },
@@ -102,11 +117,11 @@ export default function GameScreen() {
       for (const entity of entities) {
         const input = engine.getComponent<InputComponent>(entity, ComponentType.Input);
         if (input) {
-          input.direction = { x: 0, y: 1 }; // Set initial direction to down
+          input.direction = { x: 0, y: -1 }; // Set initial direction to down
         }
       }
     }
-  }, [entityManager, wWidth, wHeight, isLoading, engine]);
+  }, [entityManager, wWidth, wHeight, isLoading, engine, mapLoaded]);
 
   // Use custom hooks for animation and input
   usePlayerAnimation(isMoving, direction, currentFrame, directionValue, isMovingValue);
@@ -132,16 +147,20 @@ export default function GameScreen() {
     []
   );
 
-  // Don't render anything until assets are loaded
-  if (isLoading || !assetsLoaded || !fontsLoaded) {
-    return <LoadingScreen />;
-  }
+  console.log("Loading state:", {
+    assetsLoaded,
+    fontsLoaded,
+    mapLoaded,
+    playerLoaded,
+    isLoading,
+    isAllLoaded,
+  });
 
   return (
     <View style={styles.container}>
       <View style={styles.gameContainer}>
         <View style={[StyleSheet.absoluteFill, { zIndex: 1 }]}>
-          <Map mapX={mapX} mapY={mapY} tiles={mapData.tiles} tileSize={mapData.tileSize} mapType={CURRENT_MAP} />
+          <Map mapX={mapX} mapY={mapY} tiles={mapData.tiles} tileSize={mapData.tileSize} mapType={CURRENT_MAP} onLoadComplete={() => setMapLoaded(true)} />
         </View>
         <View
           style={[
@@ -158,12 +177,13 @@ export default function GameScreen() {
             },
           ]}
         >
-          <Player direction={direction} isMoving={isMoving} centerX={playerCenterX} centerY={playerCenterY} currentFrame={currentFrame} offsetX={offsetX} offsetY={offsetY} />
+          <Player direction={direction} isMoving={isMoving} centerX={playerCenterX} centerY={playerCenterY} currentFrame={currentFrame} offsetX={offsetX} offsetY={offsetY} onLoadComplete={() => setPlayerLoaded(true)} />
         </View>
       </View>
       <View style={[styles.controls, { zIndex: 3000, elevation: 3000 }]}>
         <Pad setDirection={handleDirectionChange} setIsMoving={handleMovingChange} />
       </View>
+      {isLoading && <LoadingScreen isLoaded={isAllLoaded} onStart={handleGameStart} />}
     </View>
   );
 }
@@ -171,13 +191,13 @@ export default function GameScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#222",
+    backgroundColor: "transparent",
   },
   gameContainer: {
     flex: 1,
     position: "relative",
     overflow: "visible",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "transparent",
   },
   controls: {
     position: "absolute",

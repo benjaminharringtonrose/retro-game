@@ -6,6 +6,8 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import GameScreen from "./GameScreen";
 import { HomeScreen } from "./navigation/screens/HomeScreen";
 import { useCachedAssets } from "./hooks/useCachedAssets";
+import { View } from "react-native";
+import { LoadingScreen } from "./components/LoadingScreen";
 
 const App = () => {
   const [started, setStarted] = useState(false);
@@ -17,18 +19,10 @@ const App = () => {
 
   if (!ready) {
     // you can render a splash or null until assets are cached
-    return null;
+    return <View style={{ flex: 1, backgroundColor: "red" }} />;
   }
 
-  return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      {started ? (
-        <GameScreen />
-      ) : (
-        <HomeScreen onStart={() => setStarted(true)} />
-      )}
-    </GestureHandlerRootView>
-  );
+  return <GestureHandlerRootView style={{ flex: 1 }}>{started ? <GameScreen /> : <HomeScreen onStart={() => setStarted(true)} />}</GestureHandlerRootView>;
 };
 
 export default App;

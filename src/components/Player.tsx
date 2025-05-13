@@ -1,5 +1,5 @@
 // components/Player.tsx
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import { Image as ExpoImage, ImageRef } from "expo-image";
 import Animated, { SharedValue, useAnimatedStyle } from "react-native-reanimated";
 import { Direction } from "../types";
@@ -32,9 +32,10 @@ export interface PlayerProps {
   currentFrame: SharedValue<number>;
   offsetX: SharedValue<number>;
   offsetY: SharedValue<number>;
+  onLoadComplete?: () => void;
 }
 
-export const Player = ({ direction, isMoving, centerX, centerY, currentFrame, offsetX, offsetY }: PlayerProps) => {
+export const Player = ({ direction, isMoving, centerX, centerY, currentFrame, offsetX, offsetY, onLoadComplete }: PlayerProps) => {
   const containerStyle = useAnimatedStyle(() => {
     "worklet";
     return {
@@ -65,9 +66,13 @@ export const Player = ({ direction, isMoving, centerX, centerY, currentFrame, of
     };
   });
 
+  const handleLoadError = (error: any) => {
+    console.error("Failed to load player spritesheet:", error);
+  };
+
   return (
     <Animated.View style={containerStyle}>
-      <AnimatedImage source={require("../assets/character-spritesheet.png")} cachePolicy="memory-disk" contentFit="cover" style={spriteStyle} />
+      <AnimatedImage source={require("../assets/character-spritesheet.png")} style={spriteStyle} contentFit="cover" cachePolicy="memory" onLoadEnd={onLoadComplete} onError={handleLoadError} />
     </Animated.View>
   );
 };

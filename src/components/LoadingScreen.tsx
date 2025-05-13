@@ -1,31 +1,77 @@
 import React, { useEffect, useState } from "react";
-import { View, StyleSheet, Text, Animated } from "react-native";
+import { View, StyleSheet, Text, Pressable, useWindowDimensions } from "react-native";
+import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming, withDelay, Easing, withSpring, runOnJS } from "react-native-reanimated";
 
 const LOADING_FRAMES = ["", ".", "..", "..."];
-const FRAME_DURATION = 400; // ms per frame
+const FRAME_DURATION = 250; // Faster animation
 
-export const LoadingScreen = () => {
+interface LoadingScreenProps {
+  isLoaded?: boolean;
+  onStart?: () => void;
+}
+
+export const LoadingScreen = ({ isLoaded = false, onStart }: LoadingScreenProps) => {
+  const { width: screenWidth } = useWindowDimensions();
   const [loadingFrame, setLoadingFrame] = useState(0);
-  const [spriteFrame, setSpriteFrame] = useState(0);
-  const blinkAnim = new Animated.Value(1);
+  const [canStart, setCanStart] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [showLoadingBar, setShowLoadingBar] = useState(true);
+  const opacity = useSharedValue(1);
+  const blinkOpacity = useSharedValue(1);
+  const scale = useSharedValue(0.95);
+  const pressScale = useSharedValue(1);
+  const barScale = useSharedValue(1);
 
-  // Animate the "PRESS START" text
+  // Simulate loading progress
   useEffect(() => {
-    const blink = Animated.sequence([
-      Animated.timing(blinkAnim, {
-        toValue: 0,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-      Animated.timing(blinkAnim, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-    ]);
+    if (isLoaded) {
+      // If already loaded, set to 100% and trigger pulse
+      setLoadingProgress(100);
+      barScale.value = withSequence(
+        withTiming(1.1, { duration: 200, easing: Easing.out(Easing.ease) }),
+        withTiming(1, { duration: 200, easing: Easing.in(Easing.ease) }),
+        withDelay(
+          200,
+          withTiming(
+            0,
+            {
+              duration: 300,
+              easing: Easing.inOut(Easing.ease),
+            },
+            () => {
+              runOnJS(setShowLoadingBar)(false);
+            }
+          )
+        )
+      );
+      return;
+    }
 
-    Animated.loop(blink).start();
-  }, []);
+    // Animate progress from current to 99%
+    const interval = setInterval(() => {
+      setLoadingProgress((prev) => {
+        if (prev >= 99) {
+          clearInterval(interval);
+          return prev;
+        }
+        return prev + (99 - prev) * 0.1;
+      });
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [isLoaded]);
+
+  // Add delay after loading completes
+  useEffect(() => {
+    if (isLoaded) {
+      const timer = setTimeout(() => {
+        setCanStart(true);
+      }, 3000);
+      return () => clearTimeout(timer);
+    } else {
+      setCanStart(false);
+    }
+  }, [isLoaded]);
 
   // Animate the loading dots
   useEffect(() => {
@@ -36,35 +82,131 @@ export const LoadingScreen = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Animate the character sprite
+  // Initial scale animation
   useEffect(() => {
-    const interval = setInterval(() => {
-      setSpriteFrame((prev) => (prev + 1) % 3);
-    }, 200);
-
-    return () => clearInterval(interval);
+    scale.value = withSpring(1, {
+      damping: 15,
+      stiffness: 90,
+    });
   }, []);
 
+  // Blink animation for "PRESS START"
+  useEffect(() => {
+    if (!canStart) {
+      blinkOpacity.value = 1;
+      return;
+    }
+
+    blinkOpacity.value = withRepeat(
+      withSequence(
+        withTiming(0.4, {
+          duration: 500,
+          easing: Easing.inOut(Easing.ease),
+        }),
+        withDelay(
+          100,
+          withTiming(1, {
+            duration: 500,
+            easing: Easing.inOut(Easing.ease),
+          })
+        )
+      ),
+      -1,
+      true
+    );
+  }, [canStart]);
+
+  const handleStart = () => {
+    if (!canStart || !onStart) return;
+
+    // Fade out animation
+    opacity.value = withTiming(
+      0,
+      {
+        duration: 500,
+        easing: Easing.inOut(Easing.ease),
+      },
+      () => {
+        runOnJS(onStart)();
+      }
+    );
+  };
+
+  const overlayStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ scale: scale.value }],
+  }));
+
+  const blinkStyle = useAnimatedStyle(() => ({
+    opacity: blinkOpacity.value,
+    transform: [{ scale: pressScale.value }],
+  }));
+
+  const handlePressIn = () => {
+    if (!canStart) return;
+    pressScale.value = withSpring(0.95, {
+      damping: 15,
+      stiffness: 400,
+    });
+  };
+
+  const handlePressOut = () => {
+    if (!canStart) return;
+    pressScale.value = withSpring(1, {
+      damping: 15,
+      stiffness: 400,
+    });
+  };
+
+  const barAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scaleY: barScale.value }],
+    opacity: barScale.value,
+  }));
+
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        <View style={styles.spriteContainer}>
-          <View style={styles.pixelArtCharacter} />
+    <Animated.View style={[styles.overlay, overlayStyle]}>
+      <View style={styles.container}>
+        <View style={styles.content}>
+          <View style={styles.textContainer}>
+            <Text style={styles.text}>{canStart ? "READY!" : "NOW LOADING" + LOADING_FRAMES[loadingFrame]}</Text>
+            <Pressable onPress={handleStart} onPressIn={handlePressIn} onPressOut={handlePressOut} disabled={!canStart}>
+              <Animated.Text style={[styles.pressStart, blinkStyle, !canStart && styles.pressStartDisabled, canStart && styles.pressStartReady]}>PRESS START</Animated.Text>
+            </Pressable>
+          </View>
         </View>
-        <View style={styles.textContainer}>
-          <Text style={styles.text}>{"NOW LOADING" + LOADING_FRAMES[loadingFrame]}</Text>
-          <Animated.Text style={[styles.pressStart, { opacity: blinkAnim }]}>PRESS START</Animated.Text>
-        </View>
+        {showLoadingBar && (
+          <Animated.View style={[styles.loadingBarContainer, barAnimatedStyle]}>
+            <View style={styles.loadingBarBackground}>
+              <View
+                style={[
+                  styles.loadingBarFill,
+                  {
+                    width: `${loadingProgress}%`,
+                  },
+                ]}
+              />
+            </View>
+            <Text style={styles.loadingPercent}>{Math.round(loadingProgress)}%</Text>
+          </Animated.View>
+        )}
       </View>
-      <Text style={styles.pixelBorder}>████████████████████████████████</Text>
-    </View>
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
+  overlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.85)",
+    zIndex: 9999,
+    elevation: 9999,
+  },
   container: {
     flex: 1,
-    backgroundColor: "#000000",
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
@@ -74,32 +216,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     flex: 1,
   },
-  spriteContainer: {
-    width: 32,
-    height: 40,
-    overflow: "hidden",
-    marginBottom: 40,
-    transform: [{ scale: 3 }],
-    backgroundColor: "#000000",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  pixelArtCharacter: {
-    width: 16,
-    height: 24,
-    backgroundColor: "#ffffff",
-    borderStyle: "solid",
-    borderWidth: 2,
-    borderColor: "#000000",
-    borderRadius: 2,
-  },
   textContainer: {
     alignItems: "center",
     backgroundColor: "#000",
     padding: 20,
     borderWidth: 2,
     borderColor: "#ffffff",
-    minWidth: 280,
+    minWidth: 300,
+    transform: [{ translateY: -40 }],
   },
   text: {
     fontFamily: "PressStart2P",
@@ -115,12 +239,40 @@ const styles = StyleSheet.create({
     fontSize: 12,
     letterSpacing: 1,
     textAlign: "center",
+    padding: 10,
   },
-  pixelBorder: {
-    color: "#ffffff",
-    fontSize: 8,
-    letterSpacing: -1,
+  pressStartDisabled: {
+    opacity: 0.5,
+  },
+  pressStartReady: {
+    borderWidth: 2,
+    borderColor: "#ffffff",
+    borderRadius: 4,
+  },
+  loadingBarContainer: {
     position: "absolute",
     bottom: 40,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  loadingBarBackground: {
+    width: "100%",
+    height: 20,
+    backgroundColor: "#1a1a1a", // Darker gray that complements the retro green
+    overflow: "hidden",
+    borderWidth: 2,
+    borderColor: "#333333",
+  },
+  loadingBarFill: {
+    height: "100%",
+    backgroundColor: "#00ff00", // Classic retro green
+  },
+  loadingPercent: {
+    fontFamily: "PressStart2P",
+    color: "#ffffff",
+    fontSize: 10,
+    marginTop: 10,
   },
 });

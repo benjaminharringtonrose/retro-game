@@ -1,5 +1,5 @@
 // components/Map.tsx
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { StyleSheet, View, FlatList, ListRenderItem, FlatListProps } from "react-native";
 import Animated, { SharedValue, useAnimatedStyle } from "react-native-reanimated";
 import { Image } from "expo-image";
@@ -12,12 +12,13 @@ const ASSETS = {
   forestBackground: require("../assets/forest-background.png"),
 };
 
-interface MapProps {
+export interface MapProps {
   mapX: SharedValue<number>;
   mapY: SharedValue<number>;
   tiles: Tile[][];
   tileSize: number;
   mapType: MapType;
+  onLoadComplete?: () => void;
 }
 
 interface TileItem {
@@ -38,7 +39,54 @@ const tileStyles: Record<Tile, any> = {
 
 const TREE_SCALE = 2.0;
 
-export const Map = React.memo(({ mapX, mapY, tiles, tileSize, mapType }: MapProps) => {
+export const Map = React.memo(({ mapX, mapY, tiles, tileSize, mapType, onLoadComplete }: MapProps) => {
+  const [backgroundLoaded, setBackgroundLoaded] = useState(false);
+  const [treeLoadCount, setTreeLoadCount] = useState(0);
+  const loadedTrees = useRef(new Set<string>());
+
+  const totalTrees = useMemo(() => {
+    const count = tiles.flat().filter((tile) => tile === Tile.Tree || tile === Tile.Tree2).length;
+    return count;
+  }, [tiles]);
+
+  // Check if everything is loaded
+  useEffect(() => {
+    const isComplete = backgroundLoaded && treeLoadCount === totalTrees;
+
+    if (isComplete) {
+      onLoadComplete?.();
+    } else {
+      console.log("Map loading status:", {
+        backgroundLoaded,
+        treeLoadCount,
+        totalTrees,
+        complete: isComplete,
+      });
+    }
+  }, [backgroundLoaded, treeLoadCount, totalTrees, onLoadComplete]);
+
+  const handleTreeLoad = useCallback(
+    (treeKey: string) => {
+      if (!loadedTrees.current.has(treeKey)) {
+        loadedTrees.current.add(treeKey);
+        setTreeLoadCount((prev) => prev + 1);
+      }
+    },
+    [treeLoadCount]
+  );
+
+  const handleTreeError = useCallback((error: any) => {
+    console.error("Failed to load tree:", error);
+  }, []);
+
+  const handleBackgroundLoad = useCallback(() => {
+    setBackgroundLoaded(true);
+  }, []);
+
+  const handleBackgroundError = useCallback((error: any) => {
+    console.error("Failed to load background:", error);
+  }, []);
+
   const mapAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: mapX.value }, { translateY: mapY.value }],
   }));
@@ -64,58 +112,6 @@ export const Map = React.memo(({ mapX, mapY, tiles, tileSize, mapType }: MapProp
     [tiles]
   );
 
-  const renderItem: ListRenderItem<TileItem> = ({ item }) => {
-    const position = {
-      top: item.row * tileSize,
-      left: item.col * tileSize,
-    };
-
-    // For grass tiles, render an empty wrapper to maintain structure
-    if (item.tile === Tile.Grass) {
-      return <View style={[styles.tileWrapper, position]} />;
-    }
-
-    if (item.tile === Tile.Tree || item.tile === Tile.Tree2) {
-      const scaledSize = tileSize * TREE_SCALE;
-      const offset = (scaledSize - tileSize) / 2;
-      return (
-        <View style={[styles.tileWrapper, position]}>
-          <Image
-            source={item.tile === Tile.Tree ? ASSETS.tree : ASSETS.tree2}
-            style={[
-              styles.tree,
-              {
-                width: scaledSize,
-                height: scaledSize,
-                left: -offset,
-                top: -offset,
-                zIndex: 2,
-              },
-            ]}
-            contentFit="contain"
-            cachePolicy="memory"
-            transition={200}
-          />
-        </View>
-      );
-    }
-
-    return (
-      <View style={[styles.tileWrapper, position]}>
-        <View
-          style={[
-            styles.tile,
-            tileStyles[item.tile],
-            {
-              width: tileSize,
-              height: tileSize,
-            },
-          ]}
-        />
-      </View>
-    );
-  };
-
   const getItemLayout = (data: ArrayLike<TileItem> | null | undefined, index: number) => ({
     length: tileSize,
     offset: tileSize * Math.floor(index / tiles[0].length),
@@ -131,18 +127,61 @@ export const Map = React.memo(({ mapX, mapY, tiles, tileSize, mapType }: MapProp
           width: mapWidth + padding * 2,
           height: mapHeight + padding * 2,
           padding,
-          backgroundColor: "#1a472a",
+          backgroundColor: "transparent",
         },
       ]}
     >
       {mapType === MapType.FOREST && (
         <View style={[styles.background, { width: mapWidth, height: mapHeight }]}>
-          <Image source={ASSETS.forestBackground} style={[{ width: mapWidth, height: mapHeight }]} contentFit="cover" cachePolicy="memory-disk" />
+          <Image source={ASSETS.forestBackground} style={[{ width: mapWidth, height: mapHeight }]} contentFit="cover" cachePolicy="memory-disk" onLoadEnd={handleBackgroundLoad} onError={handleBackgroundError} />
         </View>
       )}
       <Animated.FlatList
         data={flattenedTiles}
-        renderItem={renderItem}
+        renderItem={({ item }) => {
+          const position = {
+            top: item.row * tileSize,
+            left: item.col * tileSize,
+          };
+
+          // For grass tiles, render an empty wrapper to maintain structure
+          if (item.tile === Tile.Grass) {
+            return <View style={[styles.tileWrapper, position]} />;
+          }
+
+          if (item.tile === Tile.Tree || item.tile === Tile.Tree2) {
+            const scaledSize = tileSize * TREE_SCALE;
+            const offset = (scaledSize - tileSize) / 2;
+            const treeImageStyle = {
+              ...styles.tree,
+              width: scaledSize,
+              height: scaledSize,
+              left: -offset,
+              top: -offset,
+              zIndex: 2,
+            };
+            return (
+              <View style={[styles.tileWrapper, position]}>
+                <Image source={item.tile === Tile.Tree ? ASSETS.tree : ASSETS.tree2} style={treeImageStyle} contentFit="contain" cachePolicy="memory" transition={200} onLoadEnd={() => handleTreeLoad(item.key)} onError={handleTreeError} />
+              </View>
+            );
+          }
+
+          return (
+            <View style={[styles.tileWrapper, position]}>
+              <View
+                style={[
+                  styles.tile,
+                  tileStyles[item.tile],
+                  {
+                    width: tileSize,
+                    height: tileSize,
+                  },
+                ]}
+              />
+            </View>
+          );
+        }}
         numColumns={tiles[0].length}
         removeClippedSubviews={true}
         maxToRenderPerBatch={20}
@@ -160,6 +199,7 @@ const styles = StyleSheet.create({
   container: {
     position: "absolute",
     overflow: "visible",
+    backgroundColor: "transparent",
   },
   background: {
     position: "absolute",
@@ -174,14 +214,17 @@ const styles = StyleSheet.create({
     top: 0,
     right: 0,
     bottom: 0,
+    backgroundColor: "transparent",
   },
   tileWrapper: {
     position: "absolute",
     width: 48,
     height: 48,
+    backgroundColor: "transparent",
   },
   tile: {
     position: "absolute",
+    backgroundColor: "transparent",
   },
   tree: {
     position: "absolute",
