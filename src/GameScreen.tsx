@@ -14,7 +14,6 @@ import { LoadingScreen } from "./components/LoadingScreen";
 import { Asset } from "expo-asset";
 import { useFonts } from "expo-font";
 import { ComponentType, InputComponent } from "./engine/types/components";
-import { Image } from "expo-image";
 
 const CURRENT_MAP = MapType.FOREST;
 

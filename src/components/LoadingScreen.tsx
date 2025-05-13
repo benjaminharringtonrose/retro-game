@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, StyleSheet, Text, Pressable, useWindowDimensions } from "react-native";
-import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming, withDelay, Easing, withSpring, runOnJS } from "react-native-reanimated";
+import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming, withDelay, Easing, withSpring, runOnJS, interpolate } from "react-native-reanimated";
 
 const LOADING_FRAMES = ["", ".", "..", "..."];
 const FRAME_DURATION = 250; // Faster animation
@@ -14,51 +14,51 @@ export const LoadingScreen = ({ isLoaded = false, onStart }: LoadingScreenProps)
   const { width: screenWidth } = useWindowDimensions();
   const [loadingFrame, setLoadingFrame] = useState(0);
   const [canStart, setCanStart] = useState(false);
-  const [loadingProgress, setLoadingProgress] = useState(0);
   const [showLoadingBar, setShowLoadingBar] = useState(true);
   const opacity = useSharedValue(1);
   const blinkOpacity = useSharedValue(1);
-  const scale = useSharedValue(0.95);
   const pressScale = useSharedValue(1);
   const barScale = useSharedValue(1);
+  const progress = useSharedValue(0);
 
-  // Simulate loading progress
+  // Animate loading progress
   useEffect(() => {
     if (isLoaded) {
-      // If already loaded, set to 100% and trigger pulse
-      setLoadingProgress(100);
-      barScale.value = withSequence(
-        withTiming(1.1, { duration: 200, easing: Easing.out(Easing.ease) }),
-        withTiming(1, { duration: 200, easing: Easing.in(Easing.ease) }),
-        withDelay(
-          200,
-          withTiming(
-            0,
-            {
-              duration: 300,
-              easing: Easing.inOut(Easing.ease),
-            },
-            () => {
-              runOnJS(setShowLoadingBar)(false);
-            }
-          )
-        )
-      );
-      return;
-    }
-
-    // Animate progress from current to 99%
-    const interval = setInterval(() => {
-      setLoadingProgress((prev) => {
-        if (prev >= 99) {
-          clearInterval(interval);
-          return prev;
+      // Animate to 100% and trigger pulse
+      progress.value = withTiming(
+        100,
+        {
+          duration: 500,
+          easing: Easing.out(Easing.ease),
+        },
+        () => {
+          barScale.value = withSequence(
+            withTiming(1.1, { duration: 200, easing: Easing.out(Easing.ease) }),
+            withTiming(1, { duration: 200, easing: Easing.in(Easing.ease) }),
+            withDelay(
+              200,
+              withTiming(
+                0,
+                {
+                  duration: 300,
+                  easing: Easing.inOut(Easing.ease),
+                },
+                () => {
+                  runOnJS(setShowLoadingBar)(false);
+                }
+              )
+            )
+          );
         }
-        return prev + (99 - prev) * 0.1;
+      );
+    } else {
+      // Start from 0 and smoothly animate to 99%
+      progress.value = 0;
+      progress.value = withTiming(99, {
+        duration: 8000,
+        easing: Easing.bezier(0.1, 0.1, 0.25, 1), // Slower at start, smoother throughout
       });
-    }, 100);
-
-    return () => clearInterval(interval);
+    }
   }, [isLoaded]);
 
   // Add delay after loading completes
@@ -66,7 +66,7 @@ export const LoadingScreen = ({ isLoaded = false, onStart }: LoadingScreenProps)
     if (isLoaded) {
       const timer = setTimeout(() => {
         setCanStart(true);
-      }, 3000);
+      }, 1000);
       return () => clearTimeout(timer);
     } else {
       setCanStart(false);
@@ -80,14 +80,6 @@ export const LoadingScreen = ({ isLoaded = false, onStart }: LoadingScreenProps)
     }, FRAME_DURATION);
 
     return () => clearInterval(interval);
-  }, []);
-
-  // Initial scale animation
-  useEffect(() => {
-    scale.value = withSpring(1, {
-      damping: 15,
-      stiffness: 90,
-    });
   }, []);
 
   // Blink animation for "PRESS START"
@@ -119,7 +111,7 @@ export const LoadingScreen = ({ isLoaded = false, onStart }: LoadingScreenProps)
   const handleStart = () => {
     if (!canStart || !onStart) return;
 
-    // Fade out animation
+    // Start fade out animation
     opacity.value = withTiming(
       0,
       {
@@ -134,12 +126,20 @@ export const LoadingScreen = ({ isLoaded = false, onStart }: LoadingScreenProps)
 
   const overlayStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
-    transform: [{ scale: scale.value }],
   }));
 
   const blinkStyle = useAnimatedStyle(() => ({
     opacity: blinkOpacity.value,
     transform: [{ scale: pressScale.value }],
+  }));
+
+  const barAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scaleY: barScale.value }],
+    opacity: barScale.value,
+  }));
+
+  const progressStyle = useAnimatedStyle(() => ({
+    width: `${progress.value}%`,
   }));
 
   const handlePressIn = () => {
@@ -158,11 +158,6 @@ export const LoadingScreen = ({ isLoaded = false, onStart }: LoadingScreenProps)
     });
   };
 
-  const barAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scaleY: barScale.value }],
-    opacity: barScale.value,
-  }));
-
   return (
     <Animated.View style={[styles.overlay, overlayStyle]}>
       <View style={styles.container}>
@@ -177,16 +172,9 @@ export const LoadingScreen = ({ isLoaded = false, onStart }: LoadingScreenProps)
         {showLoadingBar && (
           <Animated.View style={[styles.loadingBarContainer, barAnimatedStyle]}>
             <View style={styles.loadingBarBackground}>
-              <View
-                style={[
-                  styles.loadingBarFill,
-                  {
-                    width: `${loadingProgress}%`,
-                  },
-                ]}
-              />
+              <Animated.View style={[styles.loadingBarFill, progressStyle]} />
             </View>
-            <Text style={styles.loadingPercent}>{Math.round(loadingProgress)}%</Text>
+            <Text style={styles.loadingPercent}>{Math.round(progress.value)}%</Text>
           </Animated.View>
         )}
       </View>
