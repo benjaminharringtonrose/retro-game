@@ -1,54 +1,33 @@
 // components/Player.tsx
-import React, { useState, useEffect, useRef } from "react";
+import React, { useRef } from "react";
 import { Image as ExpoImage, ImageRef } from "expo-image";
-import Animated, {
-  useAnimatedStyle,
-  SharedValue,
-} from "react-native-reanimated";
+import Animated, { SharedValue, useAnimatedStyle } from "react-native-reanimated";
 import { Direction } from "../types";
 
 const SPRITE_W = 32;
 const SPRITE_H = 40;
-const ROWS = { down: 0, left: 1, up: 2, right: 3 };
-const FRAMES = 3;
-const ANIM_INTERVAL = 100; // ms
+const ROWS = {
+  up: 0, // Changed from down: 0
+  right: 1, // Changed from left: 1
+  down: 2, // Changed from up: 2
+  left: 3, // Changed from right: 3
+};
 
 export interface PlayerProps {
   direction: Direction;
   isMoving: boolean;
   centerX: SharedValue<number>;
   centerY: SharedValue<number>;
+  currentFrame: SharedValue<number>;
 }
 
 // wrap ExpoImage so we can animate its container if needed
 const AnimatedImage = Animated.createAnimatedComponent(ExpoImage);
 
-export const Player: React.FC<PlayerProps> = ({
-  direction,
-  isMoving,
-  centerX,
-  centerY,
-}) => {
-  const [frame, setFrame] = useState(0);
-  const intervalRef = useRef<NodeJS.Timeout>(undefined);
+export const Player: React.FC<PlayerProps> = ({ direction, isMoving, centerX, centerY, currentFrame }) => {
   const imgRef = useRef<ImageRef>(null);
 
-  useEffect(() => {
-    if (isMoving) {
-      intervalRef.current = setInterval(() => {
-        setFrame((f) => (f + 1) % FRAMES);
-      }, ANIM_INTERVAL);
-    } else {
-      clearInterval(intervalRef.current);
-      setFrame(0);
-    }
-    return () => clearInterval(intervalRef.current);
-  }, [isMoving]);
-
-  // if you ever need to force-reload in dev:
-  // useEffect(() => { imgRef.current?.reloadAsync(); }, [direction, frame]);
-
-  const playerStyle = useAnimatedStyle(() => ({
+  const containerStyle = useAnimatedStyle(() => ({
     position: "absolute",
     left: centerX.value - SPRITE_W / 2,
     top: centerY.value - SPRITE_H / 2,
@@ -58,20 +37,16 @@ export const Player: React.FC<PlayerProps> = ({
     zIndex: 10,
   }));
 
+  const spriteStyle = useAnimatedStyle(() => ({
+    position: "absolute",
+    width: SPRITE_W * 3, // 3 frames
+    height: SPRITE_H * 4, // 4 directions
+    transform: [{ translateX: -currentFrame.value * SPRITE_W }, { translateY: -ROWS[direction] * SPRITE_H }],
+  }));
+
   return (
-    <Animated.View style={playerStyle}>
-      <AnimatedImage
-        ref={imgRef as any}
-        source={require("../assets/character-spritesheet.png")}
-        cachePolicy="memory-disk"
-        style={{
-          position: "absolute",
-          width: SPRITE_W * FRAMES,
-          height: SPRITE_H * 4,
-          left: -frame * SPRITE_W,
-          top: -ROWS[direction] * SPRITE_H,
-        }}
-      />
+    <Animated.View style={containerStyle}>
+      <AnimatedImage ref={imgRef as any} source={require("../assets/character-spritesheet.png")} cachePolicy="memory-disk" contentFit="cover" style={spriteStyle} />
     </Animated.View>
   );
 };

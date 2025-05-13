@@ -15,42 +15,70 @@ export const Pad: FC<PadProps> = ({ setDirection, setIsMoving }) => {
 
   const padRadius = 100; // half of pad width/height
   const knobRadius = 25; // half of padCenter width/height
-  const maxKnobDistance = padRadius - knobRadius; // 100 - 25 = 75
+  const maxKnobDistance = padRadius - knobRadius;
+  const deadZone = 10; // minimum distance to trigger movement
 
   const padCenterAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: padOffsetX.value }, { translateY: padOffsetY.value }],
   }));
 
   const pan = Gesture.Pan()
-    .onBegin(() => {
+    .onBegin((e) => {
       runOnJS(setIsMoving)(true);
     })
     .onUpdate((e) => {
-      // raw translation
-      let tx = e.translationX;
-      let ty = e.translationY;
-      // clamp vector length so knob stays inside outer circle
-      const dist = Math.hypot(tx, ty);
+      // Use translationX/Y instead of absolute positions
+      const x = e.translationX;
+      const y = e.translationY;
+
+      // Calculate distance from center
+      const dist = Math.hypot(x, y);
+
+      // If within dead zone, don't move
+      if (dist < deadZone) {
+        padOffsetX.value = 0;
+        padOffsetY.value = 0;
+        runOnJS(setIsMoving)(false);
+        return;
+      }
+
+      // Normalize and scale the movement
+      let tx = x;
+      let ty = y;
+
       if (dist > maxKnobDistance) {
-        const angle = Math.atan2(ty, tx);
+        const angle = Math.atan2(y, x);
         tx = Math.cos(angle) * maxKnobDistance;
         ty = Math.sin(angle) * maxKnobDistance;
       }
+
       padOffsetX.value = tx;
       padOffsetY.value = ty;
 
-      // update direction as before
-      const newDirection = Math.abs(tx) > Math.abs(ty) ? (tx > 0 ? Direction.Right : Direction.Left) : ty > 0 ? Direction.Down : Direction.Up;
+      // Determine direction based on angle
+      const angle = (Math.atan2(ty, tx) * 180) / Math.PI;
+      let newDirection;
+
+      if (angle > -45 && angle <= 45) {
+        newDirection = Direction.Left;
+      } else if (angle > 45 && angle <= 135) {
+        newDirection = Direction.Up;
+      } else if (angle > 135 || angle <= -135) {
+        newDirection = Direction.Right;
+      } else {
+        newDirection = Direction.Down;
+      }
+
+      // Always ensure we're moving when outside deadzone
+      runOnJS(setIsMoving)(true);
       runOnJS(setDirection)(newDirection);
     })
     .onEnd(() => {
-      // snap knob back to center
       padOffsetX.value = withTiming(0);
       padOffsetY.value = withTiming(0);
       runOnJS(setIsMoving)(false);
     })
     .onFinalize(() => {
-      // ensure movement stops
       padOffsetX.value = withTiming(0);
       padOffsetY.value = withTiming(0);
       runOnJS(setIsMoving)(false);
@@ -68,7 +96,7 @@ export const Pad: FC<PadProps> = ({ setDirection, setIsMoving }) => {
 const styles = StyleSheet.create({
   pad: {
     position: "absolute",
-    bottom: 10,
+    bottom: 40,
     left: 40,
     width: 200,
     height: 200,

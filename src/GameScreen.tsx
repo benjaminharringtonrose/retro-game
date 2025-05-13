@@ -1,22 +1,24 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { StyleSheet, useWindowDimensions, View } from "react-native";
-import { useSharedValue, useAnimatedStyle, cancelAnimation } from "react-native-reanimated";
-import { Direction, Tile } from "./types";
+import { useSharedValue, withTiming, withRepeat, withSequence, cancelAnimation, withSpring, runOnJS } from "react-native-reanimated";
+import { Direction } from "./types";
 import { Map } from "./components/Map";
 import { Player } from "./components/Player";
 import { DEFAULT_MAPS } from "./maps/home";
 import { Pad } from "./components/Pad";
-import { TILE_SIZE } from "./constants/map";
+import { GameEngine } from "./engine/GameEngine";
+import { EntityFactory } from "./engine/EntityFactory";
+import { MovementSystem } from "./engine/systems/MovementSystem";
+import { AnimationSystem } from "./engine/systems/AnimationSystem";
+import { RenderSystem } from "./engine/systems/RenderSystem";
+import { ComponentType, InputComponent } from "./engine/types";
 
 const CURRENT_MAP = "TOWN";
-
-const SPEED = 200;
-
-const WALKABLE_TILES = [Tile.Grass, Tile.Path] as const;
-type WalkableTile = (typeof WALKABLE_TILES)[number];
+const ANIMATION_FRAME_DURATION = 150;
 
 export default function GameScreen() {
   const { width: wWidth, height: wHeight } = useWindowDimensions();
+  const gameEngine = useRef<GameEngine>(new GameEngine());
 
   // animated values
   const mapX = useSharedValue(DEFAULT_MAPS[CURRENT_MAP].initialPosition.x);
@@ -25,134 +27,104 @@ export default function GameScreen() {
   const offsetY = useSharedValue(0);
   const playerCenterX = useSharedValue(wWidth / 2);
   const playerCenterY = useSharedValue(wHeight / 2);
+  const currentFrame = useSharedValue(0);
+  const directionValue = useSharedValue(Direction.Down);
+  const isMovingValue = useSharedValue(false);
 
   const [direction, setDirection] = useState(Direction.Down);
   const [isMoving, setIsMoving] = useState(false);
 
-  const cols = DEFAULT_MAPS[CURRENT_MAP].mapData[0].length;
-  const rows = DEFAULT_MAPS[CURRENT_MAP].mapData.length;
-  const maxMapX = 0;
-  const minMapX = wWidth - cols * TILE_SIZE;
-  const maxMapY = 0;
-  const minMapY = wHeight - rows * TILE_SIZE;
-  const maxOffX = wWidth / 2 - TILE_SIZE / 2;
-  const maxOffY = wHeight / 2 - TILE_SIZE / 2;
-
-  const mapAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: mapX.value }, { translateY: mapY.value }],
-  }));
-
-  // Movement loop
+  // Initialize game engine
   useEffect(() => {
-    if (!isMoving) {
-      cancelAnimation(mapX);
-      cancelAnimation(mapY);
-      cancelAnimation(offsetX);
-      cancelAnimation(offsetY);
-      return;
+    const engine = gameEngine.current;
+
+    // Add systems in the correct order
+    engine.addSystem(new MovementSystem(DEFAULT_MAPS[CURRENT_MAP].mapData));
+    engine.addSystem(new AnimationSystem());
+    engine.addSystem(new RenderSystem());
+
+    // Create player entity
+    const player = EntityFactory.createPlayer({ x: wWidth / 2, y: wHeight / 2 }, mapX, mapY, offsetX, offsetY, require("./assets/character-spritesheet.png"));
+    engine.addEntity(player);
+
+    // Start game loop
+    engine.start();
+
+    return () => {
+      engine.stop();
+    };
+  }, []);
+
+  // Handle animation frames using Reanimated worklet
+  useEffect(() => {
+    directionValue.value = direction;
+    isMovingValue.value = isMoving;
+
+    if (isMoving) {
+      cancelAnimation(currentFrame);
+      currentFrame.value = 0;
+      currentFrame.value = withRepeat(
+        withSequence(
+          withTiming(1, { duration: 0 }),
+          withTiming(1, { duration: ANIMATION_FRAME_DURATION }),
+          withTiming(2, { duration: 0 }),
+          withTiming(2, { duration: ANIMATION_FRAME_DURATION }),
+          withTiming(0, { duration: 0 }),
+          withTiming(0, { duration: ANIMATION_FRAME_DURATION })
+        ),
+        -1
+      );
+    } else {
+      cancelAnimation(currentFrame);
+      currentFrame.value = 0;
     }
-    const id = setInterval(() => {
-      const step = SPEED / 60;
+  }, [isMoving, direction]);
+
+  // Update player input
+  useEffect(() => {
+    const engine = gameEngine.current;
+    const entities = engine.getEntitiesWithComponents([ComponentType.Input]);
+
+    for (const entity of entities) {
+      const input = engine.getComponent<InputComponent>(entity, ComponentType.Input);
+      if (!input) continue;
+
       let dx = 0,
         dy = 0;
       switch (direction) {
         case Direction.Left:
-          dx = -step;
+          dx = -1;
           break;
         case Direction.Right:
-          dx = step;
+          dx = 1;
           break;
         case Direction.Up:
-          dy = -step;
+          dy = -1;
           break;
         case Direction.Down:
-          dy = step;
+          dy = 1;
           break;
       }
-      if (dx === 0 && dy === 0) return;
 
-      // Figure out which tile we're moving into
-      const worldX = -mapX.value + wWidth / 2 + offsetX.value + dx;
-      const worldY = -mapY.value + wHeight / 2 + offsetY.value + dy;
-      const col = Math.floor(worldX / TILE_SIZE);
-      const row = Math.floor(worldY / TILE_SIZE);
-      const tile = DEFAULT_MAPS[CURRENT_MAP].mapData[row]?.[col] as WalkableTile | undefined;
-
-      if (tile === undefined || !WALKABLE_TILES.includes(tile)) {
-        return;
-      }
-
-      // --- X axis ---
-      if (dx !== 0) {
-        // precompute for both branches
-        const absOff = Math.abs(offsetX.value);
-        const absDx = Math.abs(dx);
-        const offSign = Math.sign(offsetX.value);
-        const mvSign = Math.sign(dx);
-
-        if (offsetX.value !== 0) {
-          if (offSign !== mvSign) {
-            if (absOff <= absDx) {
-              const extra = dx + offsetX.value;
-              offsetX.value = 0;
-              const cand = mapX.value - extra;
-              if (cand <= maxMapX && cand >= minMapX) mapX.value = cand;
-              else offsetX.value = extra;
-            } else {
-              offsetX.value += dx;
-            }
-          } else {
-            // same direction, clamp by half-screen
-            offsetX.value = offSign * Math.min(absOff + absDx, maxOffX);
-          }
-        } else {
-          const cand = mapX.value - dx;
-          if (cand <= maxMapX && cand >= minMapX) mapX.value = cand;
-          else offsetX.value += dx;
-        }
-      }
-
-      // --- Y axis (identical) ---
-      if (dy !== 0) {
-        const absOffY = Math.abs(offsetY.value);
-        const absDy = Math.abs(dy);
-        const offSignY = Math.sign(offsetY.value);
-        const mvSignY = Math.sign(dy);
-
-        if (offsetY.value !== 0) {
-          if (offSignY !== mvSignY) {
-            if (absOffY <= absDy) {
-              const extra = dy + offsetY.value;
-              offsetY.value = 0;
-              const cand = mapY.value - extra;
-              if (cand <= maxMapY && cand >= minMapY) mapY.value = cand;
-              else offsetY.value = extra;
-            } else {
-              offsetY.value += dy;
-            }
-          } else {
-            offsetY.value = offSignY * Math.min(absOffY + absDy, maxOffY);
-          }
-        } else {
-          const cand = mapY.value - dy;
-          if (cand <= maxMapY && cand >= minMapY) mapY.value = cand;
-          else offsetY.value += dy;
-        }
-      }
-
-      // update player pos
-      playerCenterX.value = wWidth / 2 + offsetX.value;
-      playerCenterY.value = wHeight / 2 + offsetY.value;
-    }, 1000 / 60);
-
-    return () => clearInterval(id);
-  }, [isMoving, direction]);
+      input.direction = { x: dx, y: dy };
+      input.isMoving = isMoving;
+    }
+  }, [direction, isMoving]);
 
   return (
     <View style={styles.container}>
-      <Map mapX={mapX} mapY={mapY} tiles={DEFAULT_MAPS[CURRENT_MAP].mapData} tileSize={TILE_SIZE} mapAnimatedStyle={mapAnimatedStyle} />
-      <Player direction={direction} isMoving={isMoving} centerX={playerCenterX} centerY={playerCenterY} />
-      <Pad setIsMoving={setIsMoving} setDirection={setDirection} />
+      <Map mapX={mapX} mapY={mapY} tiles={DEFAULT_MAPS[CURRENT_MAP].mapData} tileSize={48} />
+      <Player direction={direction} isMoving={isMoving} centerX={playerCenterX} centerY={playerCenterY} currentFrame={currentFrame} />
+      <Pad
+        setDirection={(newDirection) => {
+          setDirection(newDirection);
+          directionValue.value = newDirection;
+        }}
+        setIsMoving={(value) => {
+          setIsMoving(value);
+          isMovingValue.value = value;
+        }}
+      />
     </View>
   );
 }
