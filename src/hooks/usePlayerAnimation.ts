@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { SharedValue, cancelAnimation } from "react-native-reanimated";
 import { Direction } from "../types";
 
-const FRAME_DURATION = 150; // Time each frame is shown
+const FRAME_DURATION = 100; // Time each frame is shown
 const TOTAL_FRAMES = 3;
 
 export function usePlayerAnimation(isMoving: boolean, direction: Direction, currentFrame: SharedValue<number>, directionValue: SharedValue<Direction>, isMovingValue: SharedValue<boolean>) {

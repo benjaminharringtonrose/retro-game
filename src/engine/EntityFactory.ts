@@ -30,7 +30,7 @@ export class EntityFactory {
       currentFrame: 0,
       frameWidth: 32,
       frameHeight: 40,
-      frameRate: 10,
+      frameRate: 7,
       isPlaying: false,
     } as AnimationComponent);
 
