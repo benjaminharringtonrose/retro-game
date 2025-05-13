@@ -6,11 +6,7 @@ export function useCachedAssets(): boolean {
 
   useEffect(() => {
     async function load() {
-      const images = [
-        require("../assets/character-spritesheet.png"),
-        require("../assets/tree.png"),
-        // …now you can add any other PNGs or JPGs you have
-      ];
+      const images = [require("../assets/character-spritesheet.png"), require("../assets/tree.png"), require("../assets/forest-background.png")];
       const tasks = images.map((img) => Asset.fromModule(img).downloadAsync());
       await Promise.all(tasks);
       setReady(true);

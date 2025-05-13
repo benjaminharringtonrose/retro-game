@@ -60,3 +60,21 @@ export enum Tile {
   Tree = 3,
   Rock = 4,
 }
+
+export enum MapType {
+  FOREST = "FOREST",
+  MOUNTAIN_PASS = "MOUNTAIN_PASS",
+}
+
+export interface MapPosition {
+  x: number;
+  y: number;
+}
+
+export interface MapData {
+  name: string;
+  initialPosition?: MapPosition;
+  mapData: number[][];
+}
+
+export type MapConfig = Record<MapType, MapData>;

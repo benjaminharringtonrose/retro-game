@@ -4,13 +4,14 @@ import { StyleSheet } from "react-native";
 import Animated, { SharedValue, useAnimatedStyle } from "react-native-reanimated";
 import { Image } from "expo-image";
 
-import { Tile } from "../types";
+import { Tile, MapType } from "../types";
 
 export interface MapProps {
   mapX: SharedValue<number>;
   mapY: SharedValue<number>;
   tiles: Tile[][];
   tileSize: number;
+  mapType: MapType;
 }
 
 const tileStyles: Record<Tile, any> = {
@@ -24,7 +25,7 @@ const tileStyles: Record<Tile, any> = {
 const TREE_SCALE = 1.5;
 
 export const Map = React.memo(
-  ({ mapX, mapY, tiles, tileSize }: MapProps) => {
+  ({ mapX, mapY, tiles, tileSize, mapType }: MapProps) => {
     const mapAnimatedStyle = useAnimatedStyle(() => ({
       transform: [{ translateX: mapX.value }, { translateY: mapY.value }],
     }));
@@ -32,10 +33,36 @@ export const Map = React.memo(
     // Calculate padding needed for the container to prevent tree cutoff
     const padding = useMemo(() => Math.ceil((TREE_SCALE - 1) * tileSize), [tileSize]);
 
-    // Memoize the tree image source
+    // Memoize the images
     const treeImage = useMemo(() => require("../assets/tree.png"), []);
+    const backgroundImage = useMemo(() => (mapType === MapType.FOREST ? require("../assets/forest-background.png") : null), [mapType]);
 
-    // First render the base tiles
+    // Calculate map dimensions
+    const mapWidth = useMemo(() => tiles[0].length * tileSize, [tiles, tileSize]);
+    const mapHeight = useMemo(() => tiles.length * tileSize, [tiles, tileSize]);
+
+    // First render the background if it's a forest map
+    const background = useMemo(() => {
+      if (backgroundImage) {
+        return (
+          <Image
+            source={backgroundImage}
+            style={[
+              styles.background,
+              {
+                width: mapWidth,
+                height: mapHeight,
+              },
+            ]}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+          />
+        );
+      }
+      return null;
+    }, [backgroundImage, mapWidth, mapHeight]);
+
+    // Then render the base tiles
     const baseTiles = useMemo(() => {
       return tiles.map((row, r) =>
         row.map((tile, c) => {
@@ -52,12 +79,14 @@ export const Map = React.memo(
                     left: c * tileSize,
                     top: r * tileSize,
                     zIndex: 0,
+                    // Make grass tiles transparent when we have a background
+                    ...(tile === Tile.Grass && backgroundImage ? { backgroundColor: "transparent" } : {}),
                   },
                 ]}
               />
             );
           }
-          // For tree tiles, render the grass background
+          // For tree tiles, render transparent background when we have forest background
           return (
             <Animated.View
               key={`${r}-${c}`}
@@ -68,7 +97,7 @@ export const Map = React.memo(
                   height: tileSize,
                   left: c * tileSize,
                   top: r * tileSize,
-                  backgroundColor: "#6C9A0A", // Grass background
+                  backgroundColor: backgroundImage ? "transparent" : "#6C9A0A",
                   zIndex: 0,
                 },
               ]}
@@ -76,7 +105,7 @@ export const Map = React.memo(
           );
         })
       );
-    }, [tiles, tileSize]);
+    }, [tiles, tileSize, backgroundImage]);
 
     // Then render trees separately to ensure proper layering
     const treeTiles = useMemo(() => {
@@ -120,6 +149,7 @@ export const Map = React.memo(
           },
         ]}
       >
+        {background}
         {baseTiles}
         {treeTiles}
       </Animated.View>
@@ -127,7 +157,7 @@ export const Map = React.memo(
   },
   (prevProps, nextProps) => {
     // Custom comparison function for memo
-    return prevProps.mapX === nextProps.mapX && prevProps.mapY === nextProps.mapY && prevProps.tileSize === nextProps.tileSize && prevProps.tiles === nextProps.tiles;
+    return prevProps.mapX === nextProps.mapX && prevProps.mapY === nextProps.mapY && prevProps.tileSize === nextProps.tileSize && prevProps.tiles === nextProps.tiles && prevProps.mapType === nextProps.mapType;
   }
 );
 
@@ -140,5 +170,10 @@ const styles = StyleSheet.create({
   },
   tile: {
     position: "absolute",
+  },
+  background: {
+    position: "absolute",
+    left: 0,
+    top: 0,
   },
 });
