@@ -51,7 +51,21 @@ export class MovementSystem implements System {
       const dy = input.direction.y * speed;
 
       if (shouldLog) {
+        // Calculate current tile position
+        const currentWorldX = -movement.mapX.value + transform.position.x + movement.offsetX.value;
+        const currentWorldY = -movement.mapY.value + transform.position.y + movement.offsetY.value;
+        const currentTileCol = Math.floor(currentWorldX / TILE_SIZE);
+        const currentTileRow = Math.floor(currentWorldY / TILE_SIZE);
+        const currentTile = this.getTileAt(currentTileRow, currentTileCol);
+
         console.log("\n--- Movement Debug ---");
+        console.log("Current Tile:", {
+          row: currentTileRow,
+          col: currentTileCol,
+          type: currentTile,
+          worldX: currentWorldX.toFixed(2),
+          worldY: currentWorldY.toFixed(2),
+        });
         console.log("Current Position:", {
           mapX: movement.mapX.value.toFixed(2),
           mapY: movement.mapY.value.toFixed(2),
@@ -66,10 +80,10 @@ export class MovementSystem implements System {
       }
 
       // Calculate map bounds
-      const maxX = 0;
-      const minX = -(this.cols * TILE_SIZE - transform.position.x * 2);
-      const maxY = 0;
-      const minY = -(this.rows * TILE_SIZE - transform.position.y * 2);
+      const maxX = transform.position.x; // Allow map to move right until player reaches screen edge
+      const minX = -(this.cols * TILE_SIZE - transform.position.x); // Allow map to move left until last tile
+      const maxY = transform.position.y;
+      const minY = -(this.rows * TILE_SIZE - transform.position.y);
 
       if (shouldLog) {
         console.log("Map Bounds:", {

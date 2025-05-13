@@ -41,12 +41,18 @@ export const Map = React.memo(({ mapX, mapY, tiles, tileSize, mapType }: MapProp
     return tiles.map((row, r) =>
       row.map((tile, c) => {
         const key = `tile-${r}-${c}`;
+        const position = { top: r * tileSize, left: c * tileSize };
+
+        // For grass tiles, render an empty wrapper to maintain structure
+        if (tile === Tile.Grass) {
+          return <View key={key} style={[styles.tileWrapper, position]} />;
+        }
+
         if (tile === Tile.Tree) {
           const scaledSize = tileSize * TREE_SCALE;
           const offset = (scaledSize - tileSize) / 2;
           return (
-            <View key={key} style={[styles.tileWrapper, { top: r * tileSize, left: c * tileSize }]}>
-              <View style={[styles.tile, tileStyles[tile], { width: tileSize, height: tileSize }]} />
+            <View key={key} style={[styles.tileWrapper, position]}>
               <Image
                 source={require("../assets/tree.png")}
                 style={[
@@ -66,20 +72,20 @@ export const Map = React.memo(({ mapX, mapY, tiles, tileSize, mapType }: MapProp
             </View>
           );
         }
+
         return (
-          <View
-            key={key}
-            style={[
-              styles.tile,
-              tileStyles[tile],
-              {
-                width: tileSize,
-                height: tileSize,
-                left: c * tileSize,
-                top: r * tileSize,
-              },
-            ]}
-          />
+          <View key={key} style={[styles.tileWrapper, position]}>
+            <View
+              style={[
+                styles.tile,
+                tileStyles[tile],
+                {
+                  width: tileSize,
+                  height: tileSize,
+                },
+              ]}
+            />
+          </View>
         );
       })
     );
@@ -100,7 +106,7 @@ export const Map = React.memo(({ mapX, mapY, tiles, tileSize, mapType }: MapProp
     >
       {mapType === MapType.FOREST && (
         <View style={[styles.background, { width: mapWidth, height: mapHeight }]}>
-          <Image source={require("../assets/forest-background.png")} style={[StyleSheet.absoluteFill, { width: mapWidth, height: mapHeight }]} contentFit="cover" cachePolicy="memory" />
+          <Image source={require("../assets/forest-background.png")} style={[{ width: mapWidth, height: mapHeight }]} contentFit="cover" cachePolicy="memory-disk" />
         </View>
       )}
       <View style={styles.tilesContainer}>{renderTiles}</View>
