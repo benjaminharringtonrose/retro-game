@@ -1,5 +1,6 @@
-import { System, GameEngine } from "../GameEngine";
-import { ComponentType, AnimationComponent, InputComponent } from "../types";
+import { GameEngine } from "../GameEngine";
+import { System } from "../types/engine";
+import { ComponentType, AnimationComponent, InputComponent } from "../types/components";
 
 export class AnimationSystem implements System {
   private accumulatedTime: number = 0;

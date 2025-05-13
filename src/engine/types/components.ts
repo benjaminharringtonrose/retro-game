@@ -12,6 +12,7 @@ export enum ComponentType {
   Render = "render",
   Collision = "collision",
   Interaction = "interaction",
+  Animation = "animation",
 }
 
 export interface Component {
@@ -61,4 +62,12 @@ export interface InteractionComponent extends Component {
   type: ComponentType.Interaction;
   radius: number;
   onInteract: () => void;
+}
+
+export interface AnimationComponent extends Component {
+  type: ComponentType.Animation;
+  currentFrame: number;
+  frames: number;
+  frameRate: number;
+  isPlaying: boolean;
 }

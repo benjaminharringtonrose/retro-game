@@ -1,5 +1,6 @@
-import { System, GameEngine } from "../GameEngine";
-import { ComponentType, MovementComponent, InputComponent, TransformComponent } from "../types";
+import { GameEngine } from "../GameEngine";
+import { System } from "../types/engine";
+import { ComponentType, MovementComponent, InputComponent, TransformComponent } from "../types/components";
 import { TILE_SIZE } from "../../constants/map";
 import { Tile } from "../../types";
 import { MOVE_SPEED } from "../../constants/sprites";
