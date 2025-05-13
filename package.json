@@ -38,7 +38,8 @@
     "react-native-svg": "15.11.2",
     "react-native-web": "^0.20.0",
     "ts-node": "^10.9.2",
-    "expo-screen-orientation": "~8.1.6"
+    "expo-screen-orientation": "~8.1.6",
+    "expo-font": "~13.3.1"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

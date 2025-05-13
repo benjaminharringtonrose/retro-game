@@ -58,6 +58,7 @@ export enum Tile {
   Path = 1,
   Water = 2,
   Tree = 3,
+  Tree2 = 3.2,
   Rock = 4,
 }
 

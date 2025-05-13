@@ -6,6 +6,12 @@ import { Image } from "expo-image";
 
 import { Tile, MapType } from "../types";
 
+const ASSETS = {
+  tree: require("../assets/tree.png"),
+  tree2: require("../assets/tree-2.png"),
+  forestBackground: require("../assets/forest-background.png"),
+};
+
 interface MapProps {
   mapX: SharedValue<number>;
   mapY: SharedValue<number>;
@@ -26,6 +32,7 @@ const tileStyles: Record<Tile, any> = {
   [Tile.Path]: { backgroundColor: "#C2B280" },
   [Tile.Water]: { backgroundColor: "#4A90E2" },
   [Tile.Tree]: { backgroundColor: "#2E7D32" },
+  [Tile.Tree2]: { backgroundColor: "#2E7D32" },
   [Tile.Rock]: { backgroundColor: "#757575" },
 };
 
@@ -68,13 +75,13 @@ export const Map = React.memo(({ mapX, mapY, tiles, tileSize, mapType }: MapProp
       return <View style={[styles.tileWrapper, position]} />;
     }
 
-    if (item.tile === Tile.Tree) {
+    if (item.tile === Tile.Tree || item.tile === Tile.Tree2) {
       const scaledSize = tileSize * TREE_SCALE;
       const offset = (scaledSize - tileSize) / 2;
       return (
         <View style={[styles.tileWrapper, position]}>
           <Image
-            source={require("../assets/tree.png")}
+            source={item.tile === Tile.Tree ? ASSETS.tree : ASSETS.tree2}
             style={[
               styles.tree,
               {
@@ -130,7 +137,7 @@ export const Map = React.memo(({ mapX, mapY, tiles, tileSize, mapType }: MapProp
     >
       {mapType === MapType.FOREST && (
         <View style={[styles.background, { width: mapWidth, height: mapHeight }]}>
-          <Image source={require("../assets/forest-background.png")} style={[{ width: mapWidth, height: mapHeight }]} contentFit="cover" cachePolicy="memory-disk" />
+          <Image source={ASSETS.forestBackground} style={[{ width: mapWidth, height: mapHeight }]} contentFit="cover" cachePolicy="memory-disk" />
         </View>
       )}
       <Animated.FlatList

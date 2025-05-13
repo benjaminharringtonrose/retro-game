@@ -10,6 +10,9 @@ import { EntityType } from "./engine/types/EntityTypes";
 import { useGameEngine } from "./hooks/useGameEngine";
 import { usePlayerAnimation } from "./hooks/usePlayerAnimation";
 import { usePlayerInput } from "./hooks/usePlayerInput";
+import { LoadingScreen } from "./components/LoadingScreen";
+import { Asset } from "expo-asset";
+import { useFonts } from "expo-font";
 
 const CURRENT_MAP = MapType.FOREST;
 
@@ -18,9 +21,40 @@ const DEFAULT_POSITION: MapPosition = {
   y: 0,
 };
 
+// Define assets with their module IDs
+const GAME_ASSETS = {
+  characterSpritesheet: require("./assets/character-spritesheet.png"),
+  tree: require("./assets/tree.png"),
+  tree2: require("./assets/tree-2.png"),
+  forestBackground: require("./assets/forest-background.png"),
+};
+
 export default function GameScreen() {
   const { width: wWidth, height: wHeight } = useWindowDimensions();
   const { engine, entityManager } = useGameEngine();
+  const [isLoading, setIsLoading] = useState(true);
+  const [assetsLoaded, setAssetsLoaded] = useState(false);
+
+  const [fontsLoaded] = useFonts({
+    PressStart2P: require("./assets/fonts/PressStart2P-Regular.ttf"),
+  });
+
+  // Preload assets
+  useEffect(() => {
+    async function loadAssets() {
+      try {
+        const imageAssets = Object.values(GAME_ASSETS);
+        await Asset.loadAsync(imageAssets);
+        setAssetsLoaded(true);
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Failed to load assets:", error);
+        setIsLoading(false);
+      }
+    }
+
+    loadAssets();
+  }, []);
 
   // Get initial position from map config
   const initialPosition = useMemo(() => DEFAULT_MAPS[CURRENT_MAP].initialPosition ?? DEFAULT_POSITION, []);
@@ -47,20 +81,22 @@ export default function GameScreen() {
 
   // Memoize the player creation to prevent recreation on every render
   useEffect(() => {
-    entityManager.createPlayer(
-      {
-        position: { x: wWidth / 2, y: wHeight / 2 },
-        spritesheet: require("./assets/character-spritesheet.png"),
-        type: EntityType.PLAYER,
-      },
-      {
-        mapX,
-        mapY,
-        offsetX,
-        offsetY,
-      }
-    );
-  }, [entityManager, wWidth, wHeight]);
+    if (!isLoading) {
+      entityManager.createPlayer(
+        {
+          position: { x: wWidth / 2, y: wHeight / 2 },
+          spritesheet: GAME_ASSETS.characterSpritesheet,
+          type: EntityType.PLAYER,
+        },
+        {
+          mapX,
+          mapY,
+          offsetX,
+          offsetY,
+        }
+      );
+    }
+  }, [entityManager, wWidth, wHeight, isLoading]);
 
   // Use custom hooks for animation and input
   usePlayerAnimation(isMoving, direction, currentFrame, directionValue, isMovingValue);
@@ -86,6 +122,11 @@ export default function GameScreen() {
     []
   );
 
+  // Don't render anything until assets are loaded
+  if (isLoading || !assetsLoaded || !fontsLoaded) {
+    return <LoadingScreen />;
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.gameContainer}>
@@ -98,7 +139,7 @@ export default function GameScreen() {
             {
               zIndex: 2000,
               elevation: 2000,
-              backgroundColor: "rgba(0, 0, 255, 0.1)",
+              backgroundColor: "transparent",
               position: "absolute",
               left: 0,
               top: 0,
@@ -126,7 +167,7 @@ const styles = StyleSheet.create({
     flex: 1,
     position: "relative",
     overflow: "visible",
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // Semi-transparent to see layers
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   controls: {
     position: "absolute",

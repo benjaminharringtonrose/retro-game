@@ -1,11 +1,5 @@
 import React from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  useWindowDimensions,
-} from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, useWindowDimensions } from "react-native";
 
 export interface HomeScreenProps {
   onStart: () => void;
@@ -34,10 +28,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   title: {
+    fontFamily: "PressStart2P",
     color: "#fff",
     fontSize: 32,
     marginBottom: 40,
-    // You can load a retro "Press Start" font via Expo Google Fonts if desired
+    textAlign: "center",
   },
   button: {
     backgroundColor: "#444",
@@ -47,6 +42,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   buttonText: {
+    fontFamily: "PressStart2P",
     color: "#fff",
     fontSize: 18,
     textTransform: "uppercase",
