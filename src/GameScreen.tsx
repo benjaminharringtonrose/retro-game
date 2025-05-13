@@ -1,17 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
 import { StyleSheet, useWindowDimensions, View } from "react-native";
-import { useSharedValue, withTiming, withRepeat, withSequence, cancelAnimation, withSpring, runOnJS } from "react-native-reanimated";
+import { useSharedValue, withTiming, withRepeat, withSequence, cancelAnimation } from "react-native-reanimated";
 import { Direction } from "./types";
 import { Map } from "./components/Map";
 import { Player } from "./components/Player";
 import { DEFAULT_MAPS } from "./maps/home";
 import { Pad } from "./components/Pad";
 import { GameEngine } from "./engine/GameEngine";
-import { EntityFactory } from "./engine/EntityFactory";
+import { EntityManager } from "./engine/EntityManager";
 import { MovementSystem } from "./engine/systems/MovementSystem";
 import { AnimationSystem } from "./engine/systems/AnimationSystem";
 import { RenderSystem } from "./engine/systems/RenderSystem";
-import { ComponentType, InputComponent } from "./engine/types";
+import { EntityType } from "./engine/types/EntityTypes";
+import { ComponentType, InputComponent } from "./engine/types/components";
 
 const CURRENT_MAP = "TOWN";
 const ANIMATION_FRAME_DURATION = 150;
@@ -19,6 +20,7 @@ const ANIMATION_FRAME_DURATION = 150;
 export default function GameScreen() {
   const { width: wWidth, height: wHeight } = useWindowDimensions();
   const gameEngine = useRef<GameEngine>(new GameEngine());
+  const entityManager = useRef<EntityManager>(new EntityManager(gameEngine.current));
 
   // animated values
   const mapX = useSharedValue(DEFAULT_MAPS[CURRENT_MAP].initialPosition.x);
@@ -34,9 +36,10 @@ export default function GameScreen() {
   const [direction, setDirection] = useState(Direction.Down);
   const [isMoving, setIsMoving] = useState(false);
 
-  // Initialize game engine
+  // Initialize game engine and entities
   useEffect(() => {
     const engine = gameEngine.current;
+    const manager = entityManager.current;
 
     // Add systems in the correct order
     engine.addSystem(new MovementSystem(DEFAULT_MAPS[CURRENT_MAP].mapData));
@@ -44,8 +47,36 @@ export default function GameScreen() {
     engine.addSystem(new RenderSystem());
 
     // Create player entity
-    const player = EntityFactory.createPlayer({ x: wWidth / 2, y: wHeight / 2 }, mapX, mapY, offsetX, offsetY, require("./assets/character-spritesheet.png"));
-    engine.addEntity(player);
+    const playerId = manager.createPlayer(
+      {
+        position: { x: wWidth / 2, y: wHeight / 2 },
+        spritesheet: require("./assets/character-spritesheet.png"),
+        type: EntityType.PLAYER,
+      },
+      {
+        mapX,
+        mapY,
+        offsetX,
+        offsetY,
+      }
+    );
+
+    /* Example: Create some NPCs - Uncomment when NPC sprites are available
+    const npcConfigs = [
+      {
+        position: { x: wWidth / 2 + 100, y: wHeight / 2 + 100 },
+        spritesheet: require("./assets/npc-spritesheet.png"),
+        movementPattern: { type: 'patrol' as const, points: [
+          { x: wWidth / 2 + 100, y: wHeight / 2 + 100 },
+          { x: wWidth / 2 + 200, y: wHeight / 2 + 100 },
+        ]},
+      },
+    ];
+
+    npcConfigs.forEach(config => {
+      manager.createNPC(config);
+    });
+    */
 
     // Start game loop
     engine.start();
@@ -55,14 +86,13 @@ export default function GameScreen() {
     };
   }, []);
 
-  // Handle animation frames using Reanimated worklet
+  // Handle animation frames
   useEffect(() => {
     directionValue.value = direction;
     isMovingValue.value = isMoving;
 
     if (isMoving) {
       cancelAnimation(currentFrame);
-      currentFrame.value = 0;
       currentFrame.value = withRepeat(
         withSequence(
           withTiming(1, { duration: 0 }),

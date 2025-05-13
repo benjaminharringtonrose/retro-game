@@ -1,72 +1,68 @@
-import { Entity, Component, ComponentType } from "./types";
+import { Component, ComponentType } from "./types/components";
+import { System } from "./types/engine";
 
 export class GameEngine {
-  private entities: Map<string, Entity>;
-  private systems: System[];
-  private isRunning: boolean;
-  private lastTimestamp: number;
-  private frameId: number;
+  private systems: System[] = [];
+  private entities: Map<number, Set<Component>> = new Map();
+  private nextEntityId: number = 1;
+  private isRunning: boolean = false;
+  private lastTimestamp: number = 0;
 
-  constructor() {
-    this.entities = new Map();
-    this.systems = [];
-    this.isRunning = false;
-    this.lastTimestamp = 0;
-    this.frameId = 0;
-  }
-
-  addEntity(entity: Entity): void {
-    this.entities.set(entity.id, entity);
-  }
-
-  removeEntity(entityId: string): void {
-    this.entities.delete(entityId);
-  }
-
-  addSystem(system: System): void {
+  addSystem(system: System) {
     this.systems.push(system);
   }
 
-  getEntitiesWithComponents(componentTypes: ComponentType[]): Entity[] {
-    return Array.from(this.entities.values()).filter((entity) => {
-      return componentTypes.every((type) => Array.from(entity.components).some((component) => component.type === type));
-    });
+  createEntity(): number {
+    const entityId = this.nextEntityId++;
+    this.entities.set(entityId, new Set());
+    return entityId;
   }
 
-  getComponent<T extends Component>(entity: Entity, type: ComponentType): T | undefined {
-    return Array.from(entity.components).find((component) => component.type === type) as T | undefined;
+  addComponent(entityId: number, component: Component) {
+    const components = this.entities.get(entityId);
+    if (components) {
+      components.add(component);
+    }
   }
 
-  start(): void {
+  removeEntity(entityId: number) {
+    this.entities.delete(entityId);
+  }
+
+  getComponent<T extends Component>(entityId: number, componentType: ComponentType): T | undefined {
+    const components = this.entities.get(entityId);
+    if (!components) return undefined;
+    return Array.from(components).find((c) => c.type === componentType) as T;
+  }
+
+  getEntitiesWithComponents(componentTypes: ComponentType[]): number[] {
+    return Array.from(this.entities.entries())
+      .filter(([_, components]) => componentTypes.every((type) => Array.from(components).some((c) => c.type === type)))
+      .map(([entityId]) => entityId);
+  }
+
+  start() {
     if (this.isRunning) return;
     this.isRunning = true;
     this.lastTimestamp = performance.now();
     this.gameLoop();
   }
 
-  stop(): void {
+  stop() {
     this.isRunning = false;
-    if (this.frameId) {
-      cancelAnimationFrame(this.frameId);
-    }
   }
 
-  private gameLoop = (): void => {
+  private gameLoop = () => {
     if (!this.isRunning) return;
 
     const currentTime = performance.now();
-    const deltaTime = (currentTime - this.lastTimestamp) / 1000; // Convert to seconds
+    const deltaTime = currentTime - this.lastTimestamp;
     this.lastTimestamp = currentTime;
 
-    // Update all systems
     for (const system of this.systems) {
       system.update(this, deltaTime);
     }
 
-    this.frameId = requestAnimationFrame(this.gameLoop);
+    requestAnimationFrame(this.gameLoop);
   };
-}
-
-export interface System {
-  update(engine: GameEngine, deltaTime: number): void;
 }
