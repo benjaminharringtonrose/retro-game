@@ -197,7 +197,7 @@ export default function GameScreen() {
         </View>
         {showCollisions && DEFAULT_MAPS[currentMap].collidableEntities && (
           <View style={[StyleSheet.absoluteFill, { zIndex: 1500 }]}>
-            <CollisionVisualizer collidableEntities={DEFAULT_MAPS[currentMap].collidableEntities} mapX={mapX} mapY={mapY} />
+            <CollisionVisualizer collidableEntities={DEFAULT_MAPS[currentMap].collidableEntities} mapX={mapX} mapY={mapY} portals={DEFAULT_MAPS[currentMap].portals} />
           </View>
         )}
         <View

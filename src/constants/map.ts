@@ -5,6 +5,9 @@ export const TILE_SIZE = 64;
 
 // Define cabin properties
 const CABIN_SCALE = 4;
+const CABIN_COLLISION_SCALE = 1; // No additional scaling for collision bounds
+const CABIN_BASE_WIDTH = 2; // Base size in tiles before scaling
+const CABIN_BASE_HEIGHT = 2;
 const CABIN_SPRITE = require("../assets/cabin.png");
 const CABIN_INTERIOR_BG = require("../assets/cabin-inside.png");
 
@@ -14,8 +17,8 @@ export const PORTALS: { [key: string]: Portal } = {
     id: "cabin_entrance",
     entryPoint: {
       bounds: {
-        x: TILE_SIZE * 1.5,
-        y: TILE_SIZE * 2,
+        x: TILE_SIZE * (12 + CABIN_BASE_WIDTH / 2 - 0.5),
+        y: TILE_SIZE * (14 + CABIN_BASE_HEIGHT),
         width: TILE_SIZE,
         height: TILE_SIZE / 2,
       },
@@ -27,8 +30,8 @@ export const PORTALS: { [key: string]: Portal } = {
     destination: {
       mapType: MapType.CABIN_INTERIOR,
       position: {
-        x: 0,
-        y: 0,
+        x: TILE_SIZE * 2,
+        y: TILE_SIZE * 4,
       },
       facingDirection: "up",
     },
@@ -41,8 +44,8 @@ export const PORTALS: { [key: string]: Portal } = {
     id: "cabin_exit",
     entryPoint: {
       bounds: {
-        x: TILE_SIZE * 1.5,
-        y: TILE_SIZE * 2,
+        x: TILE_SIZE * 2,
+        y: TILE_SIZE * 4,
         width: TILE_SIZE,
         height: TILE_SIZE / 2,
       },
@@ -54,8 +57,8 @@ export const PORTALS: { [key: string]: Portal } = {
     destination: {
       mapType: MapType.FOREST,
       position: {
-        x: -800.0,
-        y: -184.0,
+        x: -TILE_SIZE * (12 + CABIN_BASE_WIDTH / 2 - 0.5),
+        y: -TILE_SIZE * (14 + CABIN_BASE_HEIGHT),
       },
       facingDirection: "down",
     },
@@ -75,16 +78,70 @@ const createCollidableEntities = (mapType: MapType): CollidableEntity[] => {
           type: "cabin",
           position: { row: 14, col: 12 },
           sprite: CABIN_SPRITE,
-          scale: CABIN_SCALE,
+          spriteScale: CABIN_SCALE,
           collision: {
-            width: 1,
-            height: 1,
+            width: CABIN_BASE_WIDTH,
+            height: CABIN_BASE_HEIGHT,
+            scale: CABIN_COLLISION_SCALE,
           },
         },
       ];
     case MapType.CABIN_INTERIOR:
       return [
-        // Add interior walls and furniture collision here
+        // Left wall
+        {
+          type: "wall",
+          position: { row: 0, col: 0 },
+          spriteScale: 1,
+          collision: {
+            width: 1,
+            height: 6,
+            scale: 1,
+          },
+        },
+        // Right wall
+        {
+          type: "wall",
+          position: { row: 0, col: 4 },
+          spriteScale: 1,
+          collision: {
+            width: 1,
+            height: 6,
+            scale: 1,
+          },
+        },
+        // Top wall
+        {
+          type: "wall",
+          position: { row: 0, col: 0 },
+          spriteScale: 1,
+          collision: {
+            width: 5,
+            height: 1,
+            scale: 1,
+          },
+        },
+        // Bottom walls (with door gap)
+        {
+          type: "wall",
+          position: { row: 5, col: 0 },
+          spriteScale: 1,
+          collision: {
+            width: 2,
+            height: 1,
+            scale: 1,
+          },
+        },
+        {
+          type: "wall",
+          position: { row: 5, col: 3 },
+          spriteScale: 1,
+          collision: {
+            width: 2,
+            height: 1,
+            scale: 1,
+          },
+        },
       ];
     case MapType.MOUNTAIN_PASS:
       return [
@@ -143,16 +200,17 @@ export const DEFAULT_MAPS: MapConfig = {
   [MapType.CABIN_INTERIOR]: {
     name: "Cabin Interior",
     initialPosition: {
-      x: 0,
-      y: 0,
+      x: TILE_SIZE * 2,
+      y: TILE_SIZE * 4,
     },
     background: CABIN_INTERIOR_BG,
     mapData: [
-      [0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0],
+      [1, 1, 1, 1, 1],
+      [1, 0, 0, 0, 1],
+      [1, 0, 0, 0, 1],
+      [1, 0, 0, 0, 1],
+      [1, 0, 0, 0, 1],
+      [1, 1, 0, 1, 1],
     ],
     collidableEntities: createCollidableEntities(MapType.CABIN_INTERIOR),
     portals: [PORTALS.CABIN_EXIT],

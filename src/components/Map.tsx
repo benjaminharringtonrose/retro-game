@@ -203,8 +203,8 @@ export const Map = React.memo(({ mapX, mapY, tiles, tileSize, mapType, collidabl
         };
 
         const scaledSize = {
-          width: size.width * entity.scale,
-          height: size.height * entity.scale,
+          width: size.width * entity.collision.scale,
+          height: size.height * entity.collision.scale,
         };
 
         const offset = {
@@ -214,20 +214,22 @@ export const Map = React.memo(({ mapX, mapY, tiles, tileSize, mapType, collidabl
 
         return (
           <View key={`entity-${index}`} style={[styles.entityWrapper, position, size]}>
-            <Image
-              source={entity.sprite}
-              style={[
-                styles.entityImage,
-                {
-                  width: scaledSize.width,
-                  height: scaledSize.height,
-                  left: -offset.left,
-                  top: -offset.top,
-                },
-              ]}
-              contentFit="contain"
-              cachePolicy="memory"
-            />
+            {entity.sprite && (
+              <Image
+                source={entity.sprite}
+                style={[
+                  styles.entityImage,
+                  {
+                    width: size.width * entity.spriteScale,
+                    height: size.height * entity.spriteScale,
+                    left: -(size.width * entity.spriteScale - size.width) / 2,
+                    top: -(size.height * entity.spriteScale - size.height) / 2,
+                  },
+                ]}
+                contentFit="contain"
+                cachePolicy="memory"
+              />
+            )}
           </View>
         );
       })}

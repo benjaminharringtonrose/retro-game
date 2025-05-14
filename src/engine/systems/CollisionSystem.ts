@@ -62,8 +62,8 @@ export class CollisionSystem implements System {
         };
 
         const scaledSize = {
-          width: size.width * entity.scale,
-          height: size.height * entity.scale,
+          width: size.width * entity.collision.scale,
+          height: size.height * entity.collision.scale,
         };
 
         const offset = {

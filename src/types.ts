@@ -80,11 +80,12 @@ export interface CollidableEntity {
     row: number;
     col: number;
   };
-  sprite: any;
-  scale: number;
+  sprite?: any;
+  spriteScale: number;
   collision: {
     width: number;
     height: number;
+    scale: number;
   };
 }
 

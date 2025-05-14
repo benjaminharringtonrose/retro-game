@@ -3,14 +3,16 @@ import { View, StyleSheet, useWindowDimensions } from "react-native";
 import { CollidableEntity } from "../types";
 import { TILE_SIZE } from "../constants/map";
 import Animated, { SharedValue, useAnimatedStyle } from "react-native-reanimated";
+import { Portal } from "../engine/types/PortalTypes";
 
 interface CollisionVisualizerProps {
   collidableEntities: CollidableEntity[];
   mapX: SharedValue<number>;
   mapY: SharedValue<number>;
+  portals?: Portal[];
 }
 
-export const CollisionVisualizer = ({ collidableEntities, mapX, mapY }: CollisionVisualizerProps) => {
+export const CollisionVisualizer = ({ collidableEntities, mapX, mapY, portals = [] }: CollisionVisualizerProps) => {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
   // Player collision box should be centered on screen with half tile size
@@ -38,6 +40,23 @@ export const CollisionVisualizer = ({ collidableEntities, mapX, mapY }: Collisio
     <View style={StyleSheet.absoluteFill}>
       <Animated.View style={playerCollisionStyle} />
       <Animated.View style={mapStyle}>
+        {/* Portal entry points */}
+        {portals.map((portal, index) => (
+          <View
+            key={`portal-${index}`}
+            style={[
+              styles.portalBox,
+              {
+                left: portal.entryPoint.bounds.x,
+                top: portal.entryPoint.bounds.y,
+                width: portal.entryPoint.bounds.width,
+                height: portal.entryPoint.bounds.height,
+              },
+            ]}
+          />
+        ))}
+
+        {/* Collision boxes */}
         {collidableEntities.map((entity, index) => {
           const size = {
             width: entity.collision.width * TILE_SIZE,
@@ -45,8 +64,8 @@ export const CollisionVisualizer = ({ collidableEntities, mapX, mapY }: Collisio
           };
 
           const scaledSize = {
-            width: size.width * entity.scale,
-            height: size.height * entity.scale,
+            width: size.width * entity.collision.scale,
+            height: size.height * entity.collision.scale,
           };
 
           const offset = {
@@ -84,6 +103,13 @@ const styles = StyleSheet.create({
     borderColor: "red",
     borderWidth: 2,
     backgroundColor: "rgba(255, 0, 0, 0.2)",
+    zIndex: 1000,
+  },
+  portalBox: {
+    position: "absolute",
+    borderColor: "green",
+    borderWidth: 2,
+    backgroundColor: "rgba(0, 255, 0, 0.2)",
     zIndex: 1000,
   },
 });
