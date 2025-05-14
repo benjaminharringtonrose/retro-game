@@ -72,10 +72,25 @@ export interface MapPosition {
   y: number;
 }
 
+export interface CollidableEntity {
+  type: string;
+  position: {
+    row: number;
+    col: number;
+  };
+  sprite: any;
+  scale: number;
+  collision: {
+    width: number;
+    height: number;
+  };
+}
+
 export interface MapData {
   name: string;
   initialPosition?: MapPosition;
   mapData: number[][];
+  collidableEntities?: CollidableEntity[];
 }
 
 export type MapConfig = Record<MapType, MapData>;

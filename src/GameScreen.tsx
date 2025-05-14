@@ -14,6 +14,7 @@ import { LoadingScreen } from "./components/LoadingScreen";
 import { Asset } from "expo-asset";
 import { useFonts } from "expo-font";
 import { ComponentType, InputComponent } from "./engine/types/components";
+import { CollisionSystem } from "./engine/systems/CollisionSystem";
 
 const CURRENT_MAP = MapType.FOREST;
 
@@ -146,20 +147,18 @@ export default function GameScreen() {
     []
   );
 
-  console.log("Loading state:", {
-    assetsLoaded,
-    fontsLoaded,
-    mapLoaded,
-    playerLoaded,
-    isLoading,
-    isAllLoaded,
-  });
+  // Add CollisionSystem when map is loaded
+  useEffect(() => {
+    if (mapLoaded && DEFAULT_MAPS[CURRENT_MAP].collidableEntities) {
+      engine.addSystem(new CollisionSystem(DEFAULT_MAPS[CURRENT_MAP].collidableEntities!));
+    }
+  }, [mapLoaded, engine]);
 
   return (
     <View style={styles.container}>
       <View style={styles.gameContainer}>
         <View style={[StyleSheet.absoluteFill, { zIndex: 1 }]}>
-          <Map mapX={mapX} mapY={mapY} tiles={mapData.tiles} tileSize={mapData.tileSize} mapType={CURRENT_MAP} onLoadComplete={() => setMapLoaded(true)} />
+          <Map mapX={mapX} mapY={mapY} tiles={DEFAULT_MAPS[CURRENT_MAP].mapData} tileSize={TILE_SIZE} mapType={CURRENT_MAP} collidableEntities={DEFAULT_MAPS[CURRENT_MAP].collidableEntities} onLoadComplete={() => setMapLoaded(true)} />
         </View>
         <View
           style={[

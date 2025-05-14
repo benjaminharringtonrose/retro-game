@@ -19,7 +19,7 @@ const App = () => {
 
   if (!ready) {
     // you can render a splash or null until assets are cached
-    return <View style={{ flex: 1, backgroundColor: "red" }} />;
+    return null;
   }
 
   return <GestureHandlerRootView style={{ flex: 1 }}>{started ? <GameScreen /> : <HomeScreen onStart={() => setStarted(true)} />}</GestureHandlerRootView>;

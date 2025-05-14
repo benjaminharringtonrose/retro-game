@@ -4,7 +4,7 @@ import { StyleSheet, View, FlatList, ListRenderItem, FlatListProps } from "react
 import Animated, { SharedValue, useAnimatedStyle } from "react-native-reanimated";
 import { Image } from "expo-image";
 
-import { Tile, MapType } from "../types";
+import { Tile, MapType, CollidableEntity } from "../types";
 
 const ASSETS = {
   tree: require("../assets/tree.png"),
@@ -18,6 +18,7 @@ export interface MapProps {
   tiles: Tile[][];
   tileSize: number;
   mapType: MapType;
+  collidableEntities?: CollidableEntity[];
   onLoadComplete?: () => void;
 }
 
@@ -39,7 +40,7 @@ const tileStyles: Record<Tile, any> = {
 
 const TREE_SCALE = 2.0;
 
-export const Map = React.memo(({ mapX, mapY, tiles, tileSize, mapType, onLoadComplete }: MapProps) => {
+export const Map = React.memo(({ mapX, mapY, tiles, tileSize, mapType, collidableEntities, onLoadComplete }: MapProps) => {
   const [backgroundLoaded, setBackgroundLoaded] = useState(false);
   const [treeLoadCount, setTreeLoadCount] = useState(0);
   const loadedTrees = useRef(new Set<string>());
@@ -191,6 +192,48 @@ export const Map = React.memo(({ mapX, mapY, tiles, tileSize, mapType, onLoadCom
         scrollEnabled={false}
         getItemLayout={getItemLayout}
       />
+
+      {/* Render collidable entities */}
+      {collidableEntities?.map((entity, index) => {
+        const position = {
+          top: entity.position.row * tileSize,
+          left: entity.position.col * tileSize,
+        };
+
+        const size = {
+          width: entity.collision.width * tileSize,
+          height: entity.collision.height * tileSize,
+        };
+
+        const scaledSize = {
+          width: size.width * entity.scale,
+          height: size.height * entity.scale,
+        };
+
+        const offset = {
+          left: (scaledSize.width - size.width) / 2,
+          top: (scaledSize.height - size.height) / 2,
+        };
+
+        return (
+          <View key={`entity-${index}`} style={[styles.entityWrapper, position, size]}>
+            <Image
+              source={entity.sprite}
+              style={[
+                styles.entityImage,
+                {
+                  width: scaledSize.width,
+                  height: scaledSize.height,
+                  left: -offset.left,
+                  top: -offset.top,
+                },
+              ]}
+              contentFit="contain"
+              cachePolicy="memory"
+            />
+          </View>
+        );
+      })}
     </Animated.View>
   );
 });
@@ -229,5 +272,12 @@ const styles = StyleSheet.create({
   tree: {
     position: "absolute",
     backgroundColor: "transparent",
+  },
+  entityWrapper: {
+    position: "absolute",
+    overflow: "visible",
+  },
+  entityImage: {
+    position: "absolute",
   },
 });

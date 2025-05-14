@@ -16,7 +16,7 @@ interface EntityComponents {
 }
 
 export class MovementSystem implements System {
-  private readonly WALKABLE_TILES = [Tile.Grass] as const;
+  private readonly WALKABLE_TILES = [Tile.Grass, Tile.Path] as const;
   private mapData: Tile[][];
   private cols: number;
   private rows: number;
@@ -312,7 +312,8 @@ export class MovementSystem implements System {
       return undefined;
     }
 
-    return this.mapData[tileRow][tileCol];
+    const tile = this.mapData[tileRow][tileCol];
+    return tile;
   }
 
   private getTileAt(row: number, col: number): Tile | undefined {

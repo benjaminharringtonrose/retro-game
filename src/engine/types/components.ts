@@ -48,6 +48,7 @@ export interface RenderComponent extends Component {
   spritesheet: any;
   currentFrame: number;
   direction: Vector2D;
+  animatedStyle?: any;
 }
 
 export interface CollisionComponent extends Component {

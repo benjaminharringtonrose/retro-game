@@ -1,7 +1,7 @@
 import { Component, ComponentType } from "./types/components";
-import { System } from "./types/engine";
+import { System, IGameEngine } from "./types/engine";
 
-export class GameEngine {
+export class GameEngine implements IGameEngine {
   private systems: System[] = [];
   private entities: Map<number, Set<Component>> = new Map();
   private nextEntityId: number = 1;

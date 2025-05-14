@@ -1,6 +1,26 @@
-import { MapType, MapConfig } from "../types";
+import { MapType, MapConfig, Tile, CollidableEntity } from "../types";
 
 export const TILE_SIZE = 64;
+
+// Define cabin properties
+const CABIN_SCALE = 4;
+const CABIN_SPRITE = require("../assets/cabin.png");
+
+// Create a function to generate collidable entities
+const createCollidableEntities = (): CollidableEntity[] => {
+  return [
+    {
+      type: "cabin",
+      position: { row: 14, col: 12 }, // Placing cabin in a clear area
+      sprite: CABIN_SPRITE,
+      scale: CABIN_SCALE,
+      collision: {
+        width: 1.5, // 1.5 tiles wide
+        height: 1.5, // 1.5 tiles high
+      },
+    },
+  ];
+};
 
 export const DEFAULT_MAPS: MapConfig = {
   [MapType.FOREST]: {
@@ -41,6 +61,7 @@ export const DEFAULT_MAPS: MapConfig = {
       [3, 3.2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3.2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3.2, 3, 3, 3],
       [3.2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3.2, 3, 3, 3.2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
     ],
+    collidableEntities: createCollidableEntities(),
   },
   [MapType.MOUNTAIN_PASS]: {
     name: "Mountain Pass",
