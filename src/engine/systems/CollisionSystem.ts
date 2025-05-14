@@ -56,11 +56,26 @@ export class CollisionSystem implements System {
       let collisionY = false;
 
       for (const entity of this.collidableEntities) {
+        const size = {
+          width: entity.collision.width * TILE_SIZE,
+          height: entity.collision.height * TILE_SIZE,
+        };
+
+        const scaledSize = {
+          width: size.width * entity.scale,
+          height: size.height * entity.scale,
+        };
+
+        const offset = {
+          left: (scaledSize.width - size.width) / 2,
+          top: (scaledSize.height - size.height) / 2,
+        };
+
         const entityBounds = {
-          left: entity.position.col * TILE_SIZE,
-          top: entity.position.row * TILE_SIZE,
-          right: (entity.position.col + entity.collision.width) * TILE_SIZE,
-          bottom: (entity.position.row + entity.collision.height) * TILE_SIZE,
+          left: entity.position.col * TILE_SIZE - offset.left,
+          top: entity.position.row * TILE_SIZE - offset.top,
+          right: entity.position.col * TILE_SIZE - offset.left + scaledSize.width,
+          bottom: entity.position.row * TILE_SIZE - offset.top + scaledSize.height,
         };
 
         // Test X movement

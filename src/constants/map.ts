@@ -15,8 +15,8 @@ const createCollidableEntities = (): CollidableEntity[] => {
       sprite: CABIN_SPRITE,
       scale: CABIN_SCALE,
       collision: {
-        width: 1.5, // 1.5 tiles wide
-        height: 1.5, // 1.5 tiles high
+        width: 1, // Base collision size (will be scaled)
+        height: 1, // Base collision size (will be scaled)
       },
     },
   ];

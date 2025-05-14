@@ -15,6 +15,8 @@ import { Asset } from "expo-asset";
 import { useFonts } from "expo-font";
 import { ComponentType, InputComponent } from "./engine/types/components";
 import { CollisionSystem } from "./engine/systems/CollisionSystem";
+import { CollisionVisualizer } from "./components/CollisionVisualizer";
+import { CollisionToggleButton } from "./components/CollisionToggleButton";
 
 const CURRENT_MAP = MapType.FOREST;
 
@@ -38,6 +40,7 @@ export default function GameScreen() {
   const [assetsLoaded, setAssetsLoaded] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [playerLoaded, setPlayerLoaded] = useState(false);
+  const [showCollisions, setShowCollisions] = useState(false);
 
   const [fontsLoaded] = useFonts({
     PressStart2P: require("./assets/fonts/PressStart2P-Regular.ttf"),
@@ -154,12 +157,25 @@ export default function GameScreen() {
     }
   }, [mapLoaded, engine]);
 
+  // Calculate player world position
+  const playerWorldPosition = useMemo(() => {
+    return {
+      x: wWidth / 2 + offsetX.value,
+      y: wHeight / 2 + offsetY.value,
+    };
+  }, [wWidth, wHeight, offsetX.value, offsetY.value]);
+
   return (
     <View style={styles.container}>
       <View style={styles.gameContainer}>
         <View style={[StyleSheet.absoluteFill, { zIndex: 1 }]}>
           <Map mapX={mapX} mapY={mapY} tiles={DEFAULT_MAPS[CURRENT_MAP].mapData} tileSize={TILE_SIZE} mapType={CURRENT_MAP} collidableEntities={DEFAULT_MAPS[CURRENT_MAP].collidableEntities} onLoadComplete={() => setMapLoaded(true)} />
         </View>
+        {showCollisions && DEFAULT_MAPS[CURRENT_MAP].collidableEntities && (
+          <View style={[StyleSheet.absoluteFill, { zIndex: 1500 }]}>
+            <CollisionVisualizer collidableEntities={DEFAULT_MAPS[CURRENT_MAP].collidableEntities} playerPosition={playerWorldPosition} mapX={mapX} mapY={mapY} />
+          </View>
+        )}
         <View
           style={[
             StyleSheet.absoluteFill,
@@ -180,6 +196,7 @@ export default function GameScreen() {
       </View>
       <View style={[styles.controls, { zIndex: 3000, elevation: 3000 }]}>
         <Pad setDirection={handleDirectionChange} setIsMoving={handleMovingChange} />
+        <CollisionToggleButton isVisible={showCollisions} onToggle={() => setShowCollisions(!showCollisions)} />
       </View>
       {isLoading && <LoadingScreen isLoaded={isAllLoaded} onStart={handleGameStart} />}
     </View>
@@ -203,5 +220,9 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     height: 200,
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    flexDirection: "row",
+    paddingHorizontal: 20,
   },
 });
