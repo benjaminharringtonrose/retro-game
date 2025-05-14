@@ -19,6 +19,7 @@ export interface MapProps {
   tileSize: number;
   mapType: MapType;
   collidableEntities?: CollidableEntity[];
+  background?: any; // Optional background image
   onLoadComplete?: () => void;
 }
 
@@ -40,7 +41,7 @@ const tileStyles: Record<Tile, any> = {
 
 const TREE_SCALE = 2.0;
 
-export const Map = React.memo(({ mapX, mapY, tiles, tileSize, mapType, collidableEntities, onLoadComplete }: MapProps) => {
+export const Map = React.memo(({ mapX, mapY, tiles, tileSize, mapType, collidableEntities, background, onLoadComplete }: MapProps) => {
   const [backgroundLoaded, setBackgroundLoaded] = useState(false);
   const [treeLoadCount, setTreeLoadCount] = useState(0);
   const loadedTrees = useRef(new Set<string>());
@@ -52,7 +53,7 @@ export const Map = React.memo(({ mapX, mapY, tiles, tileSize, mapType, collidabl
 
   // Check if everything is loaded
   useEffect(() => {
-    const isComplete = backgroundLoaded && treeLoadCount === totalTrees;
+    const isComplete = (!background || backgroundLoaded) && treeLoadCount === totalTrees;
 
     if (isComplete) {
       onLoadComplete?.();
@@ -64,7 +65,7 @@ export const Map = React.memo(({ mapX, mapY, tiles, tileSize, mapType, collidabl
         complete: isComplete,
       });
     }
-  }, [backgroundLoaded, treeLoadCount, totalTrees, onLoadComplete]);
+  }, [background, backgroundLoaded, treeLoadCount, totalTrees, onLoadComplete]);
 
   const handleTreeLoad = useCallback(
     (treeKey: string) => {
@@ -128,15 +129,11 @@ export const Map = React.memo(({ mapX, mapY, tiles, tileSize, mapType, collidabl
           width: mapWidth + padding * 2,
           height: mapHeight + padding * 2,
           padding,
-          backgroundColor: "transparent",
+          backgroundColor: "#6C9A0A", // Default grass color
         },
       ]}
     >
-      {mapType === MapType.FOREST && (
-        <View style={[styles.background, { width: mapWidth, height: mapHeight }]}>
-          <Image source={ASSETS.forestBackground} style={[{ width: mapWidth, height: mapHeight }]} contentFit="cover" cachePolicy="memory-disk" onLoadEnd={handleBackgroundLoad} onError={handleBackgroundError} />
-        </View>
-      )}
+      {background && <Image source={background} style={[styles.background, { width: mapWidth, height: mapHeight }]} contentFit="cover" onLoad={() => setBackgroundLoaded(true)} />}
       <Animated.FlatList
         data={flattenedTiles}
         renderItem={({ item }) => {

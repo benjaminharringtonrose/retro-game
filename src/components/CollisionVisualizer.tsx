@@ -1,44 +1,43 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, useWindowDimensions } from "react-native";
 import { CollidableEntity } from "../types";
 import { TILE_SIZE } from "../constants/map";
-import Animated, { useAnimatedStyle } from "react-native-reanimated";
+import Animated, { SharedValue, useAnimatedStyle } from "react-native-reanimated";
 
 interface CollisionVisualizerProps {
   collidableEntities: CollidableEntity[];
-  playerPosition: {
-    x: number;
-    y: number;
-  };
-  mapX: Animated.SharedValue<number>;
-  mapY: Animated.SharedValue<number>;
+  mapX: SharedValue<number>;
+  mapY: SharedValue<number>;
 }
 
-export const CollisionVisualizer: React.FC<CollisionVisualizerProps> = ({ collidableEntities, playerPosition, mapX, mapY }) => {
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ translateX: mapX.value }, { translateY: mapY.value }],
-    };
-  });
+export const CollisionVisualizer = ({ collidableEntities, mapX, mapY }: CollisionVisualizerProps) => {
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+
+  // Player collision box should be centered on screen with half tile size
+  const playerCollisionStyle = useAnimatedStyle(() => ({
+    position: "absolute",
+    width: TILE_SIZE / 2,
+    height: TILE_SIZE / 2,
+    left: screenWidth / 2 - TILE_SIZE / 4,
+    top: screenHeight / 2 - TILE_SIZE / 4,
+    borderColor: "red",
+    borderWidth: 2,
+    backgroundColor: "rgba(255, 0, 0, 0.2)",
+    zIndex: 2000,
+  }));
+
+  // Entity collisions should move with the map
+  const mapStyle = useAnimatedStyle(() => ({
+    position: "absolute",
+    width: "100%",
+    height: "100%",
+    transform: [{ translateX: mapX.value }, { translateY: mapY.value }],
+  }));
 
   return (
     <View style={StyleSheet.absoluteFill}>
-      {/* Player collision box */}
-      <View
-        style={[
-          styles.collisionBox,
-          styles.playerBox,
-          {
-            left: playerPosition.x - TILE_SIZE / 4,
-            top: playerPosition.y - TILE_SIZE / 4,
-            width: TILE_SIZE / 2,
-            height: TILE_SIZE / 2,
-          },
-        ]}
-      />
-
-      {/* Entity collision boxes */}
-      <Animated.View style={[StyleSheet.absoluteFill, animatedStyle]}>
+      <Animated.View style={playerCollisionStyle} />
+      <Animated.View style={mapStyle}>
         {collidableEntities.map((entity, index) => {
           const size = {
             width: entity.collision.width * TILE_SIZE,
@@ -55,14 +54,24 @@ export const CollisionVisualizer: React.FC<CollisionVisualizerProps> = ({ collid
             top: (scaledSize.height - size.height) / 2,
           };
 
-          const bounds = {
+          const position = {
             left: entity.position.col * TILE_SIZE - offset.left,
             top: entity.position.row * TILE_SIZE - offset.top,
-            width: scaledSize.width,
-            height: scaledSize.height,
           };
 
-          return <View key={`collision-${index}`} style={[styles.collisionBox, styles.entityBox, bounds]} />;
+          return (
+            <View
+              key={`collision-${index}`}
+              style={[
+                styles.collisionBox,
+                {
+                  ...position,
+                  width: scaledSize.width,
+                  height: scaledSize.height,
+                },
+              ]}
+            />
+          );
         })}
       </Animated.View>
     </View>
@@ -72,16 +81,9 @@ export const CollisionVisualizer: React.FC<CollisionVisualizerProps> = ({ collid
 const styles = StyleSheet.create({
   collisionBox: {
     position: "absolute",
-    borderWidth: 1,
-  },
-  playerBox: {
-    backgroundColor: "rgba(255, 0, 0, 0.3)",
-    borderColor: "rgba(255, 0, 0, 0.7)",
-    zIndex: 2000,
-  },
-  entityBox: {
+    borderColor: "red",
+    borderWidth: 2,
     backgroundColor: "rgba(255, 0, 0, 0.2)",
-    borderColor: "rgba(255, 0, 0, 0.5)",
     zIndex: 1000,
   },
 });

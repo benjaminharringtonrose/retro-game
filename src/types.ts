@@ -1,5 +1,6 @@
 import { MapProps } from "./components/Map";
 import { PlayerProps } from "./components/Player";
+import { Portal } from "./engine/types/PortalTypes";
 
 export interface Controls {
   up: boolean;
@@ -65,6 +66,7 @@ export enum Tile {
 export enum MapType {
   FOREST = "FOREST",
   MOUNTAIN_PASS = "MOUNTAIN_PASS",
+  CABIN_INTERIOR = "CABIN_INTERIOR",
 }
 
 export interface MapPosition {
@@ -91,6 +93,8 @@ export interface MapData {
   initialPosition?: MapPosition;
   mapData: number[][];
   collidableEntities?: CollidableEntity[];
+  portals?: Portal[];
+  background?: any; // Asset require() result
 }
 
 export type MapConfig = Record<MapType, MapData>;

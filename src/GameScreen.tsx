@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { StyleSheet, useWindowDimensions, View } from "react-native";
-import { useSharedValue } from "react-native-reanimated";
+import { useSharedValue, useAnimatedStyle } from "react-native-reanimated";
 import { Direction, MapType, MapPosition } from "./types";
 import { Map } from "./components/Map";
 import { Player } from "./components/Player";
@@ -17,8 +17,9 @@ import { ComponentType, InputComponent } from "./engine/types/components";
 import { CollisionSystem } from "./engine/systems/CollisionSystem";
 import { CollisionVisualizer } from "./components/CollisionVisualizer";
 import { CollisionToggleButton } from "./components/CollisionToggleButton";
+import { PortalSystem } from "./engine/systems/PortalSystem";
 
-const CURRENT_MAP = MapType.FOREST;
+const INITIAL_MAP = MapType.FOREST;
 
 const DEFAULT_POSITION: MapPosition = {
   x: 0,
@@ -41,6 +42,7 @@ export default function GameScreen() {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [playerLoaded, setPlayerLoaded] = useState(false);
   const [showCollisions, setShowCollisions] = useState(false);
+  const [currentMap, setCurrentMap] = useState<MapType>(INITIAL_MAP);
 
   const [fontsLoaded] = useFonts({
     PressStart2P: require("./assets/fonts/PressStart2P-Regular.ttf"),
@@ -75,8 +77,15 @@ export default function GameScreen() {
     setIsLoading(false);
   }, []);
 
+  // Handle map transitions
+  const handleMapTransition = useCallback((newMapType: MapType) => {
+    console.log("Transitioning to map:", newMapType);
+    setCurrentMap(newMapType);
+    setMapLoaded(false);
+  }, []);
+
   // Get initial position from map config
-  const initialPosition = useMemo(() => DEFAULT_MAPS[CURRENT_MAP].initialPosition ?? DEFAULT_POSITION, []);
+  const initialPosition = useMemo(() => DEFAULT_MAPS[currentMap]?.initialPosition ?? { x: 0, y: 0 }, [currentMap]);
 
   // Create shared values with memoized initial values
   const mapX = useSharedValue(initialPosition.x);
@@ -144,36 +153,51 @@ export default function GameScreen() {
   // Memoize map data to prevent unnecessary re-renders
   const mapData = useMemo(
     () => ({
-      tiles: DEFAULT_MAPS[CURRENT_MAP].mapData,
+      tiles: DEFAULT_MAPS[currentMap].mapData,
       tileSize: TILE_SIZE,
     }),
-    []
+    [currentMap]
   );
 
-  // Add CollisionSystem when map is loaded
+  // Add systems when map is loaded
   useEffect(() => {
-    if (mapLoaded && DEFAULT_MAPS[CURRENT_MAP].collidableEntities) {
-      engine.addSystem(new CollisionSystem(DEFAULT_MAPS[CURRENT_MAP].collidableEntities!));
+    if (mapLoaded && DEFAULT_MAPS[currentMap]) {
+      console.log("Setting up systems for map:", currentMap);
+      if (DEFAULT_MAPS[currentMap].collidableEntities) {
+        engine.addSystem(new CollisionSystem(DEFAULT_MAPS[currentMap].collidableEntities!));
+      }
+      if (DEFAULT_MAPS[currentMap].portals) {
+        engine.addSystem(new PortalSystem(DEFAULT_MAPS[currentMap].portals!, handleMapTransition));
+      }
     }
-  }, [mapLoaded, engine]);
+  }, [mapLoaded, engine, currentMap, handleMapTransition]);
 
   // Calculate player world position
   const playerWorldPosition = useMemo(() => {
     return {
-      x: wWidth / 2 + offsetX.value,
-      y: wHeight / 2 + offsetY.value,
+      x: wWidth / 2,
+      y: wHeight / 2,
     };
-  }, [wWidth, wHeight, offsetX.value, offsetY.value]);
+  }, [wWidth, wHeight]);
 
   return (
     <View style={styles.container}>
       <View style={styles.gameContainer}>
         <View style={[StyleSheet.absoluteFill, { zIndex: 1 }]}>
-          <Map mapX={mapX} mapY={mapY} tiles={DEFAULT_MAPS[CURRENT_MAP].mapData} tileSize={TILE_SIZE} mapType={CURRENT_MAP} collidableEntities={DEFAULT_MAPS[CURRENT_MAP].collidableEntities} onLoadComplete={() => setMapLoaded(true)} />
+          <Map
+            mapX={mapX}
+            mapY={mapY}
+            tiles={DEFAULT_MAPS[currentMap].mapData}
+            tileSize={TILE_SIZE}
+            mapType={currentMap}
+            collidableEntities={DEFAULT_MAPS[currentMap].collidableEntities}
+            background={DEFAULT_MAPS[currentMap].background}
+            onLoadComplete={() => setMapLoaded(true)}
+          />
         </View>
-        {showCollisions && DEFAULT_MAPS[CURRENT_MAP].collidableEntities && (
+        {showCollisions && DEFAULT_MAPS[currentMap].collidableEntities && (
           <View style={[StyleSheet.absoluteFill, { zIndex: 1500 }]}>
-            <CollisionVisualizer collidableEntities={DEFAULT_MAPS[CURRENT_MAP].collidableEntities} playerPosition={playerWorldPosition} mapX={mapX} mapY={mapY} />
+            <CollisionVisualizer collidableEntities={DEFAULT_MAPS[currentMap].collidableEntities} mapX={mapX} mapY={mapY} />
           </View>
         )}
         <View
