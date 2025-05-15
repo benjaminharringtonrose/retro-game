@@ -37,7 +37,6 @@ export interface PlayerProps {
 
 export const Player = ({ direction, isMoving, centerX, centerY, currentFrame, offsetX, offsetY, onLoadComplete }: PlayerProps) => {
   const containerStyle = useAnimatedStyle(() => {
-    "worklet";
     return {
       position: "absolute",
       left: centerX.value - (SPRITE_W * SPRITE_SCALE) / 2 + offsetX.value,
@@ -50,7 +49,6 @@ export const Player = ({ direction, isMoving, centerX, centerY, currentFrame, of
   });
 
   const spriteStyle = useAnimatedStyle(() => {
-    "worklet";
     return {
       position: "absolute",
       width: SPRITE_W * 3 * SPRITE_SCALE,

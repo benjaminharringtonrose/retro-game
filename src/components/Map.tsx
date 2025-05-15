@@ -89,9 +89,11 @@ export const Map = React.memo(({ mapX, mapY, tiles, tileSize, mapType, collidabl
     console.error("Failed to load background:", error);
   }, []);
 
-  const mapAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: mapX.value }, { translateY: mapY.value }],
-  }));
+  const mapAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateX: mapX.value }, { translateY: mapY.value }],
+    };
+  }, []);
 
   // Calculate padding needed for the container
   const padding = useMemo(() => Math.ceil((TREE_SCALE - 1) * tileSize), [tileSize]);
@@ -99,6 +101,20 @@ export const Map = React.memo(({ mapX, mapY, tiles, tileSize, mapType, collidabl
   // Calculate map dimensions
   const mapWidth = useMemo(() => tiles[0].length * tileSize, [tiles, tileSize]);
   const mapHeight = useMemo(() => tiles.length * tileSize, [tiles, tileSize]);
+
+  // Create an animated container style that combines all the static and animated styles
+  const containerStyle = useMemo(
+    () => [
+      styles.container,
+      {
+        width: mapWidth + padding * 2,
+        height: mapHeight + padding * 2,
+        padding,
+        backgroundColor: "#6C9A0A", // Default grass color
+      },
+    ],
+    [mapWidth, mapHeight, padding]
+  );
 
   // Flatten the 2D array into 1D for FlatList
   const flattenedTiles = useMemo(
@@ -121,20 +137,10 @@ export const Map = React.memo(({ mapX, mapY, tiles, tileSize, mapType, collidabl
   });
 
   return (
-    <Animated.View
-      style={[
-        styles.container,
-        mapAnimatedStyle,
-        {
-          width: mapWidth + padding * 2,
-          height: mapHeight + padding * 2,
-          padding,
-          backgroundColor: "#6C9A0A", // Default grass color
-        },
-      ]}
-    >
-      {background && <Image source={background} style={[styles.background, { width: mapWidth, height: mapHeight }]} contentFit="cover" onLoad={() => setBackgroundLoaded(true)} />}
+    <Animated.View style={[containerStyle, mapAnimatedStyle]}>
+      {background && <Image source={background} style={[styles.background, { width: mapWidth, height: mapHeight }]} contentFit="cover" onLoad={handleBackgroundLoad} onError={handleBackgroundError} />}
       <Animated.FlatList
+        key={`map-${tiles[0].length}`}
         data={flattenedTiles}
         renderItem={({ item }) => {
           const position = {

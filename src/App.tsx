@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
-import GameScreen from "./GameScreen";
+import GameScreen from "./navigation/screens/GameScreen";
 import { HomeScreen } from "./navigation/screens/HomeScreen";
 import { useCachedAssets } from "./hooks/useCachedAssets";
 import { View } from "react-native";

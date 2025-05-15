@@ -20,11 +20,12 @@ export const LoadingScreen = ({ isLoaded = false, onStart }: LoadingScreenProps)
   const pressScale = useSharedValue(1);
   const barScale = useSharedValue(1);
   const progress = useSharedValue(0);
+  const [progressText, setProgressText] = useState("0");
 
   // Animate loading progress
   useEffect(() => {
+    progress.value = 0;
     if (isLoaded) {
-      // Animate to 100% and trigger pulse
       progress.value = withTiming(
         100,
         {
@@ -52,12 +53,18 @@ export const LoadingScreen = ({ isLoaded = false, onStart }: LoadingScreenProps)
         }
       );
     } else {
-      // Start from 0 and smoothly animate to 99%
-      progress.value = 0;
-      progress.value = withTiming(99, {
-        duration: 8000,
-        easing: Easing.bezier(0.1, 0.1, 0.25, 1), // Slower at start, smoother throughout
-      });
+      progress.value = withTiming(
+        99,
+        {
+          duration: 8000,
+          easing: Easing.bezier(0.1, 0.1, 0.25, 1),
+        },
+        (finished) => {
+          if (finished) {
+            runOnJS(setProgressText)("99");
+          }
+        }
+      );
     }
   }, [isLoaded]);
 
@@ -138,9 +145,12 @@ export const LoadingScreen = ({ isLoaded = false, onStart }: LoadingScreenProps)
     opacity: barScale.value,
   }));
 
-  const progressStyle = useAnimatedStyle(() => ({
-    width: `${progress.value}%`,
-  }));
+  const progressAnimatedStyle = useAnimatedStyle(() => {
+    runOnJS(setProgressText)(Math.round(progress.value).toString());
+    return {
+      width: `${progress.value}%`,
+    };
+  });
 
   const handlePressIn = () => {
     if (!canStart) return;
@@ -172,9 +182,9 @@ export const LoadingScreen = ({ isLoaded = false, onStart }: LoadingScreenProps)
         {showLoadingBar && (
           <Animated.View style={[styles.loadingBarContainer, barAnimatedStyle]}>
             <View style={styles.loadingBarBackground}>
-              <Animated.View style={[styles.loadingBarFill, progressStyle]} />
+              <Animated.View style={[styles.loadingBarFill, progressAnimatedStyle]} />
             </View>
-            <Text style={styles.loadingPercent}>{Math.round(progress.value)}%</Text>
+            <Text style={styles.loadingPercent}>{progressText}%</Text>
           </Animated.View>
         )}
       </View>

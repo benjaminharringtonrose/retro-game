@@ -1,23 +1,23 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { StyleSheet, useWindowDimensions, View } from "react-native";
 import { useSharedValue, useAnimatedStyle } from "react-native-reanimated";
-import { Direction, MapType, MapPosition } from "./types";
-import { Map } from "./components/Map";
-import { Player } from "./components/Player";
-import { DEFAULT_MAPS, TILE_SIZE } from "./constants/map";
-import { Pad } from "./components/Pad";
-import { EntityType } from "./engine/types/EntityTypes";
-import { useGameEngine } from "./hooks/useGameEngine";
-import { usePlayerAnimation } from "./hooks/usePlayerAnimation";
-import { usePlayerInput } from "./hooks/usePlayerInput";
-import { LoadingScreen } from "./components/LoadingScreen";
+import { Direction, MapType, MapPosition } from "../../types";
+import { Map } from "../../components/Map";
+import { Player } from "../../components/Player";
+import { DEFAULT_MAPS, TILE_SIZE } from "../../constants/map";
+import { Pad } from "../../components/Pad";
+import { EntityType } from "../../engine/types/EntityTypes";
+import { useGameEngine } from "../../hooks/useGameEngine";
+import { usePlayerAnimation } from "../../hooks/usePlayerAnimation";
+import { usePlayerInput } from "../../hooks/usePlayerInput";
+import { LoadingScreen } from "../../components/LoadingScreen";
 import { Asset } from "expo-asset";
 import { useFonts } from "expo-font";
-import { ComponentType, InputComponent } from "./engine/types/components";
-import { CollisionSystem } from "./engine/systems/CollisionSystem";
-import { CollisionVisualizer } from "./components/CollisionVisualizer";
-import { CollisionToggleButton } from "./components/CollisionToggleButton";
-import { PortalSystem } from "./engine/systems/PortalSystem";
+import { ComponentType, InputComponent } from "../../engine/types/components";
+import { CollisionSystem } from "../../engine/systems/CollisionSystem";
+import { CollisionVisualizer } from "../../components/CollisionVisualizer";
+import { CollisionToggleButton } from "../../components/CollisionToggleButton";
+import { PortalSystem } from "../../engine/systems/PortalSystem";
 
 const INITIAL_MAP = MapType.FOREST;
 
@@ -28,10 +28,10 @@ const DEFAULT_POSITION: MapPosition = {
 
 // Define assets with their module IDs
 const GAME_ASSETS = {
-  characterSpritesheet: require("./assets/character-spritesheet.png"),
-  tree: require("./assets/tree.png"),
-  tree2: require("./assets/tree-2.png"),
-  forestBackground: require("./assets/forest-background.png"),
+  characterSpritesheet: require("../../assets/character-spritesheet.png"),
+  tree: require("../../assets/tree.png"),
+  tree2: require("../../assets/tree-2.png"),
+  forestBackground: require("../../assets/forest-background.png"),
 };
 
 export default function GameScreen() {
@@ -45,7 +45,7 @@ export default function GameScreen() {
   const [currentMap, setCurrentMap] = useState<MapType>(INITIAL_MAP);
 
   const [fontsLoaded] = useFonts({
-    PressStart2P: require("./assets/fonts/PressStart2P-Regular.ttf"),
+    PressStart2P: require("../../assets/fonts/PressStart2P-Regular.ttf"),
   });
 
   // Preload assets
@@ -98,14 +98,20 @@ export default function GameScreen() {
   const directionValue = useSharedValue(Direction.Down);
   const isMovingValue = useSharedValue(false);
 
-  const [direction, setDirection] = useState(Direction.Down);
-  const [isMoving, setIsMoving] = useState(false);
-
-  // Initialize player position
+  // Update shared values when window dimensions change
   useEffect(() => {
     playerCenterX.value = wWidth / 2;
     playerCenterY.value = wHeight / 2;
   }, [wWidth, wHeight]);
+
+  // Update shared values when initial position changes
+  useEffect(() => {
+    mapX.value = initialPosition.x;
+    mapY.value = initialPosition.y;
+  }, [initialPosition.x, initialPosition.y]);
+
+  const [direction, setDirection] = useState(Direction.Down);
+  const [isMoving, setIsMoving] = useState(false);
 
   // Memoize the player creation to prevent recreation on every render
   useEffect(() => {
