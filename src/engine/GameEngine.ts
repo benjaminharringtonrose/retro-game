@@ -7,12 +7,18 @@ export class GameEngine implements IGameEngine {
   private nextEntityId: number = 1;
   private isRunning: boolean = false;
   private lastTimestamp: number = 0;
-  private componentCache: Map<string, number[]> = new Map();
+  private componentCache: Map<string, { result: number[]; timestamp: number }> = new Map();
   private frameCount: number = 0;
   private readonly CACHE_RESET_FRAMES = 60; // Reset cache every 60 frames
+  private readonly MAX_CACHE_SIZE = 100;
+  private readonly CACHE_TTL = 5000; // 5 seconds TTL
 
   addSystem(system: System) {
     this.systems.push(system);
+  }
+
+  clearSystems() {
+    this.systems = [];
   }
 
   createEntity(): number {
@@ -48,29 +54,39 @@ export class GameEngine implements IGameEngine {
     return undefined;
   }
 
-  getEntitiesWithComponents(componentTypes: ComponentType[]): number[] {
-    // Create a cache key from the component types
-    const cacheKey = componentTypes.sort().join(",");
-
-    // Check if we have a cached result
-    const cached = this.componentCache.get(cacheKey);
-    if (cached) {
-      return cached;
+  private cleanCache() {
+    const now = performance.now();
+    for (const [key, value] of this.componentCache) {
+      if (now - value.timestamp > this.CACHE_TTL) {
+        this.componentCache.delete(key);
+      }
     }
 
-    // If not cached, compute the result
+    // If still too many entries, remove oldest
+    if (this.componentCache.size > this.MAX_CACHE_SIZE) {
+      const entries = Array.from(this.componentCache.entries());
+      entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+      const toRemove = entries.slice(0, entries.length - this.MAX_CACHE_SIZE);
+      for (const [key] of toRemove) {
+        this.componentCache.delete(key);
+      }
+    }
+  }
+
+  getEntitiesWithComponents(componentTypes: ComponentType[]): number[] {
+    const cacheKey = componentTypes.sort().join(",");
+    const now = performance.now();
+
+    const cached = this.componentCache.get(cacheKey);
+    if (cached && now - cached.timestamp < this.CACHE_TTL) {
+      return cached.result;
+    }
+
     const result = [];
     for (const [entityId, components] of this.entities) {
       let hasAll = true;
       for (const type of componentTypes) {
-        let found = false;
-        for (const component of components) {
-          if (component.type === type) {
-            found = true;
-            break;
-          }
-        }
-        if (!found) {
+        if (!Array.from(components).some((comp) => comp.type === type)) {
           hasAll = false;
           break;
         }
@@ -80,8 +96,8 @@ export class GameEngine implements IGameEngine {
       }
     }
 
-    // Cache the result
-    this.componentCache.set(cacheKey, result);
+    this.componentCache.set(cacheKey, { result, timestamp: now });
+    this.cleanCache();
     return result;
   }
 

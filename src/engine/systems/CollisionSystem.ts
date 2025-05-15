@@ -4,136 +4,98 @@ import { ComponentType, MovementComponent, InputComponent, TransformComponent } 
 import { TILE_SIZE } from "../../constants/map";
 import { CollidableEntity } from "../../types";
 
-export class CollisionSystem implements System {
-  private collidableEntities: CollidableEntity[];
-  private debugFrameCount = 0;
-
-  constructor(collidableEntities: CollidableEntity[]) {
-    this.collidableEntities = collidableEntities;
-  }
-
-  update(engine: GameEngine, deltaTime: number): void {
-    const shouldLog = this.debugFrameCount % 30 === 0;
-    this.debugFrameCount++;
-
-    const entities = engine.getEntitiesWithComponents([ComponentType.Movement, ComponentType.Input, ComponentType.Transform]);
-
-    for (const entityId of entities) {
-      const movement = engine.getComponent<MovementComponent>(entityId, ComponentType.Movement);
-      const input = engine.getComponent<InputComponent>(entityId, ComponentType.Input);
-      const transform = engine.getComponent<TransformComponent>(entityId, ComponentType.Transform);
-
-      if (!movement || !input || !transform) continue;
-      if (!input.isMoving) continue;
-
-      const speed = 5;
-      const dx = input.direction.x * speed;
-      const dy = input.direction.y * speed;
-
-      // Calculate world positions
-      const currentWorldX = transform.position.x - movement.mapX.value;
-      const currentWorldY = transform.position.y - movement.mapY.value;
-      const nextWorldX = currentWorldX - dx; // Note the negative dx because map moves opposite to player
-      const nextWorldY = currentWorldY - dy; // Note the negative dy because map moves opposite to player
-
-      if (shouldLog) {
-        console.log("Position Debug:", {
-          currentWorld: { x: currentWorldX, y: currentWorldY },
-          nextWorld: { x: nextWorldX, y: nextWorldY },
-          movement: { dx, dy },
-          mapPos: { x: movement.mapX.value, y: movement.mapY.value },
-        });
-      }
-
-      // Player hitbox (smaller than tile size)
-      const playerHitbox = {
-        width: TILE_SIZE / 2,
-        height: TILE_SIZE / 2,
-      };
-
-      // Check collisions for each axis separately
-      let collisionX = false;
-      let collisionY = false;
-
-      for (const entity of this.collidableEntities) {
-        const size = {
-          width: entity.collision.width * TILE_SIZE,
-          height: entity.collision.height * TILE_SIZE,
-        };
-
-        const scaledSize = {
-          width: size.width * entity.collision.scale,
-          height: size.height * entity.collision.scale,
-        };
-
-        const offset = {
-          left: (scaledSize.width - size.width) / 2,
-          top: (scaledSize.height - size.height) / 2,
-        };
-
-        const entityBounds = {
-          left: entity.position.col * TILE_SIZE - offset.left,
-          top: entity.position.row * TILE_SIZE - offset.top,
-          right: entity.position.col * TILE_SIZE - offset.left + scaledSize.width,
-          bottom: entity.position.row * TILE_SIZE - offset.top + scaledSize.height,
-        };
-
-        // Test X movement
-        const playerBoundsX = {
-          left: nextWorldX - playerHitbox.width / 2,
-          right: nextWorldX + playerHitbox.width / 2,
-          top: currentWorldY - playerHitbox.height / 2,
-          bottom: currentWorldY + playerHitbox.height / 2,
-        };
-
-        // Test Y movement
-        const playerBoundsY = {
-          left: currentWorldX - playerHitbox.width / 2,
-          right: currentWorldX + playerHitbox.width / 2,
-          top: nextWorldY - playerHitbox.height / 2,
-          bottom: nextWorldY + playerHitbox.height / 2,
-        };
-
-        if (dx !== 0 && this.checkCollision(playerBoundsX, entityBounds)) {
-          collisionX = true;
-          if (shouldLog) {
-            console.log("X Collision detected", { playerBoundsX, entityBounds });
-          }
-        }
-
-        if (dy !== 0 && this.checkCollision(playerBoundsY, entityBounds)) {
-          collisionY = true;
-          if (shouldLog) {
-            console.log("Y Collision detected", { playerBoundsY, entityBounds });
-          }
-        }
-      }
-
-      // Apply collision response
-      if (collisionX) {
-        // Only prevent the movement in the collision direction
-        movement.mapX.value = movement.mapX.value;
-      } else {
-        movement.mapX.value += dx;
-      }
-
-      if (collisionY) {
-        // Only prevent the movement in the collision direction
-        movement.mapY.value = movement.mapY.value;
-      } else {
-        movement.mapY.value += dy;
-      }
-    }
-  }
-
-  private checkCollision(a: Bounds, b: Bounds): boolean {
-    return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
-  }
-}
+// Define player hitbox size, matching what's in MovementSystem
+const PLAYER_HITBOX = {
+  width: TILE_SIZE / 2,
+  height: TILE_SIZE / 2,
+};
 
 interface Bounds {
   left: number;
   right: number;
   top: number;
   bottom: number;
+}
+
+export class CollisionSystem implements System {
+  private collidableEntities: CollidableEntity[];
+  private debugFrameCount = 0;
+
+  constructor(collidableEntities: CollidableEntity[]) {
+    this.collidableEntities = collidableEntities || [];
+    console.log(`CollisionSystem initialized with ${this.collidableEntities.length} entities`);
+  }
+
+  update(engine: GameEngine, deltaTime: number): void {
+    // We're not handling movement here anymore - that's the MovementSystem's job
+    // This is now just a verification system to ensure collisions are being detected correctly
+
+    const shouldLog = this.debugFrameCount % 60 === 0; // Less frequent logging
+    this.debugFrameCount++;
+
+    // Only run the verification if we should log
+    if (!shouldLog) return;
+
+    const entities = engine.getEntitiesWithComponents([ComponentType.Movement, ComponentType.Transform]);
+
+    for (const entityId of entities) {
+      const movement = engine.getComponent<MovementComponent>(entityId, ComponentType.Movement);
+      const transform = engine.getComponent<TransformComponent>(entityId, ComponentType.Transform);
+
+      if (!movement || !transform) continue;
+
+      // Calculate world position (center of player)
+      const worldX = -movement.mapX.value + transform.position.x;
+      const worldY = -movement.mapY.value + transform.position.y;
+
+      // Create player bounds
+      const playerBounds = {
+        left: worldX - PLAYER_HITBOX.width / 2,
+        right: worldX + PLAYER_HITBOX.width / 2,
+        top: worldY - PLAYER_HITBOX.height / 2,
+        bottom: worldY + PLAYER_HITBOX.height / 2,
+      };
+
+      // Check for any entity collisions
+      for (const entity of this.collidableEntities) {
+        const entityBounds = this.getEntityBounds(entity);
+
+        if (this.checkCollision(playerBounds, entityBounds)) {
+          console.warn("COLLISION DETECTED: Player overlapping with entity", {
+            entity: entity.type,
+            playerPos: { x: worldX, y: worldY },
+            entityPos: { row: entity.position.row, col: entity.position.col },
+          });
+        }
+      }
+    }
+  }
+
+  private getEntityBounds(entity: CollidableEntity): Bounds {
+    const size = {
+      width: entity.collision.width * TILE_SIZE,
+      height: entity.collision.height * TILE_SIZE,
+    };
+
+    const scaledSize = {
+      width: size.width * entity.collision.scale,
+      height: size.height * entity.collision.scale,
+    };
+
+    const offset = {
+      left: (scaledSize.width - size.width) / 2,
+      top: (scaledSize.height - size.height) / 2,
+    };
+
+    return {
+      left: entity.position.col * TILE_SIZE - offset.left,
+      top: entity.position.row * TILE_SIZE - offset.top,
+      right: entity.position.col * TILE_SIZE - offset.left + scaledSize.width,
+      bottom: entity.position.row * TILE_SIZE - offset.top + scaledSize.height,
+    };
+  }
+
+  private checkCollision(a: Bounds, b: Bounds): boolean {
+    return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+  }
 }

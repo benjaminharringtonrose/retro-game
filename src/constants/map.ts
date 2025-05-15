@@ -1,5 +1,8 @@
 import { MapType, MapConfig, Tile, CollidableEntity } from "../types";
 import { Portal } from "../engine/types/PortalTypes";
+import { Dimensions } from "react-native";
+
+const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get("window");
 
 export const TILE_SIZE = 64;
 
@@ -179,8 +182,8 @@ export const DEFAULT_MAPS: MapConfig = {
       [3.2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3.2],
       [3, 3.2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3.2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3.2, 3],
       [3.2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3.2],
-      [3, 3.2, 0, 0, 0, 0, 0, 0, 3.2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3.2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3.2, 3],
-      [3.2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3.2],
+      [3, 3.2, 0, 0, 0, 0, 0, 0, 3.2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3.2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      [3.2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       [3, 3.2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3.2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3.2, 3, 3],
       [3.2, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3.2, 3, 3, 3],
       [3, 3.2, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3.2, 0, 0, 0, 0, 0, 0, 0, 3.2, 3, 3, 3, 3.2],
@@ -196,6 +199,14 @@ export const DEFAULT_MAPS: MapConfig = {
     ],
     collidableEntities: createCollidableEntities(MapType.FOREST),
     portals: [PORTALS.CABIN_ENTRANCE],
+    bounds: {
+      width: 30 * TILE_SIZE,
+      height: 30 * TILE_SIZE,
+      minX: -(30 * TILE_SIZE - WINDOW_WIDTH),
+      maxX: 0,
+      minY: -(30 * TILE_SIZE - WINDOW_HEIGHT),
+      maxY: 0,
+    },
   },
   [MapType.CABIN_INTERIOR]: {
     name: "Cabin Interior",
@@ -214,6 +225,14 @@ export const DEFAULT_MAPS: MapConfig = {
     ],
     collidableEntities: createCollidableEntities(MapType.CABIN_INTERIOR),
     portals: [PORTALS.CABIN_EXIT],
+    bounds: {
+      width: 5 * TILE_SIZE,
+      height: 6 * TILE_SIZE,
+      minX: -(5 * TILE_SIZE - WINDOW_WIDTH),
+      maxX: 0,
+      minY: -(6 * TILE_SIZE - WINDOW_HEIGHT),
+      maxY: 0,
+    },
   },
   [MapType.MOUNTAIN_PASS]: {
     name: "Mountain Pass",
@@ -231,5 +250,13 @@ export const DEFAULT_MAPS: MapConfig = {
       [2, 2, 0, 0, 0, 0, 0, 0, 0, 0],
     ],
     collidableEntities: createCollidableEntities(MapType.MOUNTAIN_PASS),
+    bounds: {
+      width: 10 * TILE_SIZE,
+      height: 7 * TILE_SIZE,
+      minX: -(10 * TILE_SIZE - WINDOW_WIDTH),
+      maxX: 0,
+      minY: -(7 * TILE_SIZE - WINDOW_HEIGHT),
+      maxY: 0,
+    },
   },
 };

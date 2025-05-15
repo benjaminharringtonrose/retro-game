@@ -96,6 +96,14 @@ export interface MapData {
   collidableEntities?: CollidableEntity[];
   portals?: Portal[];
   background?: any; // Asset require() result
+  bounds: {
+    width: number;
+    height: number;
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+  };
 }
 
 export type MapConfig = Record<MapType, MapData>;

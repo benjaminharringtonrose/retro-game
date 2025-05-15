@@ -18,6 +18,7 @@ import { CollisionSystem } from "../../engine/systems/CollisionSystem";
 import { CollisionVisualizer } from "../../components/CollisionVisualizer";
 import { CollisionToggleButton } from "../../components/CollisionToggleButton";
 import { PortalSystem } from "../../engine/systems/PortalSystem";
+import { MovementSystem } from "../../engine/systems/MovementSystem";
 
 const INITIAL_MAP = MapType.FOREST;
 
@@ -106,9 +107,28 @@ export default function GameScreen() {
 
   // Update shared values when initial position changes
   useEffect(() => {
-    mapX.value = initialPosition.x;
-    mapY.value = initialPosition.y;
-  }, [initialPosition.x, initialPosition.y]);
+    if (initialPosition) {
+      // Make sure we're setting a valid position within map bounds
+      const mapBounds = DEFAULT_MAPS[currentMap]?.bounds;
+      if (mapBounds) {
+        const boundedX = Math.max(mapBounds.minX, Math.min(mapBounds.maxX, initialPosition.x));
+        const boundedY = Math.max(mapBounds.minY, Math.min(mapBounds.maxY, initialPosition.y));
+
+        // Use bounded values to prevent going off map
+        mapX.value = boundedX;
+        mapY.value = boundedY;
+
+        // Reset offsets
+        offsetX.value = 0;
+        offsetY.value = 0;
+
+        console.log("Set initial position:", { x: boundedX, y: boundedY });
+      } else {
+        mapX.value = initialPosition.x;
+        mapY.value = initialPosition.y;
+      }
+    }
+  }, [initialPosition.x, initialPosition.y, currentMap]);
 
   const [direction, setDirection] = useState(Direction.Down);
   const [isMoving, setIsMoving] = useState(false);
@@ -169,14 +189,39 @@ export default function GameScreen() {
   useEffect(() => {
     if (mapLoaded && DEFAULT_MAPS[currentMap]) {
       console.log("Setting up systems for map:", currentMap);
+
+      // Clean up existing systems first
+      engine.clearSystems();
+
+      // Add systems in the correct order
+      engine.addSystem(new MovementSystem(DEFAULT_MAPS[currentMap]));
       if (DEFAULT_MAPS[currentMap].collidableEntities) {
         engine.addSystem(new CollisionSystem(DEFAULT_MAPS[currentMap].collidableEntities!));
       }
       if (DEFAULT_MAPS[currentMap].portals) {
         engine.addSystem(new PortalSystem(DEFAULT_MAPS[currentMap].portals!, handleMapTransition));
       }
+
+      // Ensure the map position is valid when loading a new map
+      const mapConfig = DEFAULT_MAPS[currentMap];
+      const initialPos = mapConfig.initialPosition || { x: 0, y: 0 };
+      const bounds = mapConfig.bounds;
+
+      // Clamp initial position to map bounds
+      const boundedX = Math.max(bounds.minX, Math.min(bounds.maxX, initialPos.x));
+      const boundedY = Math.max(bounds.minY, Math.min(bounds.maxY, initialPos.y));
+
+      // Apply bounded position
+      mapX.value = boundedX;
+      mapY.value = boundedY;
+
+      // Reset any offsets
+      offsetX.value = 0;
+      offsetY.value = 0;
+
+      console.log("Map loaded, position set to:", { x: boundedX, y: boundedY });
     }
-  }, [mapLoaded, engine, currentMap, handleMapTransition]);
+  }, [mapLoaded, engine, currentMap, handleMapTransition, mapX, mapY, offsetX, offsetY]);
 
   // Calculate player world position
   const playerWorldPosition = useMemo(() => {

@@ -41,6 +41,7 @@ export interface InputComponent extends Component {
   direction: Vector2D;
   isMoving: boolean;
   isControlled: boolean;
+  lastUpdate?: number;
 }
 
 export interface RenderComponent extends Component {

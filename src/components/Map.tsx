@@ -1,10 +1,13 @@
 // components/Map.tsx
 import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
-import { StyleSheet, View, FlatList, ListRenderItem, FlatListProps } from "react-native";
+import { StyleSheet, View, FlatList, ListRenderItem, FlatListProps, ActivityIndicator, Dimensions } from "react-native";
 import Animated, { SharedValue, useAnimatedStyle } from "react-native-reanimated";
 import { Image } from "expo-image";
 
 import { Tile, MapType, CollidableEntity } from "../types";
+import { Portal } from "../engine/types/PortalTypes";
+
+const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get("window");
 
 const ASSETS = {
   tree: require("../assets/tree.png"),
@@ -19,6 +22,7 @@ export interface MapProps {
   tileSize: number;
   mapType: MapType;
   collidableEntities?: CollidableEntity[];
+  portals?: Portal[];
   background?: any; // Optional background image
   onLoadComplete?: () => void;
 }
@@ -41,7 +45,7 @@ const tileStyles: Record<Tile, any> = {
 
 const TREE_SCALE = 2.0;
 
-export const Map = React.memo(({ mapX, mapY, tiles, tileSize, mapType, collidableEntities, background, onLoadComplete }: MapProps) => {
+export const Map = React.memo(({ mapX, mapY, tiles, tileSize, mapType, collidableEntities, portals, background, onLoadComplete }: MapProps) => {
   const [backgroundLoaded, setBackgroundLoaded] = useState(false);
   const [treeLoadCount, setTreeLoadCount] = useState(0);
   const loadedTrees = useRef(new Set<string>());
@@ -50,6 +54,30 @@ export const Map = React.memo(({ mapX, mapY, tiles, tileSize, mapType, collidabl
     const count = tiles.flat().filter((tile) => tile === Tile.Tree || tile === Tile.Tree2).length;
     return count;
   }, [tiles]);
+
+  const rows = tiles.length;
+  const cols = tiles[0]?.length || 0;
+  const mapWidth = cols * tileSize;
+  const mapHeight = rows * tileSize;
+
+  useEffect(() => {
+    console.log("Map bounds:", {
+      width: mapWidth,
+      height: mapHeight,
+      window: { width: WINDOW_WIDTH, height: WINDOW_HEIGHT },
+    });
+
+    // Validate map position is within bounds
+    const minX = -(mapWidth - WINDOW_WIDTH);
+    const minY = -(mapHeight - WINDOW_HEIGHT);
+
+    if (mapX.value < minX || mapX.value > 0 || mapY.value < minY || mapY.value > 0) {
+      console.warn("Map position out of bounds:", {
+        current: { x: mapX.value, y: mapY.value },
+        bounds: { minX, maxX: 0, minY, maxY: 0 },
+      });
+    }
+  }, []);
 
   // Check if everything is loaded
   useEffect(() => {
@@ -97,10 +125,6 @@ export const Map = React.memo(({ mapX, mapY, tiles, tileSize, mapType, collidabl
 
   // Calculate padding needed for the container
   const padding = useMemo(() => Math.ceil((TREE_SCALE - 1) * tileSize), [tileSize]);
-
-  // Calculate map dimensions
-  const mapWidth = useMemo(() => tiles[0].length * tileSize, [tiles, tileSize]);
-  const mapHeight = useMemo(() => tiles.length * tileSize, [tiles, tileSize]);
 
   // Create an animated container style that combines all the static and animated styles
   const containerStyle = useMemo(
