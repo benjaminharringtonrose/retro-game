@@ -117,157 +117,203 @@ export class MovementSystem implements System {
       const { movement, input, transform } = components;
       if (!input.isMoving) continue;
 
-      // Calculate movement deltas
-      const speed = BASE_SPEED;
-      const dx = input.direction.x * speed;
-      const dy = input.direction.y * speed;
-
-      // Ensure current position is within map bounds
-      movement.mapX.value = Math.max(this.mapBounds.minX, Math.min(this.mapBounds.maxX, movement.mapX.value));
-      movement.mapY.value = Math.max(this.mapBounds.minY, Math.min(this.mapBounds.maxY, movement.mapY.value));
-
-      // Calculate current world position (center of player)
-      const currentWorldX = -movement.mapX.value + transform.position.x + movement.offsetX.value;
-      const currentWorldY = -movement.mapY.value + transform.position.y + movement.offsetY.value;
-
-      if (shouldLog) {
-        this.logCurrentPosition(movement, currentWorldX, currentWorldY, dx, dy);
-      }
-
-      // Handle X movement
-      if (dx !== 0) {
-        this.handleXMovement(movement, transform, dx, currentWorldX, currentWorldY, shouldLog);
-      }
-
-      // Handle Y movement
-      if (dy !== 0) {
-        this.handleYMovement(movement, transform, dy, currentWorldX, currentWorldY, shouldLog);
-      }
+      this.processEntityMovement(movement, input, transform, shouldLog);
     }
 
     this.lastProcessedEntities = entities;
   }
 
+  private processEntityMovement(movement: MovementComponent, input: InputComponent, transform: TransformComponent, shouldLog: boolean): void {
+    // Calculate movement deltas
+    const speed = BASE_SPEED;
+    const dx = input.direction.x * speed;
+    const dy = input.direction.y * speed;
+
+    // Ensure current position is within map bounds
+    this.clampMapPosition(movement);
+
+    // Calculate current world position (center of player)
+    const currentWorldX = this.calculateWorldX(movement, transform);
+    const currentWorldY = this.calculateWorldY(movement, transform);
+
+    if (shouldLog) {
+      this.logCurrentPosition(movement, currentWorldX, currentWorldY, dx, dy);
+    }
+
+    // Handle X movement
+    if (dx !== 0) {
+      this.handleXMovement(movement, transform, dx, currentWorldX, currentWorldY, shouldLog);
+    }
+
+    // Handle Y movement
+    if (dy !== 0) {
+      this.handleYMovement(movement, transform, dy, currentWorldX, currentWorldY, shouldLog);
+    }
+  }
+
+  private clampMapPosition(movement: MovementComponent): void {
+    movement.mapX.value = Math.max(this.mapBounds.minX, Math.min(this.mapBounds.maxX, movement.mapX.value));
+    movement.mapY.value = Math.max(this.mapBounds.minY, Math.min(this.mapBounds.maxY, movement.mapY.value));
+  }
+
+  private calculateWorldX(movement: MovementComponent, transform: TransformComponent): number {
+    return -movement.mapX.value + transform.position.x + movement.offsetX.value;
+  }
+
+  private calculateWorldY(movement: MovementComponent, transform: TransformComponent): number {
+    return -movement.mapY.value + transform.position.y + movement.offsetY.value;
+  }
+
+  private calculateNextMapPosition(currentValue: number, delta: number): { next: number; bounded: number; atMapBoundary: boolean } {
+    const next = currentValue + delta;
+    const bounded = Math.max(this.mapBounds.minX, Math.min(this.mapBounds.maxX, next));
+    const atMapBoundary = bounded !== next;
+
+    return { next, bounded, atMapBoundary };
+  }
+
   private handleXMovement(movement: MovementComponent, transform: TransformComponent, dx: number, currentWorldX: number, currentWorldY: number, shouldLog: boolean): void {
-    // Calculate next positions
-    const nextMapX = movement.mapX.value + dx;
+    const { next, bounded, atMapBoundary } = this.calculateNextMapPosition(movement.mapX.value, dx);
 
-    // Ensure map stays within bounds
-    const boundedMapX = Math.max(this.mapBounds.minX, Math.min(this.mapBounds.maxX, nextMapX));
-    const nextWorldX = -boundedMapX + transform.position.x + movement.offsetX.value;
+    if (atMapBoundary) {
+      this.handleMapBoundaryXMovement(movement, dx, currentWorldX, currentWorldY, shouldLog);
+      return;
+    }
 
-    // Check if we're at a map boundary
-    const atMapBoundaryX = boundedMapX !== nextMapX;
+    this.handleNormalXMovement(movement, transform, dx, currentWorldX, currentWorldY, bounded);
+  }
 
-    if (atMapBoundaryX) {
-      // At map boundary, allow player to move within screen bounds
-      const newOffsetX = movement.offsetX.value - dx;
+  private handleYMovement(movement: MovementComponent, transform: TransformComponent, dy: number, currentWorldX: number, currentWorldY: number, shouldLog: boolean): void {
+    const { next, bounded, atMapBoundary } = this.calculateNextMapPosition(movement.mapY.value, dy);
 
-      // Calculate screen bounds for player movement
-      const maxScreenOffset = WINDOW_WIDTH / 4; // Allow movement up to 1/4 of screen width from center
+    if (atMapBoundary) {
+      this.handleMapBoundaryYMovement(movement, dy, currentWorldX, currentWorldY, shouldLog);
+      return;
+    }
 
-      // Check if the new offset would keep player within screen bounds
-      if (Math.abs(newOffsetX) <= maxScreenOffset) {
-        const nextWorldXWithOffset = currentWorldX + dx;
-        const canMove = this.canMoveToPosition(nextWorldXWithOffset, currentWorldY);
+    this.handleNormalYMovement(movement, transform, dy, currentWorldX, currentWorldY, bounded);
+  }
 
-        if (canMove) {
-          movement.offsetX.value = newOffsetX;
-          if (shouldLog) console.log("Player moving at boundary, offset:", newOffsetX);
-        }
-      }
-    } else {
-      // Not at map boundary, check if we need to recenter player first
-      if (movement.offsetX.value !== 0) {
-        const isMovingTowardCenter = (movement.offsetX.value > 0 && dx < 0) || (movement.offsetX.value < 0 && dx > 0);
+  private handleMapBoundaryXMovement(movement: MovementComponent, dx: number, currentWorldX: number, currentWorldY: number, shouldLog: boolean): void {
+    const newOffsetX = movement.offsetX.value - dx;
+    const maxScreenOffset = this.calculateMaxScreenOffsetX();
 
-        if (isMovingTowardCenter) {
-          // Moving toward center - reduce offset before moving map
-          const offsetReduction = Math.min(Math.abs(dx), Math.abs(movement.offsetX.value)) * Math.sign(movement.offsetX.value) * -1;
-          movement.offsetX.value += offsetReduction;
-        } else {
-          // Moving away from center with offset - don't move map until centered
-          const newOffsetX = movement.offsetX.value - dx;
-          const maxScreenOffset = WINDOW_WIDTH / 4;
-
-          if (Math.abs(newOffsetX) <= maxScreenOffset) {
-            const nextWorldXWithOffset = currentWorldX + dx;
-            const canMove = this.canMoveToPosition(nextWorldXWithOffset, currentWorldY);
-
-            if (canMove) {
-              movement.offsetX.value = newOffsetX;
-            }
-          }
-        }
-      } else {
-        // Player is centered - normal map movement
-        const canMove = this.canMoveToPosition(nextWorldX, currentWorldY);
-        if (canMove) {
-          movement.mapX.value = boundedMapX;
-        }
+    if (this.isWithinScreenBounds(newOffsetX, maxScreenOffset)) {
+      const nextWorldXWithOffset = currentWorldX + dx;
+      if (this.canMoveToPosition(nextWorldXWithOffset, currentWorldY)) {
+        movement.offsetX.value = newOffsetX;
+        if (shouldLog) console.log("Player moving at boundary, offset:", newOffsetX);
       }
     }
   }
 
-  private handleYMovement(movement: MovementComponent, transform: TransformComponent, dy: number, currentWorldX: number, currentWorldY: number, shouldLog: boolean): void {
-    // Calculate next positions
-    const nextMapY = movement.mapY.value + dy;
+  private handleMapBoundaryYMovement(movement: MovementComponent, dy: number, currentWorldX: number, currentWorldY: number, shouldLog: boolean): void {
+    const newOffsetY = movement.offsetY.value - dy;
+    const maxScreenOffset = this.calculateMaxScreenOffsetY();
 
-    // Ensure map stays within bounds
-    const boundedMapY = Math.max(this.mapBounds.minY, Math.min(this.mapBounds.maxY, nextMapY));
-    const nextWorldY = -boundedMapY + transform.position.y + movement.offsetY.value;
-
-    // Check if we're at a map boundary
-    const atMapBoundaryY = boundedMapY !== nextMapY;
-
-    if (atMapBoundaryY) {
-      // At map boundary, allow player to move within screen bounds
-      const newOffsetY = movement.offsetY.value - dy;
-
-      // Calculate screen bounds for player movement
-      const maxScreenOffset = WINDOW_HEIGHT / 4; // Allow movement up to 1/4 of screen height from center
-
-      // Check if the new offset would keep player within screen bounds
-      if (Math.abs(newOffsetY) <= maxScreenOffset) {
-        const nextWorldYWithOffset = currentWorldY + dy;
-        const canMove = this.canMoveToPosition(currentWorldX, nextWorldYWithOffset);
-
-        if (canMove) {
-          movement.offsetY.value = newOffsetY;
-          if (shouldLog) console.log("Player moving at boundary, offset:", newOffsetY);
-        }
-      }
-    } else {
-      // Not at map boundary, check if we need to recenter player first
-      if (movement.offsetY.value !== 0) {
-        const isMovingTowardCenter = (movement.offsetY.value > 0 && dy < 0) || (movement.offsetY.value < 0 && dy > 0);
-
-        if (isMovingTowardCenter) {
-          // Moving toward center - reduce offset before moving map
-          const offsetReduction = Math.min(Math.abs(dy), Math.abs(movement.offsetY.value)) * Math.sign(movement.offsetY.value) * -1;
-          movement.offsetY.value += offsetReduction;
-        } else {
-          // Moving away from center with offset - don't move map until centered
-          const newOffsetY = movement.offsetY.value - dy;
-          const maxScreenOffset = WINDOW_HEIGHT / 4;
-
-          if (Math.abs(newOffsetY) <= maxScreenOffset) {
-            const nextWorldYWithOffset = currentWorldY + dy;
-            const canMove = this.canMoveToPosition(currentWorldX, nextWorldYWithOffset);
-
-            if (canMove) {
-              movement.offsetY.value = newOffsetY;
-            }
-          }
-        }
-      } else {
-        // Player is centered - normal map movement
-        const canMove = this.canMoveToPosition(currentWorldX, nextWorldY);
-        if (canMove) {
-          movement.mapY.value = boundedMapY;
-        }
+    if (this.isWithinScreenBounds(newOffsetY, maxScreenOffset)) {
+      const nextWorldYWithOffset = currentWorldY + dy;
+      if (this.canMoveToPosition(currentWorldX, nextWorldYWithOffset)) {
+        movement.offsetY.value = newOffsetY;
+        if (shouldLog) console.log("Player moving at boundary, offset:", newOffsetY);
       }
     }
+  }
+
+  private handleNormalXMovement(movement: MovementComponent, transform: TransformComponent, dx: number, currentWorldX: number, currentWorldY: number, boundedMapX: number): void {
+    if (movement.offsetX.value !== 0) {
+      this.handleOffsetXMovement(movement, dx, currentWorldX, currentWorldY);
+    } else {
+      this.handleCenteredXMovement(movement, transform, dx, currentWorldX, currentWorldY, boundedMapX);
+    }
+  }
+
+  private handleNormalYMovement(movement: MovementComponent, transform: TransformComponent, dy: number, currentWorldX: number, currentWorldY: number, boundedMapY: number): void {
+    if (movement.offsetY.value !== 0) {
+      this.handleOffsetYMovement(movement, dy, currentWorldX, currentWorldY);
+    } else {
+      this.handleCenteredYMovement(movement, transform, dy, currentWorldX, currentWorldY, boundedMapY);
+    }
+  }
+
+  private handleOffsetXMovement(movement: MovementComponent, dx: number, currentWorldX: number, currentWorldY: number): void {
+    const isMovingTowardCenter = (movement.offsetX.value > 0 && dx < 0) || (movement.offsetX.value < 0 && dx > 0);
+
+    if (isMovingTowardCenter) {
+      this.reduceOffsetX(movement, dx);
+    } else {
+      this.handleMovingAwayFromCenterX(movement, dx, currentWorldX, currentWorldY);
+    }
+  }
+
+  private handleOffsetYMovement(movement: MovementComponent, dy: number, currentWorldX: number, currentWorldY: number): void {
+    const isMovingTowardCenter = (movement.offsetY.value > 0 && dy < 0) || (movement.offsetY.value < 0 && dy > 0);
+
+    if (isMovingTowardCenter) {
+      this.reduceOffsetY(movement, dy);
+    } else {
+      this.handleMovingAwayFromCenterY(movement, dy, currentWorldX, currentWorldY);
+    }
+  }
+
+  private reduceOffsetX(movement: MovementComponent, dx: number): void {
+    const offsetReduction = Math.min(Math.abs(dx), Math.abs(movement.offsetX.value)) * Math.sign(movement.offsetX.value) * -1;
+    movement.offsetX.value += offsetReduction;
+  }
+
+  private reduceOffsetY(movement: MovementComponent, dy: number): void {
+    const offsetReduction = Math.min(Math.abs(dy), Math.abs(movement.offsetY.value)) * Math.sign(movement.offsetY.value) * -1;
+    movement.offsetY.value += offsetReduction;
+  }
+
+  private handleMovingAwayFromCenterX(movement: MovementComponent, dx: number, currentWorldX: number, currentWorldY: number): void {
+    const newOffsetX = movement.offsetX.value - dx;
+    const maxScreenOffset = this.calculateMaxScreenOffsetX();
+
+    if (this.isWithinScreenBounds(newOffsetX, maxScreenOffset)) {
+      const nextWorldXWithOffset = currentWorldX + dx;
+      if (this.canMoveToPosition(nextWorldXWithOffset, currentWorldY)) {
+        movement.offsetX.value = newOffsetX;
+      }
+    }
+  }
+
+  private handleMovingAwayFromCenterY(movement: MovementComponent, dy: number, currentWorldX: number, currentWorldY: number): void {
+    const newOffsetY = movement.offsetY.value - dy;
+    const maxScreenOffset = this.calculateMaxScreenOffsetY();
+
+    if (this.isWithinScreenBounds(newOffsetY, maxScreenOffset)) {
+      const nextWorldYWithOffset = currentWorldY + dy;
+      if (this.canMoveToPosition(currentWorldX, nextWorldYWithOffset)) {
+        movement.offsetY.value = newOffsetY;
+      }
+    }
+  }
+
+  private handleCenteredXMovement(movement: MovementComponent, transform: TransformComponent, dx: number, currentWorldX: number, currentWorldY: number, boundedMapX: number): void {
+    const nextWorldX = -boundedMapX + transform.position.x + movement.offsetX.value;
+    if (this.canMoveToPosition(nextWorldX, currentWorldY)) {
+      movement.mapX.value = boundedMapX;
+    }
+  }
+
+  private handleCenteredYMovement(movement: MovementComponent, transform: TransformComponent, dy: number, currentWorldX: number, currentWorldY: number, boundedMapY: number): void {
+    const nextWorldY = -boundedMapY + transform.position.y + movement.offsetY.value;
+    if (this.canMoveToPosition(currentWorldX, nextWorldY)) {
+      movement.mapY.value = boundedMapY;
+    }
+  }
+
+  private calculateMaxScreenOffsetX(): number {
+    return WINDOW_WIDTH / 2 - PLAYER_HITBOX.width / 2;
+  }
+
+  private calculateMaxScreenOffsetY(): number {
+    return WINDOW_HEIGHT / 2 - PLAYER_HITBOX.height / 2;
+  }
+
+  private isWithinScreenBounds(offset: number, maxOffset: number): boolean {
+    return Math.abs(offset) <= maxOffset;
   }
 
   private canMoveToPosition(worldX: number, worldY: number): boolean {

@@ -43,6 +43,7 @@ The `MovementSystem` is a sophisticated system handling all entity movement with
 - Tile-based movement restrictions
 - Entity collision handling
 - Screen-edge handling with smooth transitions
+- Player-centric movement with offset handling
 
 #### Movement Mechanics
 
@@ -51,23 +52,88 @@ The `MovementSystem` is a sophisticated system handling all entity movement with
    - Maintains map boundaries considering screen dimensions
    - Handles both larger-than-screen and smaller-than-screen maps
    - Implements screen padding and centered positioning
+   - Allows player movement to screen edges at map boundaries
 
 2. **Movement Processing**
 
    - Processes movement in both X and Y axes independently
    - Handles diagonal movement correctly
    - Maintains constant movement speed regardless of direction
+   - Manages player offset and centering
 
 3. **Collision Detection**
 
    - Checks for tile-based collisions (water, trees, rocks)
    - Handles entity-to-entity collisions
    - Uses optimized hitboxes for precise collision detection
+   - Validates movement against walkable tiles
 
 4. **Camera System**
    - Implements smooth camera following
    - Handles screen edge cases
    - Provides smooth transitions when reaching map boundaries
+   - Supports player movement to screen edges
+
+#### Method Documentation
+
+The MovementSystem implements several key methods for handling movement:
+
+1. **Core Movement Methods**
+
+   - `processEntityMovement`: Main entry point for movement processing
+   - `handleXMovement`: Handles horizontal movement
+   - `handleYMovement`: Handles vertical movement
+   - `calculateNextMapPosition`: Calculates next position and boundary checks
+
+2. **Boundary Handling**
+
+   - `handleMapBoundaryXMovement`: Manages movement at horizontal map boundaries
+   - `handleMapBoundaryYMovement`: Manages movement at vertical map boundaries
+   - `clampMapPosition`: Ensures map position stays within bounds
+
+3. **Player Movement**
+
+   - `handleNormalXMovement`: Handles standard horizontal movement
+   - `handleNormalYMovement`: Handles standard vertical movement
+   - `handleOffsetXMovement`: Manages player offset in X direction
+   - `handleOffsetYMovement`: Manages player offset in Y direction
+   - `handleCenteredXMovement`: Handles movement when player is centered
+   - `handleCenteredYMovement`: Handles movement when player is centered
+
+4. **Utility Methods**
+   - `calculateWorldX/Y`: Converts map coordinates to world coordinates
+   - `calculateMaxScreenOffsetX/Y`: Calculates maximum screen offsets
+   - `isWithinScreenBounds`: Validates screen boundary constraints
+   - `reduceOffsetX/Y`: Handles player offset reduction
+   - `canMoveToPosition`: Validates movement against collisions
+   - `intersect`: Checks for collision between two rectangles
+
+#### Movement States
+
+The system manages several movement states:
+
+1. **Map Boundary State**
+
+   - Player can move to screen edges
+   - Map position remains fixed
+   - Offset is managed within screen bounds
+
+2. **Normal Movement State**
+
+   - Player stays centered
+   - Map moves with player
+   - Collision checks prevent invalid movement
+
+3. **Offset Movement State**
+
+   - Player can move away from center
+   - Offset is managed within screen bounds
+   - Smooth transition to centered state
+
+4. **Centered Movement State**
+   - Player is at screen center
+   - Map moves with player
+   - Standard movement behavior
 
 ### Other Systems
 
