@@ -235,7 +235,7 @@ export default function GameScreen() {
   }, [wWidth, wHeight]);
 
   // Add Lilly NPC
-  const { lillyDirection, lillyIsMoving, lillyCurrentFrame, lillyCenterX, lillyCenterY } = useLillyNPC(mapX, mapY, offsetX, offsetY, wWidth, wHeight, mapLoaded, GAME_ASSETS.lillySpritesheet);
+  const { direction: lillyDirection, isMoving: lillyIsMoving, lillyCurrentFrame, lillyCenterX, lillyCenterY } = useLillyNPC(mapX, mapY, offsetX, offsetY, wWidth, wHeight, mapLoaded, GAME_ASSETS.lillySpritesheet);
 
   return (
     <View style={styles.container}>
@@ -276,7 +276,7 @@ export default function GameScreen() {
             },
           ]}
         >
-          <NPC direction={lillyDirection.value} isMoving={lillyIsMoving.value} centerX={lillyCenterX} centerY={lillyCenterY} currentFrame={lillyCurrentFrame} spritesheet={GAME_ASSETS.lillySpritesheet} />
+          <NPC direction={lillyDirection} isMoving={lillyIsMoving} centerX={lillyCenterX} centerY={lillyCenterY} currentFrame={lillyCurrentFrame} spritesheet={GAME_ASSETS.lillySpritesheet} />
           <Player direction={direction} isMoving={isMoving} centerX={playerCenterX} centerY={playerCenterY} currentFrame={currentFrame} offsetX={offsetX} offsetY={offsetY} onLoadComplete={() => setPlayerLoaded(true)} />
         </View>
       </View>

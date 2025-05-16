@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { SharedValue, useSharedValue } from "react-native-reanimated";
 import { Direction, CollidableEntity } from "../types";
 import { EntityType } from "../engine/types/EntityTypes";
@@ -57,9 +57,11 @@ export const useLillyNPC = (mapX: SharedValue<number>, mapY: SharedValue<number>
   const screenCenterX = windowWidth / 2;
   const screenCenterY = windowHeight / 2;
 
-  // Shared values for Lilly's animation and state
-  const lillyDirection = useSharedValue(Direction.Down);
-  const lillyIsMoving = useSharedValue(false);
+  // Use state for direction and isMoving
+  const [direction, setDirection] = useState<Direction>(Direction.Down);
+  const [isMoving, setIsMoving] = useState(false);
+
+  // Keep shared values for animation and position
   const lillyCurrentFrame = useSharedValue(0);
   const lillyCenterX = useSharedValue(screenCenterX);
   const lillyCenterY = useSharedValue(screenCenterY);
@@ -123,15 +125,15 @@ export const useLillyNPC = (mapX: SharedValue<number>, mapY: SharedValue<number>
 
         if (!input || !animation || input.isControlled) continue;
 
-        // Update shared values based on entity state
-        lillyIsMoving.value = input.isMoving;
+        // Update state based on entity state
+        setIsMoving(input.isMoving);
         lillyCurrentFrame.value = animation.currentFrame % TOTAL_FRAMES;
 
         // Update direction based on input direction
         if (Math.abs(input.direction.x) > Math.abs(input.direction.y)) {
-          lillyDirection.value = input.direction.x > 0 ? Direction.Right : Direction.Left;
+          setDirection(input.direction.x > 0 ? Direction.Right : Direction.Left);
         } else {
-          lillyDirection.value = input.direction.y > 0 ? Direction.Down : Direction.Up;
+          setDirection(input.direction.y > 0 ? Direction.Down : Direction.Up);
         }
       }
     }, 1000 / 60); // 60fps update
@@ -156,8 +158,8 @@ export const useLillyNPC = (mapX: SharedValue<number>, mapY: SharedValue<number>
 
   // Return values needed by the component
   return {
-    lillyDirection,
-    lillyIsMoving,
+    direction,
+    isMoving,
     lillyCurrentFrame,
     lillyCenterX,
     lillyCenterY,
