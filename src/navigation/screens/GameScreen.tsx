@@ -19,6 +19,8 @@ import { CollisionVisualizer } from "../../components/CollisionVisualizer";
 import { CollisionToggleButton } from "../../components/CollisionToggleButton";
 import { PortalSystem } from "../../engine/systems/PortalSystem";
 import { MovementSystem } from "../../engine/systems/MovementSystem";
+import { useLillyNPC } from "../../hooks/useLillyNPC";
+import { NPC } from "../../components/NPC";
 
 const INITIAL_MAP = MapType.FOREST;
 
@@ -30,6 +32,7 @@ const DEFAULT_POSITION: MapPosition = {
 // Define assets with their module IDs
 const GAME_ASSETS = {
   characterSpritesheet: require("../../assets/character-spritesheet.png"),
+  lillySpritesheet: require("../../assets/lilly-spritesheet.png"),
   tree: require("../../assets/tree.png"),
   tree2: require("../../assets/tree-2.png"),
   forestBackground: require("../../assets/forest-background.png"),
@@ -231,9 +234,13 @@ export default function GameScreen() {
     };
   }, [wWidth, wHeight]);
 
+  // Add Lilly NPC
+  const { lillyDirection, lillyIsMoving, lillyCurrentFrame, lillyCenterX, lillyCenterY } = useLillyNPC(mapX, mapY, offsetX, offsetY, wWidth, wHeight, mapLoaded, GAME_ASSETS.lillySpritesheet);
+
   return (
     <View style={styles.container}>
       <View style={styles.gameContainer}>
+        {/* Background and Map Layer */}
         <View style={[StyleSheet.absoluteFill, { zIndex: 1 }]}>
           <Map
             mapX={mapX}
@@ -246,17 +253,20 @@ export default function GameScreen() {
             onLoadComplete={() => setMapLoaded(true)}
           />
         </View>
+
+        {/* Collision Visualization Layer */}
         {showCollisions && DEFAULT_MAPS[currentMap].collidableEntities && (
           <View style={[StyleSheet.absoluteFill, { zIndex: 1500 }]}>
             <CollisionVisualizer collidableEntities={DEFAULT_MAPS[currentMap].collidableEntities} mapX={mapX} mapY={mapY} portals={DEFAULT_MAPS[currentMap].portals} />
           </View>
         )}
+
+        {/* Game Entities Layer */}
         <View
           style={[
             StyleSheet.absoluteFill,
             {
-              zIndex: 2000,
-              elevation: 2000,
+              zIndex: 1800,
               backgroundColor: "transparent",
               position: "absolute",
               left: 0,
@@ -266,13 +276,17 @@ export default function GameScreen() {
             },
           ]}
         >
+          <NPC direction={lillyDirection.value} isMoving={lillyIsMoving.value} centerX={lillyCenterX} centerY={lillyCenterY} currentFrame={lillyCurrentFrame} spritesheet={GAME_ASSETS.lillySpritesheet} />
           <Player direction={direction} isMoving={isMoving} centerX={playerCenterX} centerY={playerCenterY} currentFrame={currentFrame} offsetX={offsetX} offsetY={offsetY} onLoadComplete={() => setPlayerLoaded(true)} />
         </View>
       </View>
-      <View style={[styles.controls, { zIndex: 3000, elevation: 3000 }]}>
+
+      {/* Controls Layer */}
+      <View style={[styles.controls, { zIndex: 3000 }]}>
         <Pad setDirection={handleDirectionChange} setIsMoving={handleMovingChange} />
         <CollisionToggleButton isVisible={showCollisions} onToggle={() => setShowCollisions(!showCollisions)} />
       </View>
+
       {isLoading && <LoadingScreen isLoaded={isAllLoaded} onStart={handleGameStart} />}
     </View>
   );

@@ -87,6 +87,28 @@ export interface CollidableEntity {
     height: number;
     scale: number;
   };
+  dialogues?: Record<string, string>;
+  movementPattern?: {
+    type: "patrol" | "random" | "stationary";
+    points?: { row: number; col: number }[];
+    radius?: number;
+  };
+  spritesheet?: {
+    frameWidth: number;
+    frameHeight: number;
+    frames: number;
+    frameRate: number;
+    animations: {
+      idle: number[];
+      walk: number[];
+    };
+    rows: {
+      down: number;
+      right: number;
+      up: number;
+      left: number;
+    };
+  };
 }
 
 export interface MapData {

@@ -71,5 +71,7 @@ export interface AnimationComponent extends Component {
   currentFrame: number;
   frames: number;
   frameRate: number;
+  frameWidth: number;
+  frameHeight: number;
   isPlaying: boolean;
 }
