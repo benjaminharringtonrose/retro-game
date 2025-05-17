@@ -214,3 +214,18 @@ export interface NPCProps {
     frameRate: number;
   };
 }
+
+export interface DialogComponent extends Component {
+  isVisible: boolean;
+  message: string;
+}
+
+export interface DialogState {
+  isVisible: boolean;
+  message: string;
+}
+
+export interface DialogProps {
+  message: string;
+  isVisible: boolean;
+}

@@ -160,6 +160,13 @@ export const setupGameEntities = (): { [key: string]: Entity } => {
     y: lillyMapY,
   };
 
+  // Initialize dialog state
+  const dialog = {
+    id: "dialog",
+    isVisible: false,
+    message: "",
+  };
+
   // Log initial state for debugging
   console.log("Created Lilly at:", {
     position: lilly.position,
@@ -172,5 +179,6 @@ export const setupGameEntities = (): { [key: string]: Entity } => {
     "map-1": map,
     "player-1": player,
     "npc-lilly": lilly,
+    dialog,
   };
 };
