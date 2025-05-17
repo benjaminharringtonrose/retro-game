@@ -1,6 +1,6 @@
 // components/Map.tsx
-import React, { useMemo } from "react";
-import { StyleSheet, View, ImageBackground, Dimensions, FlatList } from "react-native";
+import React, { useMemo, useState } from "react";
+import { StyleSheet, View, ImageBackground, Dimensions, FlatList, TouchableOpacity, Text } from "react-native";
 import { Image } from "expo-image";
 import { MapProps, Tile } from "../types";
 
@@ -92,7 +92,25 @@ const MapRow: React.FC<{ item: RowData }> = React.memo(({ item }) => {
   );
 });
 
+// Grid overlay component
+const GridOverlay: React.FC<{ tileSize: number; width: number; height: number }> = React.memo(({ tileSize, width, height }) => {
+  const rows = Math.ceil(height / tileSize);
+  const cols = Math.ceil(width / tileSize);
+
+  return (
+    <View style={[styles.gridOverlay, { width, height }]}>
+      {Array.from({ length: rows }).map((_, rowIndex) => (
+        <View key={`row-${rowIndex}`} style={[styles.gridLine, { top: rowIndex * tileSize, width: "100%" }]} />
+      ))}
+      {Array.from({ length: cols }).map((_, colIndex) => (
+        <View key={`col-${colIndex}`} style={[styles.gridLine, { left: colIndex * tileSize, height: "100%" }]} />
+      ))}
+    </View>
+  );
+});
+
 export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileData }) => {
+  const [showGrid, setShowGrid] = useState(false);
   const { x, y } = position;
   const { width, height } = dimensions;
   const { tileSize, tiles } = tileData;
@@ -118,19 +136,25 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
   const renderItem = ({ item }: { item: RowData }) => <MapRow item={item} />;
 
   return (
-    <View
-      style={[
-        styles.map,
-        {
-          transform: [{ translateX: x }, { translateY: y }],
-          width,
-          height,
-        },
-      ]}
-    >
-      <ImageBackground source={require("../assets/forest-background.png")} style={styles.background} resizeMode="repeat">
-        <FlatList data={rowData} renderItem={renderItem} keyExtractor={keyExtractor} showsVerticalScrollIndicator={false} scrollEnabled={false} style={styles.list} />
-      </ImageBackground>
+    <View style={{ flex: 1 }}>
+      <View
+        style={[
+          styles.map,
+          {
+            transform: [{ translateX: x }, { translateY: y }],
+            width,
+            height,
+          },
+        ]}
+      >
+        <ImageBackground source={require("../assets/forest-background.png")} style={styles.background} resizeMode="repeat">
+          <FlatList data={rowData} renderItem={renderItem} keyExtractor={keyExtractor} showsVerticalScrollIndicator={false} scrollEnabled={false} style={styles.list} />
+          {showGrid && <GridOverlay tileSize={tileSize} width={width} height={height} />}
+        </ImageBackground>
+      </View>
+      <TouchableOpacity style={styles.devToggle} onPress={() => setShowGrid(!showGrid)}>
+        <Text style={styles.devToggleText}>{showGrid ? "Hide Grid" : "Show Grid"}</Text>
+      </TouchableOpacity>
     </View>
   );
 });
@@ -184,5 +208,32 @@ const styles = StyleSheet.create({
   },
   tileImage: {
     position: "absolute",
+  },
+  gridOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    zIndex: 100,
+    pointerEvents: "none",
+  },
+  gridLine: {
+    position: "absolute",
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    width: 1,
+    height: 1,
+  },
+  devToggle: {
+    position: "absolute",
+    bottom: 20,
+    right: 20,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    padding: 10,
+    borderRadius: 5,
+    zIndex: 1000,
+  },
+  devToggleText: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "bold",
   },
 });
