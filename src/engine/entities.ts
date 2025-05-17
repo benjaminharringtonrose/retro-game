@@ -4,6 +4,7 @@ import { Direction, MapType, Entity } from "../types";
 import { Player } from "../components/Player";
 import { Map } from "../components/Map";
 import { NPC } from "../components/NPC";
+import { DialogBoxRenderer } from "../components/DialogBoxRenderer";
 import { DEFAULT_MAPS, TILE_SIZE } from "../constants/map";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
@@ -131,6 +132,14 @@ const createMap = (id: string, mapType: MapType): Entity => {
   };
 };
 
+const createDialog = (id: string): Entity => ({
+  id,
+  isVisible: false,
+  message: "",
+  inRange: false,
+  renderer: DialogBoxRenderer,
+});
+
 export const setupGameEntities = (): { [key: string]: Entity } => {
   // Position player in a clear area in the middle of the map
   const playerX = screenWidth / 2;
@@ -160,25 +169,13 @@ export const setupGameEntities = (): { [key: string]: Entity } => {
     y: lillyMapY,
   };
 
-  // Initialize dialog state
-  const dialog = {
-    id: "dialog",
-    isVisible: false,
-    message: "",
-  };
-
-  // Log initial state for debugging
-  console.log("Created Lilly at:", {
-    position: lilly.position,
-    absolutePosition: lilly.absolutePosition,
-    mapPosition: map.position,
-    playerPosition: { x: playerX, y: playerY },
-  });
+  // Create dialog entity
+  const dialog = createDialog("dialog-1");
 
   return {
     "map-1": map,
     "player-1": player,
     "npc-lilly": lilly,
-    dialog,
+    "dialog-1": dialog,
   };
 };

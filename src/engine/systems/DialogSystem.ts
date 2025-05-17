@@ -1,20 +1,9 @@
 import { Entity, SystemProps } from "../../types";
 
-export const DialogSystem = (entities: { [key: string]: Entity }, { events = [], dispatch }: SystemProps) => {
+export const DialogSystem = (entities: { [key: string]: Entity }, { events = [] }: SystemProps) => {
   const player = entities["player-1"];
   const npcs = Object.values(entities).filter((entity) => entity.id.startsWith("npc"));
-
-  // Initialize dialog state if it doesn't exist
-  if (!entities.dialog) {
-    entities.dialog = {
-      id: "dialog",
-      isVisible: false,
-      message: "",
-      // Track if we're in range of an NPC
-      inRange: false,
-    };
-    console.log("[DialogSystem] Initialized dialog state:", entities.dialog);
-  }
+  const dialog = entities["dialog-1"];
 
   // Check for collisions with NPCs to trigger dialog
   npcs.forEach((npc) => {
@@ -35,32 +24,22 @@ export const DialogSystem = (entities: { [key: string]: Entity }, { events = [],
       console.log("[DialogSystem] Distance to Lilly:", {
         distance,
         inRange,
-        wasInRange: entities.dialog.inRange,
+        wasInRange: dialog.inRange,
       });
 
       // Update dialog state based on range
-      if (inRange && !entities.dialog.inRange) {
+      if (inRange && !dialog.inRange) {
         // Just entered range
-        entities.dialog.isVisible = true;
-        entities.dialog.message = "I love you Ben!";
-        entities.dialog.inRange = true;
+        dialog.isVisible = true;
+        dialog.message = "I love you Ben!";
+        dialog.inRange = true;
         console.log("[DialogSystem] Entered range, showing dialog");
-
-        dispatch({
-          type: "entities-updated",
-          payload: entities,
-        });
-      } else if (!inRange && entities.dialog.inRange) {
+      } else if (!inRange && dialog.inRange) {
         // Just left range
-        entities.dialog.isVisible = false;
-        entities.dialog.message = "";
-        entities.dialog.inRange = false;
+        dialog.isVisible = false;
+        dialog.message = "";
+        dialog.inRange = false;
         console.log("[DialogSystem] Left range, hiding dialog");
-
-        dispatch({
-          type: "entities-updated",
-          payload: entities,
-        });
       }
     }
   });
