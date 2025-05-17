@@ -38,6 +38,9 @@ const GroundTile: React.FC<{ tile: number; tileSize: number }> = React.memo(({ t
 const TreeTile: React.FC<{ tile: number; tileSize: number }> = React.memo(({ tile, tileSize }) => {
   if (tile !== Tile.Tree && tile !== Tile.Tree2) return null;
 
+  const treeSource = tile === Tile.Tree2 ? require("../assets/tree-2.png") : require("../assets/tree.png");
+  const scaledSize = tileSize * TREE_SCALE;
+
   return (
     <View
       style={[
@@ -46,19 +49,19 @@ const TreeTile: React.FC<{ tile: number; tileSize: number }> = React.memo(({ til
           width: tileSize,
           height: tileSize,
           position: "absolute",
-          top: 0,
-          left: 0,
         },
       ]}
     >
       <Image
-        source={require("../assets/tree.png")}
+        source={treeSource}
         style={[
           styles.tileImage,
           {
-            width: tileSize * TREE_SCALE,
-            height: tileSize * TREE_SCALE,
-            transform: [{ translateX: (-tileSize * (TREE_SCALE - 1)) / 2 }, { translateY: (-tileSize * (TREE_SCALE - 1)) / 2 }],
+            width: scaledSize,
+            height: scaledSize,
+            position: "absolute",
+            left: -((scaledSize - tileSize) / 2),
+            top: -(scaledSize - tileSize), // Place tree at bottom of tile
           },
         ]}
         contentFit="contain"
@@ -79,15 +82,28 @@ const MapRow: React.FC<{ item: RowData }> = React.memo(({ item }) => {
   const { rowIndex, tiles, startCol, endCol, tileSize } = item;
 
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, { height: tileSize }]}>
       {/* Ground layer */}
-      {tiles.slice(startCol, endCol).map((tile: number, colIndex: number) => (
-        <GroundTile key={`ground-${rowIndex}-${colIndex + startCol}`} tile={tile} tileSize={tileSize} />
-      ))}
+      <View style={styles.layerContainer}>
+        {tiles.map((tile: number, colIndex: number) => (
+          <GroundTile key={`ground-${rowIndex}-${colIndex}`} tile={tile} tileSize={tileSize} />
+        ))}
+      </View>
       {/* Tree layer */}
-      {tiles.slice(startCol, endCol).map((tile: number, colIndex: number) => (
-        <TreeTile key={`tree-${rowIndex}-${colIndex + startCol}`} tile={tile} tileSize={tileSize} />
-      ))}
+      <View style={styles.layerContainer}>
+        {tiles.map((tile: number, colIndex: number) => (
+          <View
+            key={`tree-container-${rowIndex}-${colIndex}`}
+            style={{
+              width: tileSize,
+              height: tileSize,
+              position: "relative",
+            }}
+          >
+            <TreeTile key={`tree-${rowIndex}-${colIndex}`} tile={tile} tileSize={tileSize} />
+          </View>
+        ))}
+      </View>
     </View>
   );
 });
@@ -115,22 +131,16 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
   const { width, height } = dimensions;
   const { tileSize, tiles } = tileData;
 
-  // Calculate visible tile range
-  const startCol = Math.max(0, Math.floor(-x / tileSize) - RENDER_AHEAD);
-  const endCol = Math.min(tiles[0].length, Math.ceil((-x + WINDOW_WIDTH) / tileSize) + RENDER_AHEAD);
-  const startRow = Math.max(0, Math.floor(-y / tileSize) - RENDER_AHEAD);
-  const endRow = Math.min(tiles.length, Math.ceil((-y + WINDOW_HEIGHT) / tileSize) + RENDER_AHEAD);
-
-  // Prepare data for FlatList
+  // Prepare data for FlatList - render all tiles without slicing
   const rowData = useMemo(() => {
-    return tiles.slice(startRow, endRow).map((row, index) => ({
-      rowIndex: index + startRow,
+    return tiles.map((row, index) => ({
+      rowIndex: index,
       tiles: row,
-      startCol,
-      endCol,
+      startCol: 0,
+      endCol: row.length,
       tileSize,
     }));
-  }, [startRow, endRow, startCol, endCol, tileSize, tiles]);
+  }, [tiles, tileSize]);
 
   const keyExtractor = (item: RowData) => `row-${item.rowIndex}`;
   const renderItem = ({ item }: { item: RowData }) => <MapRow item={item} />;
@@ -148,7 +158,16 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
         ]}
       >
         <ImageBackground source={require("../assets/forest-background.png")} style={styles.background} resizeMode="repeat">
-          <FlatList data={rowData} renderItem={renderItem} keyExtractor={keyExtractor} showsVerticalScrollIndicator={false} scrollEnabled={false} style={styles.list} />
+          <FlatList
+            data={rowData}
+            renderItem={renderItem}
+            keyExtractor={keyExtractor}
+            showsVerticalScrollIndicator={false}
+            scrollEnabled={false}
+            style={styles.list}
+            removeClippedSubviews={false}
+            initialNumToRender={tiles.length} // Render all rows initially
+          />
           {showGrid && <GridOverlay tileSize={tileSize} width={width} height={height} />}
         </ImageBackground>
       </View>
@@ -193,9 +212,21 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     position: "relative",
+    width: "100%",
+    overflow: "visible",
+  },
+  layerContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    flexDirection: "row",
+    overflow: "visible",
   },
   tile: {
-    position: "relative",
+    position: "absolute",
+    overflow: "visible",
   },
   tileOverlay: {
     position: "absolute",

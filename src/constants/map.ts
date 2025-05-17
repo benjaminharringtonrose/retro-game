@@ -15,8 +15,8 @@ export const DEFAULT_MAPS: MapConfig = {
   [MapType.FOREST]: {
     name: "Forest Path",
     initialPosition: {
-      x: -800.0,
-      y: -184.0,
+      x: 0,
+      y: 0,
     },
     background: require("../assets/forest-background.png"),
     mapData: [
