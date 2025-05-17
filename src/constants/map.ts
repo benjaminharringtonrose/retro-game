@@ -5,12 +5,6 @@ const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get("window");
 
 export const TILE_SIZE = 64;
 
-// Define cabin properties
-const CABIN_SCALE = 4;
-const CABIN_BASE_WIDTH = 2;
-const CABIN_BASE_HEIGHT = 2;
-const CABIN_SPRITE = require("../assets/cabin.png");
-
 export const DEFAULT_MAPS: MapConfig = {
   [MapType.FOREST]: {
     name: "Forest Path",
@@ -50,19 +44,6 @@ export const DEFAULT_MAPS: MapConfig = {
       [3.2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3.2, 3, 3, 0, 0, 3.2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
       [3, 3.2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3.2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3.2, 3, 3, 3],
       [3.2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3.2, 3, 3, 3.2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-    ],
-    collidableEntities: [
-      {
-        type: "cabin",
-        position: { row: 14, col: 12 },
-        sprite: CABIN_SPRITE,
-        spriteScale: CABIN_SCALE,
-        collision: {
-          width: CABIN_BASE_WIDTH,
-          height: CABIN_BASE_HEIGHT,
-          scale: 1,
-        },
-      },
     ],
     bounds: {
       width: 30 * TILE_SIZE,

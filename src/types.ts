@@ -130,7 +130,6 @@ export interface MapData {
   initialPosition: MapPosition;
   mapData: number[][];
   background: any;
-  collidableEntities?: CollidableEntity[];
   bounds: {
     width: number;
     height: number;
@@ -155,6 +154,22 @@ export interface MapProps {
   tileData: {
     tileSize: number;
     tiles: number[][];
+  };
+  boxes?: Array<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    color: string;
+  }>;
+  debug?: {
+    boxes: Array<{
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      color: string;
+    }>;
   };
 }
 

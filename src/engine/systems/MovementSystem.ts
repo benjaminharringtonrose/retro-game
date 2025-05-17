@@ -33,21 +33,29 @@ export const MovementSystem = (entities: { [key: string]: Entity }, { time, delt
   let deltaY = 0;
   const speed = player.movement.speed * deltaSeconds;
 
-  if (player.controls.up) {
+  // Check collision state
+  const blocked = player.collision?.blocked || {
+    up: false,
+    down: false,
+    left: false,
+    right: false,
+  };
+
+  if (player.controls.up && !blocked.up) {
     deltaY = -speed;
     player.movement.direction = Direction.Up;
     player.movement.isMoving = true;
-  } else if (player.controls.down) {
+  } else if (player.controls.down && !blocked.down) {
     deltaY = speed;
     player.movement.direction = Direction.Down;
     player.movement.isMoving = true;
   }
 
-  if (player.controls.left) {
+  if (player.controls.left && !blocked.left) {
     deltaX = -speed;
     player.movement.direction = Direction.Left;
     player.movement.isMoving = true;
-  } else if (player.controls.right) {
+  } else if (player.controls.right && !blocked.right) {
     deltaX = speed;
     player.movement.direction = Direction.Right;
     player.movement.isMoving = true;
@@ -76,7 +84,7 @@ export const MovementSystem = (entities: { [key: string]: Entity }, { time, delt
         debugLog(`Moving map X: ${map.position.x} -> ${newMapX}`);
         map.position.x = newMapX;
         player.position.x = centerX;
-      } else {
+      } else if (!blocked.left && !blocked.right) {
         player.position.x = Math.min(Math.max(newPlayerX, EDGE_MARGIN), screenWidth - EDGE_MARGIN);
       }
     }
@@ -97,7 +105,7 @@ export const MovementSystem = (entities: { [key: string]: Entity }, { time, delt
         debugLog(`Moving map Y: ${map.position.y} -> ${newMapY}`);
         map.position.y = newMapY;
         player.position.y = centerY;
-      } else {
+      } else if (!blocked.up && !blocked.down) {
         // Otherwise move player within screen bounds
         const boundedY = Math.min(Math.max(newPlayerY, EDGE_MARGIN), screenHeight - EDGE_MARGIN);
         player.position.y = boundedY;

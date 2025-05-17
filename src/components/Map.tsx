@@ -3,6 +3,7 @@ import React, { useMemo, useState } from "react";
 import { StyleSheet, View, ImageBackground, Dimensions, FlatList, TouchableOpacity, Text } from "react-native";
 import { Image } from "expo-image";
 import { MapProps, Tile } from "../types";
+import { DebugRenderer } from "./DebugRenderer";
 
 const TREE_SCALE = 1.5; // Scale for tree sprites
 const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get("window");
@@ -125,11 +126,15 @@ const GridOverlay: React.FC<{ tileSize: number; width: number; height: number }>
   );
 });
 
-export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileData }) => {
+export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileData, debug }) => {
   const [showGrid, setShowGrid] = useState(false);
+  const [showDebug, setShowDebug] = useState(true);
   const { x, y } = position;
   const { width, height } = dimensions;
   const { tileSize, tiles } = tileData;
+
+  // Get debug boxes if they exist
+  const debugBoxes = debug?.boxes || [];
 
   // Prepare data for FlatList - render all tiles without slicing
   const rowData = useMemo(() => {
@@ -146,7 +151,7 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
   const renderItem = ({ item }: { item: RowData }) => <MapRow item={item} />;
 
   return (
-    <View style={{ flex: 1 }}>
+    <>
       <View
         style={[
           styles.map,
@@ -158,23 +163,24 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
         ]}
       >
         <ImageBackground source={require("../assets/forest-background.png")} style={styles.background} resizeMode="repeat">
-          <FlatList
-            data={rowData}
-            renderItem={renderItem}
-            keyExtractor={keyExtractor}
-            showsVerticalScrollIndicator={false}
-            scrollEnabled={false}
-            style={styles.list}
-            removeClippedSubviews={false}
-            initialNumToRender={tiles.length} // Render all rows initially
-          />
+          <FlatList data={rowData} renderItem={renderItem} keyExtractor={keyExtractor} showsVerticalScrollIndicator={false} scrollEnabled={false} style={styles.list} removeClippedSubviews={false} initialNumToRender={tiles.length} />
           {showGrid && <GridOverlay tileSize={tileSize} width={width} height={height} />}
+          {showDebug && debugBoxes.length > 0 && (
+            <View style={StyleSheet.absoluteFill}>
+              <DebugRenderer boxes={debugBoxes} />
+            </View>
+          )}
         </ImageBackground>
       </View>
-      <TouchableOpacity style={styles.devToggle} onPress={() => setShowGrid(!showGrid)}>
-        <Text style={styles.devToggleText}>{showGrid ? "Hide Grid" : "Show Grid"}</Text>
-      </TouchableOpacity>
-    </View>
+      <View style={styles.devControls}>
+        <TouchableOpacity style={styles.devToggle} onPress={() => setShowGrid(!showGrid)}>
+          <Text style={styles.devToggleText}>{showGrid ? "Hide Grid" : "Show Grid"}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.devToggle} onPress={() => setShowDebug(!showDebug)}>
+          <Text style={styles.devToggleText}>{showDebug ? `Hide Debug (${debugBoxes.length})` : "Show Debug"}</Text>
+        </TouchableOpacity>
+      </View>
+    </>
   );
 });
 
@@ -253,14 +259,18 @@ const styles = StyleSheet.create({
     width: 1,
     height: 1,
   },
-  devToggle: {
+  devControls: {
     position: "absolute",
     bottom: 20,
     right: 20,
+    flexDirection: "column",
+    gap: 10,
+    zIndex: 1000,
+  },
+  devToggle: {
     backgroundColor: "rgba(0,0,0,0.7)",
     padding: 10,
     borderRadius: 5,
-    zIndex: 1000,
   },
   devToggleText: {
     color: "white",

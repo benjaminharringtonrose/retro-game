@@ -2,7 +2,7 @@ import React, { useRef } from "react";
 import { StyleSheet, View } from "react-native";
 import { GameEngine as RNGameEngine } from "react-native-game-engine";
 import { setupGameEntities } from "../../engine/entities";
-import { MovementSystem, AnimationSystem, ControlSystem } from "../../engine/systems";
+import { Systems } from "../../engine/systems";
 import { Pad } from "../../components/Pad";
 import { Direction, Entity, GameEvent } from "../../types";
 
@@ -30,7 +30,7 @@ const GameScreen: React.FC = () => {
       <RNGameEngine
         ref={engineRef}
         style={StyleSheet.absoluteFill}
-        systems={[ControlSystem, MovementSystem, AnimationSystem]}
+        systems={Systems}
         entities={entities}
         running={true}
         onEvent={(event: GameEvent) => {

@@ -89,11 +89,19 @@ const createMap = (id: string, mapType: MapType): Entity => {
 };
 
 export const setupGameEntities = (): { [key: string]: Entity } => {
+  // Position player in a clear area in the middle of the map
   const playerX = screenWidth / 2;
   const playerY = screenHeight / 2;
 
+  const map = createMap("map-1", MapType.FOREST);
+  const player = createPlayer("player-1", playerX, playerY);
+
+  // Adjust initial map position to ensure player starts in a clear area
+  map.position.x = -TILE_SIZE * 12; // Move map to position player in clear area
+  map.position.y = -TILE_SIZE * 12; // Move map to position player in clear area
+
   return {
-    "player-1": createPlayer("player-1", playerX, playerY),
-    "map-1": createMap("map-1", MapType.FOREST),
+    "player-1": player,
+    "map-1": map,
   };
 };
