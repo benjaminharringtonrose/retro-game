@@ -1,13 +1,13 @@
 // components/Map.tsx
 import React, { useMemo, useState } from "react";
-import { StyleSheet, View, ImageBackground, Dimensions, FlatList, TouchableOpacity, Text } from "react-native";
+import { StyleSheet, View, ImageBackground, FlatList, TouchableOpacity, Text } from "react-native";
 import { Image } from "expo-image";
 import { MapProps, Tile } from "../types";
 import { DebugRenderer } from "./DebugRenderer";
 
 const TREE_SCALE = 1.5; // Scale for tree sprites
-const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get("window");
-const RENDER_AHEAD = 2; // Number of rows/columns to render ahead
+const TREE_1 = require("../assets/tree.png");
+const TREE_2 = require("../assets/tree-2.png");
 
 // Separate component for ground tiles
 const GroundTile: React.FC<{ tile: number; tileSize: number }> = React.memo(({ tile, tileSize }) => {
@@ -39,7 +39,7 @@ const GroundTile: React.FC<{ tile: number; tileSize: number }> = React.memo(({ t
 const TreeTile: React.FC<{ tile: number; tileSize: number }> = React.memo(({ tile, tileSize }) => {
   if (tile !== Tile.Tree && tile !== Tile.Tree2) return null;
 
-  const treeSource = tile === Tile.Tree2 ? require("../assets/tree-2.png") : require("../assets/tree.png");
+  const treeSource = tile === Tile.Tree2 ? TREE_2 : TREE_1;
   const scaledSize = tileSize * TREE_SCALE;
 
   return (
@@ -66,6 +66,7 @@ const TreeTile: React.FC<{ tile: number; tileSize: number }> = React.memo(({ til
           },
         ]}
         contentFit="contain"
+        cachePolicy={"memory-disk"}
       />
     </View>
   );
@@ -128,7 +129,7 @@ const GridOverlay: React.FC<{ tileSize: number; width: number; height: number }>
 
 export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileData, debug }) => {
   const [showGrid, setShowGrid] = useState(false);
-  const [showDebug, setShowDebug] = useState(true);
+  const [showDebug, setShowDebug] = useState(false);
   const { x, y } = position;
   const { width, height } = dimensions;
   const { tileSize, tiles } = tileData;
@@ -163,7 +164,7 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
         ]}
       >
         <ImageBackground source={require("../assets/forest-background.png")} style={styles.background} resizeMode="repeat">
-          <FlatList data={rowData} renderItem={renderItem} keyExtractor={keyExtractor} showsVerticalScrollIndicator={false} scrollEnabled={false} style={styles.list} removeClippedSubviews={false} initialNumToRender={tiles.length} />
+          <FlatList data={rowData} renderItem={renderItem} keyExtractor={keyExtractor} showsVerticalScrollIndicator={false} scrollEnabled={false} style={styles.list} initialNumToRender={tiles.length} />
           {showGrid && <GridOverlay tileSize={tileSize} width={width} height={height} />}
           {showDebug && debugBoxes.length > 0 && (
             <View style={StyleSheet.absoluteFill}>
