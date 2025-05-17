@@ -3,6 +3,7 @@ import { Dimensions } from "react-native";
 import { Direction, MapType, Entity } from "../types";
 import { Player } from "../components/Player";
 import { Map } from "../components/Map";
+import { NPC } from "../components/NPC";
 import { DEFAULT_MAPS, TILE_SIZE } from "../constants/map";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
@@ -52,6 +53,48 @@ const createPlayer = (id: string, x: number, y: number): Entity => ({
   renderer: Player,
 });
 
+const createNPC = (id: string, x: number, y: number, boundsTiles: { minX: number; maxX: number; minY: number; maxY: number }): Entity => {
+  // Validate initial position
+  if (isNaN(x) || isNaN(y)) {
+    console.error("Invalid initial position:", { x, y });
+    x = screenWidth / 2;
+    y = screenHeight / 2;
+  }
+
+  return {
+    id,
+    position: {
+      id: `${id}-position`,
+      x,
+      y,
+    },
+    dimensions: {
+      id: `${id}-dimensions`,
+      width: PLAYER_WIDTH,
+      height: PLAYER_HEIGHT,
+    },
+    movement: {
+      id: `${id}-movement`,
+      speed: MOVEMENT_SPEED * 0.5,
+      direction: Direction.Down,
+      isMoving: true,
+      bounds: {
+        minX: boundsTiles.minX * TILE_SIZE,
+        maxX: boundsTiles.maxX * TILE_SIZE,
+        minY: boundsTiles.minY * TILE_SIZE,
+        maxY: boundsTiles.maxY * TILE_SIZE,
+      },
+    },
+    animation: {
+      id: `${id}-animation`,
+      currentFrame: 0,
+      frameCount: 3,
+      frameRate: 12,
+    },
+    renderer: NPC,
+  };
+};
+
 const createMap = (id: string, mapType: MapType): Entity => {
   const mapData = DEFAULT_MAPS[mapType];
   const mapTiles = mapData.mapData;
@@ -100,8 +143,34 @@ export const setupGameEntities = (): { [key: string]: Entity } => {
   map.position.x = -TILE_SIZE * 12; // Move map to position player in clear area
   map.position.y = -TILE_SIZE * 12; // Move map to position player in clear area
 
+  // Create Lilly NPC just one tile to the right of player's starting position
+  const lillyMapX = -map.position.x + playerX + TILE_SIZE; // One tile right of player
+  const lillyMapY = -map.position.y + playerY; // Same Y as player
+
+  const lilly = createNPC("npc-lilly", lillyMapX + map.position.x, lillyMapY + map.position.y, {
+    minX: 0,
+    maxX: screenWidth,
+    minY: 0,
+    maxY: screenHeight,
+  });
+
+  // Store absolute position for map-relative positioning
+  lilly.absolutePosition = {
+    x: lillyMapX,
+    y: lillyMapY,
+  };
+
+  // Log initial state for debugging
+  console.log("Created Lilly at:", {
+    position: lilly.position,
+    absolutePosition: lilly.absolutePosition,
+    mapPosition: map.position,
+    playerPosition: { x: playerX, y: playerY },
+  });
+
   return {
-    "player-1": player,
     "map-1": map,
+    "player-1": player,
+    "npc-lilly": lilly,
   };
 };

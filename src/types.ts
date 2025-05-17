@@ -191,3 +191,26 @@ export interface PlayerProps {
     frameRate: number;
   };
 }
+
+export interface NPCProps {
+  position: {
+    x: number;
+    y: number;
+  };
+  movement: {
+    direction: Direction;
+    isMoving: boolean;
+    speed: number;
+    bounds: {
+      minX: number;
+      maxX: number;
+      minY: number;
+      maxY: number;
+    };
+  };
+  animation: {
+    currentFrame: number;
+    frameCount: number;
+    frameRate: number;
+  };
+}
