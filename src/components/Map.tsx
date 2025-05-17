@@ -1,14 +1,16 @@
 // components/Map.tsx
-import React from "react";
-import { StyleSheet, View, ImageBackground, Dimensions } from "react-native";
+import React, { useMemo } from "react";
+import { StyleSheet, View, ImageBackground, Dimensions, FlatList } from "react-native";
 import { Image } from "expo-image";
 import { MapProps, Tile } from "../types";
 
 const TREE_SCALE = 1.5; // Scale for tree sprites
 const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get("window");
+const RENDER_AHEAD = 2; // Number of rows/columns to render ahead
 
-const MapTile: React.FC<{ tile: number; tileSize: number }> = React.memo(({ tile, tileSize }) => {
-  if (tile === 0) return null; // Don't render empty tiles
+// Separate component for ground tiles
+const GroundTile: React.FC<{ tile: number; tileSize: number }> = React.memo(({ tile, tileSize }) => {
+  if (tile === 0 || tile === Tile.Tree || tile === Tile.Tree2) return null;
 
   return (
     <View
@@ -17,35 +19,75 @@ const MapTile: React.FC<{ tile: number; tileSize: number }> = React.memo(({ tile
         {
           width: tileSize,
           height: tileSize,
-          position: "relative",
-          zIndex: tile === Tile.Tree || tile === Tile.Tree2 ? 1 : 0,
         },
       ]}
     >
-      {(tile === Tile.Tree || tile === Tile.Tree2) && (
-        <Image
-          source={require("../assets/tree.png")}
-          style={[
-            styles.tileImage,
-            {
-              width: tileSize * TREE_SCALE,
-              height: tileSize * TREE_SCALE,
-              transform: [{ translateX: (-tileSize * (TREE_SCALE - 1)) / 2 }, { translateY: (-tileSize * (TREE_SCALE - 1)) / 2 }],
-              zIndex: 1,
-            },
-          ]}
-          contentFit="contain"
-        />
-      )}
       <View
         style={[
           styles.tileOverlay,
           {
             backgroundColor: getTileColor(tile),
-            zIndex: 0,
           },
         ]}
       />
+    </View>
+  );
+});
+
+// Separate component for trees
+const TreeTile: React.FC<{ tile: number; tileSize: number }> = React.memo(({ tile, tileSize }) => {
+  if (tile !== Tile.Tree && tile !== Tile.Tree2) return null;
+
+  return (
+    <View
+      style={[
+        styles.tile,
+        {
+          width: tileSize,
+          height: tileSize,
+          position: "absolute",
+          top: 0,
+          left: 0,
+        },
+      ]}
+    >
+      <Image
+        source={require("../assets/tree.png")}
+        style={[
+          styles.tileImage,
+          {
+            width: tileSize * TREE_SCALE,
+            height: tileSize * TREE_SCALE,
+            transform: [{ translateX: (-tileSize * (TREE_SCALE - 1)) / 2 }, { translateY: (-tileSize * (TREE_SCALE - 1)) / 2 }],
+          },
+        ]}
+        contentFit="contain"
+      />
+    </View>
+  );
+});
+
+interface RowData {
+  rowIndex: number;
+  tiles: number[];
+  startCol: number;
+  endCol: number;
+  tileSize: number;
+}
+
+const MapRow: React.FC<{ item: RowData }> = React.memo(({ item }) => {
+  const { rowIndex, tiles, startCol, endCol, tileSize } = item;
+
+  return (
+    <View style={styles.row}>
+      {/* Ground layer */}
+      {tiles.slice(startCol, endCol).map((tile: number, colIndex: number) => (
+        <GroundTile key={`ground-${rowIndex}-${colIndex + startCol}`} tile={tile} tileSize={tileSize} />
+      ))}
+      {/* Tree layer */}
+      {tiles.slice(startCol, endCol).map((tile: number, colIndex: number) => (
+        <TreeTile key={`tree-${rowIndex}-${colIndex + startCol}`} tile={tile} tileSize={tileSize} />
+      ))}
     </View>
   );
 });
@@ -56,10 +98,24 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
   const { tileSize, tiles } = tileData;
 
   // Calculate visible tile range
-  const startCol = Math.max(0, Math.floor(-x / tileSize));
-  const endCol = Math.min(tiles[0].length, Math.ceil((-x + WINDOW_WIDTH) / tileSize) + 1);
-  const startRow = Math.max(0, Math.floor(-y / tileSize));
-  const endRow = Math.min(tiles.length, Math.ceil((-y + WINDOW_HEIGHT) / tileSize) + 1);
+  const startCol = Math.max(0, Math.floor(-x / tileSize) - RENDER_AHEAD);
+  const endCol = Math.min(tiles[0].length, Math.ceil((-x + WINDOW_WIDTH) / tileSize) + RENDER_AHEAD);
+  const startRow = Math.max(0, Math.floor(-y / tileSize) - RENDER_AHEAD);
+  const endRow = Math.min(tiles.length, Math.ceil((-y + WINDOW_HEIGHT) / tileSize) + RENDER_AHEAD);
+
+  // Prepare data for FlatList
+  const rowData = useMemo(() => {
+    return tiles.slice(startRow, endRow).map((row, index) => ({
+      rowIndex: index + startRow,
+      tiles: row,
+      startCol,
+      endCol,
+      tileSize,
+    }));
+  }, [startRow, endRow, startCol, endCol, tileSize, tiles]);
+
+  const keyExtractor = (item: RowData) => `row-${item.rowIndex}`;
+  const renderItem = ({ item }: { item: RowData }) => <MapRow item={item} />;
 
   return (
     <View
@@ -69,18 +125,11 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
           transform: [{ translateX: x }, { translateY: y }],
           width,
           height,
-          zIndex: 1,
         },
       ]}
     >
-      <ImageBackground source={require("../assets/forest-background.png")} style={[styles.background, { zIndex: 0 }]} resizeMode="repeat">
-        {tiles.slice(startRow, endRow).map((row: number[], rowIndex: number) => (
-          <View key={rowIndex + startRow} style={[styles.row, { zIndex: 1 }]}>
-            {row.slice(startCol, endCol).map((tile: number, colIndex: number) => (
-              <MapTile key={`${rowIndex + startRow}-${colIndex + startCol}`} tile={tile} tileSize={tileSize} />
-            ))}
-          </View>
-        ))}
+      <ImageBackground source={require("../assets/forest-background.png")} style={styles.background} resizeMode="repeat">
+        <FlatList data={rowData} renderItem={renderItem} keyExtractor={keyExtractor} showsVerticalScrollIndicator={false} scrollEnabled={false} style={styles.list} />
       </ImageBackground>
     </View>
   );
@@ -114,8 +163,12 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
+  list: {
+    flex: 1,
+  },
   row: {
     flexDirection: "row",
+    position: "relative",
   },
   tile: {
     position: "relative",
@@ -131,6 +184,5 @@ const styles = StyleSheet.create({
   },
   tileImage: {
     position: "absolute",
-    zIndex: 1,
   },
 });

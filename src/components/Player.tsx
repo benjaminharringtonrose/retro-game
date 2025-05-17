@@ -21,8 +21,6 @@ export const Player: React.FC<PlayerProps> = ({ position, movement, animation })
   const { currentFrame } = animation;
   const row = SPRITE_ROWS[direction];
 
-  console.log("currentFrame", currentFrame);
-
   const spriteWidth = SPRITE_W * SPRITE_SCALE;
   const spriteHeight = SPRITE_H * SPRITE_SCALE;
 

@@ -3,6 +3,21 @@ import { Dimensions } from "react-native";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
+// Screen edge margins
+const EDGE_MARGIN = 20;
+
+// Logging helper to prevent spam
+let lastLogTime = 0;
+const LOG_INTERVAL = 500; // Only log every 500ms max
+
+const debugLog = (message: string, force = false) => {
+  const now = Date.now();
+  if (force || now - lastLogTime > LOG_INTERVAL) {
+    console.log(`[Movement] ${message}`);
+    lastLogTime = now;
+  }
+};
+
 export const MovementSystem = (entities: { [key: string]: Entity }, { time, delta = 16.666 }: SystemProps) => {
   const player = entities["player-1"];
   const map = entities["map-1"];
@@ -19,21 +34,21 @@ export const MovementSystem = (entities: { [key: string]: Entity }, { time, delt
   const speed = player.movement.speed * deltaSeconds;
 
   if (player.controls.up) {
-    deltaY = speed;
+    deltaY = -speed;
     player.movement.direction = Direction.Up;
     player.movement.isMoving = true;
   } else if (player.controls.down) {
-    deltaY = -speed;
+    deltaY = speed;
     player.movement.direction = Direction.Down;
     player.movement.isMoving = true;
   }
 
   if (player.controls.left) {
-    deltaX = speed;
+    deltaX = -speed;
     player.movement.direction = Direction.Left;
     player.movement.isMoving = true;
   } else if (player.controls.right) {
-    deltaX = -speed;
+    deltaX = speed;
     player.movement.direction = Direction.Right;
     player.movement.isMoving = true;
   }
@@ -43,17 +58,51 @@ export const MovementSystem = (entities: { [key: string]: Entity }, { time, delt
     return entities;
   }
 
-  // Apply bounds checking
-  if (map.bounds) {
-    const newX = map.position.x + deltaX;
-    const newY = map.position.y + deltaY;
+  // Calculate center position
+  const centerX = screenWidth / 2;
+  const centerY = screenHeight / 2;
 
-    // Only move if within bounds
-    if (newX <= map.bounds.maxX && newX >= map.bounds.minX) {
-      map.position.x = newX;
+  if (map.bounds) {
+    // Handle X movement
+    if (deltaX !== 0) {
+      const newMapX = map.position.x - deltaX;
+      const canMoveMapX = newMapX <= map.bounds.maxX && newMapX >= map.bounds.minX;
+      const newPlayerX = player.position.x + deltaX;
+
+      // Check if player would cross center
+      const wouldCrossCenterX = (deltaX < 0 && player.position.x > centerX && newPlayerX <= centerX) || (deltaX > 0 && player.position.x < centerX && newPlayerX >= centerX);
+
+      if (canMoveMapX && (player.position.x === centerX || wouldCrossCenterX)) {
+        debugLog(`Moving map X: ${map.position.x} -> ${newMapX}`);
+        map.position.x = newMapX;
+        player.position.x = centerX;
+      } else {
+        player.position.x = Math.min(Math.max(newPlayerX, EDGE_MARGIN), screenWidth - EDGE_MARGIN);
+      }
     }
-    if (newY <= map.bounds.maxY && newY >= map.bounds.minY) {
-      map.position.y = newY;
+
+    // Handle Y movement
+    if (deltaY !== 0) {
+      const newMapY = map.position.y - deltaY;
+      const canMoveMapY = newMapY <= map.bounds.maxY && newMapY >= map.bounds.minY;
+      const newPlayerY = player.position.y + deltaY;
+
+      // Check if player would cross center
+      const wouldCrossCenterY = (deltaY < 0 && player.position.y > centerY && newPlayerY <= centerY) || (deltaY > 0 && player.position.y < centerY && newPlayerY >= centerY);
+
+      debugLog(`Y Movement - Player: ${player.position.y.toFixed(2)}, New: ${newPlayerY.toFixed(2)}, Center: ${centerY}, Delta: ${deltaY.toFixed(2)}, Can move map: ${canMoveMapY}, Would cross: ${wouldCrossCenterY}`);
+
+      if (canMoveMapY && (player.position.y === centerY || wouldCrossCenterY)) {
+        // If map can move and player is at or crossing center, move map and center player
+        debugLog(`Moving map Y: ${map.position.y} -> ${newMapY}`);
+        map.position.y = newMapY;
+        player.position.y = centerY;
+      } else {
+        // Otherwise move player within screen bounds
+        const boundedY = Math.min(Math.max(newPlayerY, EDGE_MARGIN), screenHeight - EDGE_MARGIN);
+        player.position.y = boundedY;
+        debugLog(`Moving player Y: ${player.position.y} -> ${boundedY}`);
+      }
     }
   }
 
