@@ -1,12 +1,66 @@
 // components/Map.tsx
 import React from "react";
-import { StyleSheet, View, ImageBackground } from "react-native";
+import { StyleSheet, View, ImageBackground, Dimensions } from "react-native";
 import { Image } from "expo-image";
 import { MapProps, Tile } from "../types";
 
 const TREE_SCALE = 1.5; // Scale for tree sprites
+const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get("window");
 
-export const Map: React.FC<MapProps> = ({ x, y, width, height, tileSize, tiles }) => {
+const MapTile: React.FC<{ tile: number; tileSize: number }> = React.memo(({ tile, tileSize }) => {
+  if (tile === 0) return null; // Don't render empty tiles
+
+  return (
+    <View
+      style={[
+        styles.tile,
+        {
+          width: tileSize,
+          height: tileSize,
+          position: "relative",
+          zIndex: tile === Tile.Tree || tile === Tile.Tree2 ? 1 : 0,
+        },
+      ]}
+    >
+      {(tile === Tile.Tree || tile === Tile.Tree2) && (
+        <Image
+          source={require("../assets/tree.png")}
+          style={[
+            styles.tileImage,
+            {
+              width: tileSize * TREE_SCALE,
+              height: tileSize * TREE_SCALE,
+              transform: [{ translateX: (-tileSize * (TREE_SCALE - 1)) / 2 }, { translateY: (-tileSize * (TREE_SCALE - 1)) / 2 }],
+              zIndex: 1,
+            },
+          ]}
+          contentFit="contain"
+        />
+      )}
+      <View
+        style={[
+          styles.tileOverlay,
+          {
+            backgroundColor: getTileColor(tile),
+            zIndex: 0,
+          },
+        ]}
+      />
+    </View>
+  );
+});
+
+export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileData }) => {
+  const { x, y } = position;
+  const { width, height } = dimensions;
+  const { tileSize, tiles } = tileData;
+
+  // Calculate visible tile range
+  const startCol = Math.max(0, Math.floor(-x / tileSize));
+  const endCol = Math.min(tiles[0].length, Math.ceil((-x + WINDOW_WIDTH) / tileSize) + 1);
+  const startRow = Math.max(0, Math.floor(-y / tileSize));
+  const endRow = Math.min(tiles.length, Math.ceil((-y + WINDOW_HEIGHT) / tileSize) + 1);
+
   return (
     <View
       style={[
@@ -15,54 +69,22 @@ export const Map: React.FC<MapProps> = ({ x, y, width, height, tileSize, tiles }
           transform: [{ translateX: x }, { translateY: y }],
           width,
           height,
-          zIndex: 1, // Ensure map is below player
+          zIndex: 1,
         },
       ]}
     >
-      <ImageBackground source={require("../assets/forest-background.png")} style={styles.background} resizeMode="repeat">
-        {tiles.map((row, rowIndex) => (
-          <View key={rowIndex} style={styles.row}>
-            {row.map((tile, colIndex) => (
-              <View
-                key={`${rowIndex}-${colIndex}`}
-                style={[
-                  styles.tile,
-                  {
-                    width: tileSize,
-                    height: tileSize,
-                  },
-                ]}
-              >
-                {tile === Tile.Tree && (
-                  <Image
-                    source={require("../assets/tree.png")}
-                    style={[
-                      styles.tileImage,
-                      {
-                        width: tileSize * TREE_SCALE,
-                        height: tileSize * TREE_SCALE,
-                        transform: [{ translateX: (-tileSize * (TREE_SCALE - 1)) / 2 }, { translateY: (-tileSize * (TREE_SCALE - 1)) / 2 }],
-                      },
-                    ]}
-                    contentFit="contain"
-                  />
-                )}
-                <View
-                  style={[
-                    styles.tileOverlay,
-                    {
-                      backgroundColor: getTileColor(tile),
-                    },
-                  ]}
-                />
-              </View>
+      <ImageBackground source={require("../assets/forest-background.png")} style={[styles.background, { zIndex: 0 }]} resizeMode="repeat">
+        {tiles.slice(startRow, endRow).map((row: number[], rowIndex: number) => (
+          <View key={rowIndex + startRow} style={[styles.row, { zIndex: 1 }]}>
+            {row.slice(startCol, endCol).map((tile: number, colIndex: number) => (
+              <MapTile key={`${rowIndex + startRow}-${colIndex + startCol}`} tile={tile} tileSize={tileSize} />
             ))}
           </View>
         ))}
       </ImageBackground>
     </View>
   );
-};
+});
 
 const getTileColor = (tile: number) => {
   switch (tile) {
@@ -85,6 +107,8 @@ const getTileColor = (tile: number) => {
 const styles = StyleSheet.create({
   map: {
     position: "absolute",
+    left: 0,
+    top: 0,
   },
   background: {
     width: "100%",

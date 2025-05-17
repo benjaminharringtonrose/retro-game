@@ -1,52 +1,42 @@
-import React, { useRef, useState } from "react";
+import React, { useRef } from "react";
 import { StyleSheet, View } from "react-native";
 import { GameEngine as RNGameEngine } from "react-native-game-engine";
 import { setupGameEntities } from "../../engine/entities";
-import { GameLoop } from "../../engine/systems";
+import { MovementSystem, AnimationSystem, ControlSystem } from "../../engine/systems";
 import { Pad } from "../../components/Pad";
-import { Direction, Entities } from "../../types";
+import { Direction, Entity, GameEvent } from "../../types";
 
 interface GameEngineType extends RNGameEngine {
   dispatch: (event: any) => void;
-  entities: Entities;
+  entities: { [key: string]: Entity };
 }
+
+const entities = setupGameEntities();
 
 const GameScreen: React.FC = () => {
   const engineRef = useRef<GameEngineType>(null);
-  const [entities] = useState(setupGameEntities);
 
   const handleDirectionChange = (direction: Direction | null) => {
-    // Access entities directly from our state
-    const { controls } = entities.gameState;
+    if (!engineRef.current) return;
 
-    // Reset all directional controls
-    controls.up = false;
-    controls.down = false;
-    controls.left = false;
-    controls.right = false;
-
-    // Set the new direction
-    if (direction) {
-      switch (direction) {
-        case Direction.Up:
-          controls.up = true;
-          break;
-        case Direction.Down:
-          controls.down = true;
-          break;
-        case Direction.Left:
-          controls.left = true;
-          break;
-        case Direction.Right:
-          controls.right = true;
-          break;
-      }
-    }
+    engineRef.current.dispatch({
+      type: "move",
+      payload: { direction },
+    });
   };
 
   return (
     <View style={styles.container}>
-      <RNGameEngine ref={engineRef} style={StyleSheet.absoluteFill} systems={[GameLoop]} entities={entities} running={true} />
+      <RNGameEngine
+        ref={engineRef}
+        style={StyleSheet.absoluteFill}
+        systems={[ControlSystem, MovementSystem, AnimationSystem]}
+        entities={entities}
+        running={true}
+        onEvent={(event: GameEvent) => {
+          console.log("Game Event:", event);
+        }}
+      />
       <Pad onDirectionChange={handleDirectionChange} />
     </View>
   );

@@ -1,11 +1,11 @@
 // components/Player.tsx
 import React from "react";
-import { View, Image } from "react-native";
+import { View, Image, StyleSheet } from "react-native";
 import { Direction, PlayerProps } from "../types";
 
 const SPRITE_W = 32;
 const SPRITE_H = 40;
-const SPRITE_SCALE = 1.2;
+const SPRITE_SCALE = 1.0; // Reverted back to normal scale
 const characterSprite = require("../assets/character-spritesheet.png");
 
 const SPRITE_ROWS = {
@@ -15,39 +15,63 @@ const SPRITE_ROWS = {
   [Direction.Right]: 3,
 };
 
-export const Player: React.FC<PlayerProps> = ({ x, y, direction, currentFrame }) => {
+export const Player: React.FC<PlayerProps> = ({ position, movement, animation }) => {
+  const { x, y } = position;
+  const { direction } = movement;
+  const { currentFrame } = animation;
   const row = SPRITE_ROWS[direction];
+
+  console.log("currentFrame", currentFrame);
+
+  const spriteWidth = SPRITE_W * SPRITE_SCALE;
+  const spriteHeight = SPRITE_H * SPRITE_SCALE;
 
   return (
     <View
       style={[
+        styles.container,
         {
-          position: "absolute",
-          left: x - (SPRITE_W * SPRITE_SCALE) / 2,
-          top: y - (SPRITE_H * SPRITE_SCALE) / 2,
-          width: SPRITE_W * SPRITE_SCALE,
-          height: SPRITE_H * SPRITE_SCALE,
-          overflow: "hidden",
+          left: x - spriteWidth / 2,
+          top: y - spriteHeight / 2,
+          width: spriteWidth,
+          height: spriteHeight,
+          backgroundColor: "transparent",
           zIndex: 2000,
         },
       ]}
     >
-      <Image
-        source={characterSprite}
-        style={{
-          position: "absolute",
-          width: SPRITE_W * 3 * SPRITE_SCALE,
-          height: SPRITE_H * 4 * SPRITE_SCALE,
-          transform: [
+      <View style={styles.spriteWrapper}>
+        <Image
+          source={characterSprite}
+          style={[
+            styles.sprite,
             {
-              translateX: -currentFrame * SPRITE_W * SPRITE_SCALE,
+              width: spriteWidth * 3,
+              height: spriteHeight * 4,
+              transform: [{ translateX: -currentFrame * spriteWidth }, { translateY: -row * spriteHeight }],
             },
-            {
-              translateY: -row * SPRITE_H * SPRITE_SCALE,
-            },
-          ],
-        }}
-      />
+          ]}
+          resizeMode="cover"
+        />
+      </View>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    position: "absolute",
+    zIndex: 2000,
+    overflow: "visible",
+  },
+  spriteWrapper: {
+    width: "100%",
+    height: "100%",
+    overflow: "hidden",
+  },
+  sprite: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+  },
+});
