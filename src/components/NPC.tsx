@@ -4,11 +4,15 @@ import { Image } from "expo-image";
 import { NPCProps } from "../types";
 
 const SPRITE_WIDTH = 32;
-const SPRITE_HEIGHT = 40;
+const SPRITE_HEIGHT = 41;
+const SPRITE_SCALE = 1.0;
 const lillySprite = require("../assets/lilly-spritesheet.png");
 
 export const NPC: React.FC<NPCProps> = ({ position }) => {
   const { x, y } = position;
+
+  const spriteWidth = SPRITE_WIDTH * SPRITE_SCALE;
+  const spriteHeight = SPRITE_HEIGHT * SPRITE_SCALE;
 
   return (
     <View
@@ -16,10 +20,10 @@ export const NPC: React.FC<NPCProps> = ({ position }) => {
         styles.container,
         {
           position: "absolute",
-          left: x,
-          top: y,
-          width: SPRITE_WIDTH,
-          height: SPRITE_HEIGHT,
+          left: x - spriteWidth / 2,
+          top: y - spriteHeight / 2,
+          width: spriteWidth,
+          height: spriteHeight,
         },
       ]}
     >
@@ -44,7 +48,8 @@ const styles = StyleSheet.create({
   container: {
     justifyContent: "center",
     alignItems: "center",
-    zIndex: 2000,
+    zIndex: 1000,
+    overflow: "visible",
   },
   spriteWrapper: {
     width: "100%",

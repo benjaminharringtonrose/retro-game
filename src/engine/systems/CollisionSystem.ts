@@ -19,6 +19,7 @@ const checkCollision = (playerLeft: number, playerRight: number, playerTop: numb
 export const CollisionSystem = (entities: { [key: string]: Entity }, { delta = 16.666 }: SystemProps) => {
   const player = entities["player-1"];
   const map = entities["map-1"];
+  const npcs = Object.values(entities).filter((entity) => entity.id.startsWith("npc"));
 
   if (!player?.position || !map?.position || !map.tileData) {
     return entities;
@@ -88,6 +89,51 @@ export const CollisionSystem = (entities: { [key: string]: Entity }, { delta = 1
   const nextPlayerRight = nextX + playerHalfSize;
   const nextPlayerTop = nextY - playerHalfSize;
   const nextPlayerBottom = nextY + playerHalfSize;
+
+  // Check NPC collisions
+  npcs.forEach((npc) => {
+    if (!npc.position) return;
+
+    // Calculate NPC position relative to map (already centered due to sprite rendering)
+    const npcMapX = npc.position.x - map.position.x;
+    const npcMapY = npc.position.y - map.position.y;
+
+    // NPC collision box (same size as player)
+    const npcSize = tileSize * 0.3; // Same size as player
+    const npcHalfSize = npcSize / 2;
+
+    // Since the sprite is already centered, we can use the position directly
+    const npcLeft = npcMapX - npcHalfSize;
+    const npcRight = npcMapX + npcHalfSize;
+    const npcTop = npcMapY - npcHalfSize;
+    const npcBottom = npcMapY + npcHalfSize;
+
+    // Add NPC collision box to debug
+    debugBoxes.push({
+      x: npcLeft,
+      y: npcTop,
+      width: npcSize,
+      height: npcSize,
+      color: "#ff00ff",
+    });
+
+    // Check if the next position would result in a collision
+    if (checkCollision(nextPlayerLeft, nextPlayerRight, nextPlayerTop, nextPlayerBottom, npcLeft, npcRight, npcTop, npcBottom)) {
+      // Determine which direction to block based on current position
+      if (nextPlayerRight > npcLeft && playerRight <= npcLeft) {
+        player.collision.blocked.right = true;
+      }
+      if (nextPlayerLeft < npcRight && playerLeft >= npcRight) {
+        player.collision.blocked.left = true;
+      }
+      if (nextPlayerBottom > npcTop && playerBottom <= npcTop) {
+        player.collision.blocked.down = true;
+      }
+      if (nextPlayerTop < npcBottom && playerTop >= npcBottom) {
+        player.collision.blocked.up = true;
+      }
+    }
+  });
 
   // Get the tiles to check based on next position
   const { tileX: nextTileX, tileY: nextTileY } = getTileCoordinates(nextX, nextY, tileSize);
