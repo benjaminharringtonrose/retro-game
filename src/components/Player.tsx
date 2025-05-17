@@ -1,76 +1,53 @@
 // components/Player.tsx
-import React, { useRef, useEffect } from "react";
-import { Image as ExpoImage, ImageRef } from "expo-image";
-import Animated, { SharedValue, useAnimatedStyle } from "react-native-reanimated";
-import { Direction } from "../types";
+import React from "react";
+import { View, Image } from "react-native";
+import { Direction, PlayerProps } from "../types";
 
 const SPRITE_W = 32;
 const SPRITE_H = 40;
 const SPRITE_SCALE = 1.2;
+const characterSprite = require("../assets/character-spritesheet.png");
 
-const ROWS = {
+const SPRITE_ROWS = {
   [Direction.Down]: 0,
-  [Direction.Right]: 1,
+  [Direction.Left]: 1,
   [Direction.Up]: 2,
-  [Direction.Left]: 3,
+  [Direction.Right]: 3,
 };
 
-// Memoize the sprite image
-const SPRITE_IMAGE = {
-  uri: require("../assets/character-spritesheet.png"),
-  cacheKey: "character-sprite",
-};
-
-// Create animated version of ExpoImage
-const AnimatedImage = Animated.createAnimatedComponent(ExpoImage);
-
-export interface PlayerProps {
-  direction: Direction;
-  isMoving: boolean;
-  centerX: SharedValue<number>;
-  centerY: SharedValue<number>;
-  currentFrame: SharedValue<number>;
-  offsetX: SharedValue<number>;
-  offsetY: SharedValue<number>;
-  onLoadComplete?: () => void;
-}
-
-export const Player = ({ direction, isMoving, centerX, centerY, currentFrame, offsetX, offsetY, onLoadComplete }: PlayerProps) => {
-  const containerStyle = useAnimatedStyle(() => {
-    return {
-      position: "absolute",
-      left: centerX.value - (SPRITE_W * SPRITE_SCALE) / 2 + offsetX.value,
-      top: centerY.value - (SPRITE_H * SPRITE_SCALE) / 2 + offsetY.value,
-      width: SPRITE_W * SPRITE_SCALE,
-      height: SPRITE_H * SPRITE_SCALE,
-      overflow: "hidden",
-      zIndex: 2000,
-    };
-  });
-
-  const spriteStyle = useAnimatedStyle(() => {
-    return {
-      position: "absolute",
-      width: SPRITE_W * 3 * SPRITE_SCALE,
-      height: SPRITE_H * 4 * SPRITE_SCALE,
-      transform: [
-        {
-          translateX: -currentFrame.value * SPRITE_W * SPRITE_SCALE,
-        },
-        {
-          translateY: -ROWS[direction] * SPRITE_H * SPRITE_SCALE,
-        },
-      ],
-    };
-  });
-
-  const handleLoadError = (error: any) => {
-    console.error("Failed to load player spritesheet:", error);
-  };
+export const Player: React.FC<PlayerProps> = ({ x, y, direction, currentFrame }) => {
+  const row = SPRITE_ROWS[direction];
 
   return (
-    <Animated.View style={containerStyle}>
-      <AnimatedImage source={require("../assets/character-spritesheet.png")} style={spriteStyle} contentFit="cover" cachePolicy="memory" onLoadEnd={onLoadComplete} onError={handleLoadError} />
-    </Animated.View>
+    <View
+      style={[
+        {
+          position: "absolute",
+          left: x - (SPRITE_W * SPRITE_SCALE) / 2,
+          top: y - (SPRITE_H * SPRITE_SCALE) / 2,
+          width: SPRITE_W * SPRITE_SCALE,
+          height: SPRITE_H * SPRITE_SCALE,
+          overflow: "hidden",
+          zIndex: 2000,
+        },
+      ]}
+    >
+      <Image
+        source={characterSprite}
+        style={{
+          position: "absolute",
+          width: SPRITE_W * 3 * SPRITE_SCALE,
+          height: SPRITE_H * 4 * SPRITE_SCALE,
+          transform: [
+            {
+              translateX: -currentFrame * SPRITE_W * SPRITE_SCALE,
+            },
+            {
+              translateY: -row * SPRITE_H * SPRITE_SCALE,
+            },
+          ],
+        }}
+      />
+    </View>
   );
 };

@@ -1,52 +1,3 @@
-import { MapProps } from "./components/Map";
-import { PlayerProps } from "./components/Player";
-import { Portal } from "./engine/types/PortalTypes";
-
-export interface Controls {
-  up: boolean;
-  down: boolean;
-  left: boolean;
-  right: boolean;
-  a: boolean;
-  b: boolean;
-  start: boolean;
-  select: boolean;
-}
-
-export interface GameState {
-  controls: Controls;
-  health: number;
-  rupees: number;
-  hasItem: boolean;
-}
-
-export interface PlayerEntity {
-  direction: Direction;
-  isMoving: boolean;
-  speed: number;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  renderer: React.FC<PlayerProps>;
-}
-
-export interface MapEntity {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  tileSize: number;
-  tiles: Tile[][];
-  renderer: React.FC<MapProps>;
-}
-
-export interface Entities {
-  player: PlayerEntity;
-  map: MapEntity;
-  gameState: GameState;
-}
-
 export enum Direction {
   Left = "left",
   Right = "right",
@@ -65,8 +16,57 @@ export enum Tile {
 
 export enum MapType {
   FOREST = "FOREST",
-  MOUNTAIN_PASS = "MOUNTAIN_PASS",
-  CABIN_INTERIOR = "CABIN_INTERIOR",
+}
+
+export interface Controls {
+  up: boolean;
+  down: boolean;
+  left: boolean;
+  right: boolean;
+}
+
+export interface GameState {
+  controls: Controls;
+  health: number;
+  rupees: number;
+  hasItem: boolean;
+}
+
+export interface BaseProps {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface PlayerProps extends BaseProps {
+  direction: Direction;
+  currentFrame: number;
+}
+
+export interface MapProps extends BaseProps {
+  tileSize: number;
+  tiles: number[][];
+}
+
+export interface PlayerEntity extends BaseProps {
+  direction: Direction;
+  isMoving: boolean;
+  speed: number;
+  currentFrame: number;
+  renderer: React.FC<PlayerProps>;
+}
+
+export interface MapEntity extends BaseProps {
+  tileSize: number;
+  tiles: number[][];
+  renderer: React.FC<MapProps>;
+}
+
+export interface Entities {
+  player: PlayerEntity;
+  map: MapEntity;
+  gameState: GameState;
 }
 
 export interface MapPosition {
@@ -113,11 +113,10 @@ export interface CollidableEntity {
 
 export interface MapData {
   name: string;
-  initialPosition?: MapPosition;
+  initialPosition: MapPosition;
   mapData: number[][];
   collidableEntities?: CollidableEntity[];
-  portals?: Portal[];
-  background?: any; // Asset require() result
+  background?: any;
   bounds: {
     width: number;
     height: number;

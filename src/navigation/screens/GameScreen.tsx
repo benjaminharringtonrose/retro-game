@@ -1,317 +1,62 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { StyleSheet, useWindowDimensions, View } from "react-native";
-import { useSharedValue, useAnimatedStyle } from "react-native-reanimated";
-import { Direction, MapType, MapPosition } from "../../types";
-import { Map } from "../../components/Map";
-import { Player } from "../../components/Player";
-import { DEFAULT_MAPS, TILE_SIZE } from "../../constants/map";
+import React, { useRef, useState } from "react";
+import { StyleSheet, View } from "react-native";
+import { GameEngine as RNGameEngine } from "react-native-game-engine";
+import { setupGameEntities } from "../../engine/entities";
+import { GameLoop } from "../../engine/systems";
 import { Pad } from "../../components/Pad";
-import { EntityType } from "../../engine/types/EntityTypes";
-import { useGameEngine } from "../../hooks/useGameEngine";
-import { usePlayerAnimation } from "../../hooks/usePlayerAnimation";
-import { usePlayerInput } from "../../hooks/usePlayerInput";
-import { LoadingScreen } from "../../components/LoadingScreen";
-import { Asset } from "expo-asset";
-import { useFonts } from "expo-font";
-import { ComponentType, InputComponent } from "../../engine/types/components";
-import { CollisionSystem } from "../../engine/systems/CollisionSystem";
-import { CollisionVisualizer } from "../../components/CollisionVisualizer";
-import { CollisionToggleButton } from "../../components/CollisionToggleButton";
-import { PortalSystem } from "../../engine/systems/PortalSystem";
-import { MovementSystem } from "../../engine/systems/MovementSystem";
-import { useLillyNPC } from "../../hooks/useLillyNPC";
-import { NPC } from "../../components/NPC";
+import { Direction, Entities } from "../../types";
 
-const INITIAL_MAP = MapType.FOREST;
+interface GameEngineType extends RNGameEngine {
+  dispatch: (event: any) => void;
+  entities: Entities;
+}
 
-const DEFAULT_POSITION: MapPosition = {
-  x: 0,
-  y: 0,
-};
+const GameScreen: React.FC = () => {
+  const engineRef = useRef<GameEngineType>(null);
+  const [entities] = useState(setupGameEntities);
 
-// Define assets with their module IDs
-const GAME_ASSETS = {
-  characterSpritesheet: require("../../assets/character-spritesheet.png"),
-  lillySpritesheet: require("../../assets/lilly-spritesheet.png"),
-  tree: require("../../assets/tree.png"),
-  tree2: require("../../assets/tree-2.png"),
-  forestBackground: require("../../assets/forest-background.png"),
-};
+  const handleDirectionChange = (direction: Direction | null) => {
+    // Access entities directly from our state
+    const { controls } = entities.gameState;
 
-export default function GameScreen() {
-  const { width: wWidth, height: wHeight } = useWindowDimensions();
-  const { engine, entityManager } = useGameEngine();
-  const [isLoading, setIsLoading] = useState(true);
-  const [assetsLoaded, setAssetsLoaded] = useState(false);
-  const [mapLoaded, setMapLoaded] = useState(false);
-  const [playerLoaded, setPlayerLoaded] = useState(false);
-  const [showCollisions, setShowCollisions] = useState(false);
-  const [currentMap, setCurrentMap] = useState<MapType>(INITIAL_MAP);
+    // Reset all directional controls
+    controls.up = false;
+    controls.down = false;
+    controls.left = false;
+    controls.right = false;
 
-  const [fontsLoaded] = useFonts({
-    PressStart2P: require("../../assets/fonts/PressStart2P-Regular.ttf"),
-  });
-
-  // Preload assets
-  useEffect(() => {
-    async function loadAssets() {
-      try {
-        const imageAssets = Object.values(GAME_ASSETS);
-        await Asset.loadAsync(imageAssets);
-        setAssetsLoaded(true);
-      } catch (error) {
-        console.error("Failed to load assets:", error);
+    // Set the new direction
+    if (direction) {
+      switch (direction) {
+        case Direction.Up:
+          controls.up = true;
+          break;
+        case Direction.Down:
+          controls.down = true;
+          break;
+        case Direction.Left:
+          controls.left = true;
+          break;
+        case Direction.Right:
+          controls.right = true;
+          break;
       }
     }
-
-    loadAssets();
-  }, []);
-
-  // Update loading state when all assets are ready
-  const isAllLoaded = useMemo(() => assetsLoaded && mapLoaded && playerLoaded && fontsLoaded, [assetsLoaded, mapLoaded, playerLoaded, fontsLoaded]);
-
-  useEffect(() => {
-    if (isAllLoaded && isLoading) {
-      console.log("✨ All components loaded, ready to start");
-    }
-  }, [isAllLoaded, isLoading]);
-
-  const handleGameStart = useCallback(() => {
-    console.log("🎮 Starting game");
-    setIsLoading(false);
-  }, []);
-
-  // Handle map transitions
-  const handleMapTransition = useCallback((newMapType: MapType) => {
-    console.log("Transitioning to map:", newMapType);
-    setCurrentMap(newMapType);
-    setMapLoaded(false);
-  }, []);
-
-  // Get initial position from map config
-  const initialPosition = useMemo(() => DEFAULT_MAPS[currentMap]?.initialPosition ?? { x: 0, y: 0 }, [currentMap]);
-
-  // Create shared values with memoized initial values
-  const mapX = useSharedValue(initialPosition.x);
-  const mapY = useSharedValue(initialPosition.y);
-  const offsetX = useSharedValue(0);
-  const offsetY = useSharedValue(0);
-  const playerCenterX = useSharedValue(wWidth / 2);
-  const playerCenterY = useSharedValue(wHeight / 2);
-  const currentFrame = useSharedValue(0);
-  const directionValue = useSharedValue(Direction.Down);
-  const isMovingValue = useSharedValue(false);
-
-  // Update shared values when window dimensions change
-  useEffect(() => {
-    playerCenterX.value = wWidth / 2;
-    playerCenterY.value = wHeight / 2;
-  }, [wWidth, wHeight]);
-
-  // Update shared values when initial position changes
-  useEffect(() => {
-    if (initialPosition) {
-      // Make sure we're setting a valid position within map bounds
-      const mapBounds = DEFAULT_MAPS[currentMap]?.bounds;
-      if (mapBounds) {
-        const boundedX = Math.max(mapBounds.minX, Math.min(mapBounds.maxX, initialPosition.x));
-        const boundedY = Math.max(mapBounds.minY, Math.min(mapBounds.maxY, initialPosition.y));
-
-        // Use bounded values to prevent going off map
-        mapX.value = boundedX;
-        mapY.value = boundedY;
-
-        // Reset offsets
-        offsetX.value = 0;
-        offsetY.value = 0;
-
-        console.log("Set initial position:", { x: boundedX, y: boundedY });
-      } else {
-        mapX.value = initialPosition.x;
-        mapY.value = initialPosition.y;
-      }
-    }
-  }, [initialPosition.x, initialPosition.y, currentMap]);
-
-  const [direction, setDirection] = useState(Direction.Down);
-  const [isMoving, setIsMoving] = useState(false);
-
-  // Memoize the player creation to prevent recreation on every render
-  useEffect(() => {
-    if (!isLoading && mapLoaded) {
-      entityManager.createPlayer(
-        {
-          position: { x: wWidth / 2, y: wHeight / 2 },
-          spritesheet: GAME_ASSETS.characterSpritesheet,
-          type: EntityType.PLAYER,
-        },
-        {
-          mapX,
-          mapY,
-          offsetX,
-          offsetY,
-        }
-      );
-
-      // Force initial direction update
-      const entities = engine.getEntitiesWithComponents([ComponentType.Input]);
-      for (const entity of entities) {
-        const input = engine.getComponent<InputComponent>(entity, ComponentType.Input);
-        if (input) {
-          input.direction = { x: 0, y: -1 }; // Set initial direction to down
-        }
-      }
-    }
-  }, [entityManager, wWidth, wHeight, isLoading, engine, mapLoaded]);
-
-  // Use custom hooks for animation and input
-  usePlayerAnimation(isMoving, direction, currentFrame, directionValue, isMovingValue);
-  usePlayerInput(engine, direction, isMoving);
-
-  // Memoize direction and movement handlers
-  const handleDirectionChange = useCallback((newDirection: Direction) => {
-    setDirection(newDirection);
-    directionValue.value = newDirection;
-  }, []);
-
-  const handleMovingChange = useCallback((value: boolean) => {
-    setIsMoving(value);
-    isMovingValue.value = value;
-  }, []);
-
-  // Memoize map data to prevent unnecessary re-renders
-  const mapData = useMemo(
-    () => ({
-      tiles: DEFAULT_MAPS[currentMap].mapData,
-      tileSize: TILE_SIZE,
-    }),
-    [currentMap]
-  );
-
-  // Add systems when map is loaded
-  useEffect(() => {
-    if (mapLoaded && DEFAULT_MAPS[currentMap]) {
-      console.log("Setting up systems for map:", currentMap);
-
-      // Clean up existing systems first
-      engine.clearSystems();
-
-      // Add systems in the correct order
-      engine.addSystem(new MovementSystem(DEFAULT_MAPS[currentMap]));
-      if (DEFAULT_MAPS[currentMap].collidableEntities) {
-        engine.addSystem(new CollisionSystem(DEFAULT_MAPS[currentMap].collidableEntities!));
-      }
-      if (DEFAULT_MAPS[currentMap].portals) {
-        engine.addSystem(new PortalSystem(DEFAULT_MAPS[currentMap].portals!, handleMapTransition));
-      }
-
-      // Ensure the map position is valid when loading a new map
-      const mapConfig = DEFAULT_MAPS[currentMap];
-      const initialPos = mapConfig.initialPosition || { x: 0, y: 0 };
-      const bounds = mapConfig.bounds;
-
-      // Clamp initial position to map bounds
-      const boundedX = Math.max(bounds.minX, Math.min(bounds.maxX, initialPos.x));
-      const boundedY = Math.max(bounds.minY, Math.min(bounds.maxY, initialPos.y));
-
-      // Apply bounded position
-      mapX.value = boundedX;
-      mapY.value = boundedY;
-
-      // Reset any offsets
-      offsetX.value = 0;
-      offsetY.value = 0;
-
-      console.log("Map loaded, position set to:", { x: boundedX, y: boundedY });
-    }
-  }, [mapLoaded, engine, currentMap, handleMapTransition, mapX, mapY, offsetX, offsetY]);
-
-  // Calculate player world position
-  const playerWorldPosition = useMemo(() => {
-    return {
-      x: wWidth / 2,
-      y: wHeight / 2,
-    };
-  }, [wWidth, wHeight]);
-
-  // Add Lilly NPC
-  const { direction: lillyDirection, isMoving: lillyIsMoving, lillyCurrentFrame, lillyCenterX, lillyCenterY } = useLillyNPC(mapX, mapY, offsetX, offsetY, wWidth, wHeight, mapLoaded, GAME_ASSETS.lillySpritesheet);
+  };
 
   return (
     <View style={styles.container}>
-      <View style={styles.gameContainer}>
-        {/* Background and Map Layer */}
-        <View style={[StyleSheet.absoluteFill, { zIndex: 1 }]}>
-          <Map
-            mapX={mapX}
-            mapY={mapY}
-            tiles={DEFAULT_MAPS[currentMap].mapData}
-            tileSize={TILE_SIZE}
-            mapType={currentMap}
-            collidableEntities={DEFAULT_MAPS[currentMap].collidableEntities}
-            background={DEFAULT_MAPS[currentMap].background}
-            onLoadComplete={() => setMapLoaded(true)}
-          />
-        </View>
-
-        {/* Collision Visualization Layer */}
-        {showCollisions && DEFAULT_MAPS[currentMap].collidableEntities && (
-          <View style={[StyleSheet.absoluteFill, { zIndex: 1500 }]}>
-            <CollisionVisualizer collidableEntities={DEFAULT_MAPS[currentMap].collidableEntities} mapX={mapX} mapY={mapY} portals={DEFAULT_MAPS[currentMap].portals} />
-          </View>
-        )}
-
-        {/* Game Entities Layer */}
-        <View
-          style={[
-            StyleSheet.absoluteFill,
-            {
-              zIndex: 1800,
-              backgroundColor: "transparent",
-              position: "absolute",
-              left: 0,
-              top: 0,
-              right: 0,
-              bottom: 0,
-            },
-          ]}
-        >
-          <NPC direction={lillyDirection} isMoving={lillyIsMoving} centerX={lillyCenterX} centerY={lillyCenterY} currentFrame={lillyCurrentFrame} spritesheet={GAME_ASSETS.lillySpritesheet} />
-          <Player direction={direction} isMoving={isMoving} centerX={playerCenterX} centerY={playerCenterY} currentFrame={currentFrame} offsetX={offsetX} offsetY={offsetY} onLoadComplete={() => setPlayerLoaded(true)} />
-        </View>
-      </View>
-
-      {/* Controls Layer */}
-      <View style={[styles.controls, { zIndex: 3000 }]}>
-        <Pad setDirection={handleDirectionChange} setIsMoving={handleMovingChange} />
-        <CollisionToggleButton isVisible={showCollisions} onToggle={() => setShowCollisions(!showCollisions)} />
-      </View>
-
-      {isLoading && <LoadingScreen isLoaded={isAllLoaded} onStart={handleGameStart} />}
+      <RNGameEngine ref={engineRef} style={StyleSheet.absoluteFill} systems={[GameLoop]} entities={entities} running={true} />
+      <Pad onDirectionChange={handleDirectionChange} />
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "transparent",
-  },
-  gameContainer: {
-    flex: 1,
-    position: "relative",
-    overflow: "visible",
-    backgroundColor: "transparent",
-  },
-  controls: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 200,
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    flexDirection: "row",
-    paddingHorizontal: 20,
+    backgroundColor: "#000",
   },
 });
+
+export default GameScreen;
