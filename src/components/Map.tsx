@@ -38,11 +38,20 @@ const GroundTile: React.FC<{ tile: number; tileSize: number }> = React.memo(({ t
 
 // Separate component for trees
 const TreeTile: React.FC<{ tile: number; tileSize: number; onImageLoad?: (assetId?: string) => void }> = React.memo(({ tile, tileSize, onImageLoad }) => {
+  const [hasLoaded, setHasLoaded] = useState(false);
   if (tile !== Tile.Tree && tile !== Tile.Tree2) return null;
 
   const treeSource = tile === Tile.Tree2 ? TREE_2 : TREE_1;
   const scaledSize = tileSize * TREE_SCALE;
   const assetId = tile === Tile.Tree2 ? "tree-2" : "tree-1";
+
+  const handleLoadEnd = () => {
+    if (!hasLoaded) {
+      console.log(`[Map] Tree loaded: ${assetId}`);
+      onImageLoad?.(assetId);
+      setHasLoaded(true);
+    }
+  };
 
   return (
     <View
@@ -69,7 +78,7 @@ const TreeTile: React.FC<{ tile: number; tileSize: number; onImageLoad?: (assetI
         ]}
         contentFit="contain"
         cachePolicy={"memory-disk"}
-        onLoadEnd={() => onImageLoad?.(assetId)}
+        onLoadEnd={handleLoadEnd}
       />
     </View>
   );
@@ -77,7 +86,16 @@ const TreeTile: React.FC<{ tile: number; tileSize: number; onImageLoad?: (assetI
 
 // Separate component for flowers
 const FlowerTile: React.FC<{ tile: number; tileSize: number; onImageLoad?: (assetId?: string) => void }> = React.memo(({ tile, tileSize, onImageLoad }) => {
+  const [hasLoaded, setHasLoaded] = useState(false);
   if (tile !== Tile.Flower) return null;
+
+  const handleLoadEnd = () => {
+    if (!hasLoaded) {
+      console.log("[Map] Flower loaded");
+      onImageLoad?.("flower");
+      setHasLoaded(true);
+    }
+  };
 
   return (
     <View
@@ -102,7 +120,7 @@ const FlowerTile: React.FC<{ tile: number; tileSize: number; onImageLoad?: (asse
         ]}
         contentFit="contain"
         cachePolicy={"memory-disk"}
-        onLoadEnd={() => onImageLoad?.("flower")}
+        onLoadEnd={handleLoadEnd}
       />
     </View>
   );
@@ -114,7 +132,7 @@ interface RowData {
   startCol: number;
   endCol: number;
   tileSize: number;
-  onImageLoad?: () => void;
+  onImageLoad?: (assetId?: string) => void;
 }
 
 const MapRow: React.FC<{ item: RowData }> = React.memo(({ item }) => {
@@ -175,6 +193,7 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
 
   useEffect(() => {
     if (backgroundLoaded) {
+      console.log("[Map] Background loaded");
       onImageLoad?.("background");
     }
   }, [backgroundLoaded, onImageLoad]);
@@ -209,7 +228,17 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
           },
         ]}
       >
-        <ImageBackground source={require("../assets/forest-background.png")} style={styles.background} resizeMode="repeat" onLoad={(() => setBackgroundLoaded(true)) as () => void}>
+        <ImageBackground
+          source={require("../assets/forest-background.png")}
+          style={styles.background}
+          resizeMode="repeat"
+          onLoadEnd={() => {
+            if (!backgroundLoaded) {
+              console.log("[Map] Background load ended");
+              setBackgroundLoaded(true);
+            }
+          }}
+        >
           <FlatList data={rowData} renderItem={renderItem} keyExtractor={keyExtractor} showsVerticalScrollIndicator={false} scrollEnabled={false} style={styles.list} initialNumToRender={tiles.length} />
           {showGrid && <GridOverlay tileSize={tileSize} width={width} height={height} />}
           {showDebug && debugBoxes.length > 0 && (

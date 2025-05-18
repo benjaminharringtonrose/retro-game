@@ -39,16 +39,16 @@ const GameScreen: React.FC = () => {
 
   useEffect(() => {
     if (engineRef.current) {
-      // Store the game engine reference globally
       window.gameEngine = engineRef.current;
     }
 
     // Subscribe to loading updates
     const unsubscribe = loadingHandler.subscribe(() => {
       const progress = loadingHandler.getProgress();
+      console.log(`[GameScreen] Loading progress update: ${progress}/${TOTAL_GAME_ASSETS}`);
       setLoadedAssets(progress);
 
-      if (progress === loadingHandler.getTotalAssets()) {
+      if (progress === TOTAL_GAME_ASSETS) {
         console.log("[GameScreen] All assets loaded, hiding overlay");
         setIsLoading(false);
       }

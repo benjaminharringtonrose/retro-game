@@ -53,6 +53,14 @@ export const NPC: React.FC<NPCProps> = ({ position, movement, animation, onInter
     }
   };
 
+  const handleLoadEnd = () => {
+    if (!hasLoaded) {
+      debugNPC("Sprite image loaded", { id });
+      onImageLoad?.("npc-" + id);
+      setHasLoaded(true);
+    }
+  };
+
   return (
     <Pressable
       onPress={handlePress}
@@ -87,13 +95,7 @@ export const NPC: React.FC<NPCProps> = ({ position, movement, animation, onInter
           ]}
           contentFit="contain"
           cachePolicy="memory-disk"
-          onLoad={() => {
-            if (!hasLoaded) {
-              debugNPC("Sprite image loaded", { id });
-              onImageLoad?.("npc-" + id);
-              setHasLoaded(true);
-            }
-          }}
+          onLoadEnd={handleLoadEnd}
         />
       </View>
     </Pressable>

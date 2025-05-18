@@ -15,6 +15,11 @@ export const createLoadingHandler = (totalAssets: number) => {
 
   console.log(`[LoadingHandler] Created with ${totalAssets} total assets`);
 
+  const notifySubscribers = () => {
+    console.log(`[LoadingHandler] Notifying subscribers: ${loadedCount}/${totalAssets}`);
+    subscribers.forEach((callback) => callback());
+  };
+
   return {
     handleImageLoad: (assetId?: string) => {
       // If no assetId provided, generate one based on the stack trace
@@ -25,11 +30,13 @@ export const createLoadingHandler = (totalAssets: number) => {
         loadedAssets.add(id);
         loadedCount = Math.min(loadedCount + 1, totalAssets);
         console.log(`[LoadingHandler] Image loaded (${loadedCount}/${totalAssets}) - ${id}`);
-        subscribers.forEach((callback) => callback());
+        notifySubscribers();
       }
     },
     subscribe: (callback: () => void) => {
       subscribers.add(callback);
+      // Notify immediately of current state
+      callback();
       return () => subscribers.delete(callback);
     },
     getProgress: () => loadedCount,
