@@ -43,6 +43,7 @@ export interface AnimationComponent extends Component {
   currentFrame: number;
   frameCount: number;
   frameRate: number;
+  accumulatedTime?: number;
 }
 
 export interface RenderComponent extends Component {
