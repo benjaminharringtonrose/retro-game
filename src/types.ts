@@ -228,6 +228,24 @@ export interface NPCProps {
   onInteract?: () => GameEvent;
 }
 
+export interface NPCEntity extends Entity {
+  absolutePosition: {
+    x: number;
+    y: number;
+  };
+  initialPosition: {
+    x: number;
+    y: number;
+  };
+  aiState?: {
+    currentWaitTime: number;
+    targetWaitTime: number;
+    isWaiting: boolean;
+    lastMoveTime: number;
+    moveInterval: number;
+  };
+}
+
 export interface DialogComponent extends Component {
   isVisible: boolean;
   message: string;

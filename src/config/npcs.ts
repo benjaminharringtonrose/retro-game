@@ -22,6 +22,25 @@ const LILLY_SPRITE = {
   },
 };
 
+const WILLOW_SPRITE = {
+  source: require("../assets/willow.png"),
+  width: 32,
+  height: 32,
+  scale: 1.5,
+  frameCount: 3,
+  frameRate: 8,
+  rows: {
+    [Direction.Down]: 0,
+    [Direction.Left]: 1,
+    [Direction.Right]: 2,
+    [Direction.Up]: 3,
+    [Direction.UpLeft]: 1,
+    [Direction.UpRight]: 2,
+    [Direction.DownLeft]: 1,
+    [Direction.DownRight]: 2,
+  },
+};
+
 export const NPC_CONFIGS: { [key: string]: NPCConfig } = {
   "npc-lilly": {
     id: "npc-lilly",
@@ -49,6 +68,38 @@ export const NPC_CONFIGS: { [key: string]: NPCConfig } = {
     dialogue: {
       messages: ["I love you Ben!"],
       triggerDistance: 1,
+    },
+    initialPosition: {
+      x: 23 * TILE_SIZE,
+      y: 15 * TILE_SIZE,
+    },
+  },
+  "npc-willow": {
+    id: "npc-willow",
+    name: "Willow",
+    sprite: WILLOW_SPRITE,
+    behavior: {
+      type: "wander",
+      moveSpeed: 80,
+      moveIntervalRange: {
+        min: 4000,
+        max: 7000,
+      },
+      waitTimeRange: {
+        min: 2500,
+        max: 5000,
+      },
+      boundary: {
+        minX: 12,
+        maxX: 18,
+        minY: 12,
+        maxY: 18,
+      },
+      allowedTiles: [0],
+    },
+    dialogue: {
+      triggerDistance: 2,
+      messages: ["Woof woof!", "*wags tail excitedly*", "*sniffs around curiously*"],
     },
     initialPosition: {
       x: 23 * TILE_SIZE,
