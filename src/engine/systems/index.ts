@@ -14,13 +14,13 @@ export { NPCSystem } from "./NPCSystem";
 export { DialogSystem } from "./DialogSystem";
 export { InteractionSystem } from "./InteractionSystem";
 
-// Order matters: Controls -> Collision -> Movement -> Animation
+// Order matters: Controls -> Dialog -> Interaction -> Movement -> Animation
 export const Systems = [
   ControlSystem, // First handle input
-  InteractionSystem, // Then handle NPC interactions
+  DialogSystem, // Handle dialog interactions immediately
   NPCSystem, // Then update NPCs
+  InteractionSystem, // Then handle walking to NPCs
   CollisionSystem, // Then check for potential collisions
-  DialogSystem, // Handle dialog after collisions
   MovementSystem, // Apply movement respecting collision flags
   AnimationSystem, // Finally update visuals
 ];

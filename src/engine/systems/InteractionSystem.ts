@@ -8,7 +8,8 @@ interface InteractionState {
   isMovingToTarget: boolean;
 }
 
-const INTERACTION_RANGE = TILE_SIZE * 0.8; // Same as dialog range
+// Make interaction range smaller than dialog range to ensure we get close enough
+const INTERACTION_RANGE = TILE_SIZE * 0.5; // Half a tile distance
 
 const calculateDistance = (x1: number, y1: number, x2: number, y2: number): number => {
   const dx = x2 - x1;
@@ -31,6 +32,12 @@ const getDirectionToTarget = (currentX: number, currentY: number, targetX: numbe
 export const InteractionSystem = (entities: { [key: string]: Entity }, { events = [] }: SystemProps) => {
   const player = entities["player-1"];
   const map = entities["map-1"];
+  const dialog = entities["dialog-1"];
+
+  // If dialog is visible, don't process interactions
+  if (dialog.isVisible) {
+    return entities;
+  }
 
   // Initialize or get interaction state
   if (!player.interaction) {
@@ -83,6 +90,14 @@ export const InteractionSystem = (entities: { [key: string]: Entity }, { events 
       player.controls.left = false;
       player.controls.right = false;
       player.movement.isMoving = false;
+
+      // Trigger another click event to show dialog
+      if (window.gameEngine?.dispatch) {
+        window.gameEngine.dispatch({
+          type: "npc-click",
+          payload: { npcId: player.interaction.targetNPC },
+        });
+      }
     } else {
       // Move towards target
       const direction = getDirectionToTarget(playerMapX, playerMapY, player.interaction.targetX, player.interaction.targetY);
