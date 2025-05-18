@@ -22,9 +22,12 @@ export const getMapCoords = (tileX: number, tileY: number): { x: number; y: numb
   y: tileY * TILE_SIZE + TILE_SIZE / 2,
 });
 
-// Manhattan distance heuristic for tile coordinates
+// Diagonal distance heuristic for tile coordinates
 const heuristic = (nodeA: { tileX: number; tileY: number }, nodeB: { tileX: number; tileY: number }): number => {
-  return Math.abs(nodeA.tileX - nodeB.tileX) + Math.abs(nodeA.tileY - nodeB.tileY);
+  const dx = Math.abs(nodeA.tileX - nodeB.tileX);
+  const dy = Math.abs(nodeA.tileY - nodeB.tileY);
+  // Use diagonal distance: cost of 1.4 for diagonal, 1 for cardinal
+  return 1.4 * Math.min(dx, dy) + Math.abs(dx - dy);
 };
 
 // Check if a tile position is walkable

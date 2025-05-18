@@ -71,7 +71,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onStart }) => {
     <View style={[styles.container, { width, height }]}>
       <View style={styles.content}>
         <Animated.View style={[styles.titleContainer, titleStyle]}>
-          <Text style={styles.title}>THE LEGEND OF{"\n"}MY GAME</Text>
+          <Text style={styles.title}>THE LEGEND OF{"\n"}LILLY</Text>
         </Animated.View>
         <View style={styles.buttonContainer}>
           <Animated.View style={[styles.buttonWrapper, buttonStyle]}>

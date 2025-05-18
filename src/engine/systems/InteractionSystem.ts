@@ -262,19 +262,41 @@ export const InteractionSystem = (entities: { [key: string]: Entity }, { events 
         const dx = currentTarget.x - playerMapX;
         const dy = currentTarget.y - playerMapY;
 
-        // Determine primary movement direction based on larger delta
-        if (Math.abs(dx) > Math.abs(dy)) {
+        // Set diagonal movement based on relative magnitudes
+        const useDiagonal = Math.abs(dx) * 0.7 <= Math.abs(dy) && Math.abs(dy) * 0.7 <= Math.abs(dx);
+
+        if (useDiagonal) {
+          // Diagonal movement
           player.controls.left = dx < 0;
           player.controls.right = dx > 0;
-          player.controls.up = false;
-          player.controls.down = false;
-          player.movement.direction = dx < 0 ? Direction.Left : Direction.Right;
-        } else {
           player.controls.up = dy < 0;
           player.controls.down = dy > 0;
-          player.controls.left = false;
-          player.controls.right = false;
-          player.movement.direction = dy < 0 ? Direction.Up : Direction.Down;
+
+          // Set diagonal direction
+          if (dx > 0 && dy < 0) {
+            player.movement.direction = Direction.UpRight;
+          } else if (dx > 0 && dy > 0) {
+            player.movement.direction = Direction.DownRight;
+          } else if (dx < 0 && dy > 0) {
+            player.movement.direction = Direction.DownLeft;
+          } else {
+            player.movement.direction = Direction.UpLeft;
+          }
+        } else {
+          // Cardinal movement (when one direction is dominant)
+          if (Math.abs(dx) > Math.abs(dy)) {
+            player.controls.left = dx < 0;
+            player.controls.right = dx > 0;
+            player.controls.up = false;
+            player.controls.down = false;
+            player.movement.direction = dx < 0 ? Direction.Left : Direction.Right;
+          } else {
+            player.controls.up = dy < 0;
+            player.controls.down = dy > 0;
+            player.controls.left = false;
+            player.controls.right = false;
+            player.movement.direction = dy < 0 ? Direction.Up : Direction.Down;
+          }
         }
 
         player.movement.isMoving = true;
