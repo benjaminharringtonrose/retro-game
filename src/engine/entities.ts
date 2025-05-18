@@ -6,6 +6,7 @@ import { Map } from "../components/Map";
 import { NPC } from "../components/NPC";
 import { DialogBoxRenderer } from "../components/DialogBoxRenderer";
 import { DEFAULT_MAPS, TILE_SIZE } from "../constants/map";
+import { NPC_CONFIGS } from "../config/npcs";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -54,12 +55,24 @@ const createPlayer = (id: string, x: number, y: number): Entity => ({
   renderer: Player,
 });
 
-const createNPC = (id: string, x: number, y: number, boundsTiles: { minX: number; maxX: number; minY: number; maxY: number }): Entity => {
+const createNPC = (id: string, x: number, y: number): Entity => {
+  // Get NPC config
+  const config = NPC_CONFIGS[id];
+  if (!config) {
+    console.error(`No configuration found for NPC: ${id}`);
+    return {
+      id,
+      position: { id: `${id}-position`, x: 0, y: 0 },
+      dimensions: { id: `${id}-dimensions`, width: 0, height: 0 },
+      renderer: NPC,
+    } as Entity;
+  }
+
   // Validate initial position
   if (isNaN(x) || isNaN(y)) {
     console.error("Invalid initial position:", { x, y });
-    x = screenWidth / 2;
-    y = screenHeight / 2;
+    x = config.initialPosition.x;
+    y = config.initialPosition.y;
   }
 
   return {
@@ -71,26 +84,21 @@ const createNPC = (id: string, x: number, y: number, boundsTiles: { minX: number
     },
     dimensions: {
       id: `${id}-dimensions`,
-      width: PLAYER_WIDTH,
-      height: PLAYER_HEIGHT,
+      width: config.sprite.width * config.sprite.scale,
+      height: config.sprite.height * config.sprite.scale,
     },
     movement: {
       id: `${id}-movement`,
-      speed: MOVEMENT_SPEED * 0.5,
+      speed: config.behavior.moveSpeed,
       direction: Direction.Down,
       isMoving: false,
-      bounds: {
-        minX: boundsTiles.minX * TILE_SIZE,
-        maxX: boundsTiles.maxX * TILE_SIZE,
-        minY: boundsTiles.minY * TILE_SIZE,
-        maxY: boundsTiles.maxY * TILE_SIZE,
-      },
+      bounds: config.behavior.boundary,
     },
     animation: {
       id: `${id}-animation`,
       currentFrame: 0,
-      frameCount: 3,
-      frameRate: 12,
+      frameCount: config.sprite.frameCount,
+      frameRate: config.sprite.frameRate,
     },
     onInteract: () => {
       return {
@@ -166,41 +174,21 @@ export const setupGameEntities = (): { [key: string]: Entity } => {
   const player = createPlayer("player-1", playerX, playerY);
 
   // Adjust initial map position to ensure player starts in a clear area
-  map.position.x = -TILE_SIZE * 12; // Move map to position player in clear area
-  map.position.y = -TILE_SIZE * 12; // Move map to position player in clear area
+  map.position.x = -TILE_SIZE * 12;
+  map.position.y = -TILE_SIZE * 12;
 
-  // Create Lilly NPC with a fixed position on the map (e.g., at tile position 15,15)
-  const lillyTileX = 23;
-  const lillyTileY = 15;
-  const lillyMapX = lillyTileX * TILE_SIZE;
-  const lillyMapY = lillyTileY * TILE_SIZE;
-
-  // Calculate Lilly's movement bounds in map coordinates
-  const boundsTiles = {
-    minX: lillyTileX - 5, // 5 tiles to the left
-    maxX: lillyTileX + 5, // 5 tiles to the right
-    minY: lillyTileY - 5, // 5 tiles up
-    maxY: lillyTileY + 5, // 5 tiles down
-  };
-
-  const lilly = createNPC("npc-lilly", lillyMapX + map.position.x, lillyMapY + map.position.y, {
-    minX: boundsTiles.minX * TILE_SIZE,
-    maxX: boundsTiles.maxX * TILE_SIZE,
-    minY: boundsTiles.minY * TILE_SIZE,
-    maxY: boundsTiles.maxY * TILE_SIZE,
-  });
+  // Create Lilly NPC with config-based position
+  const lillyConfig = NPC_CONFIGS["npc-lilly"];
+  const lilly = createNPC("npc-lilly", lillyConfig.initialPosition.x + map.position.x, lillyConfig.initialPosition.y + map.position.y);
 
   // Store absolute position for map-relative positioning
   lilly.absolutePosition = {
-    x: lillyMapX,
-    y: lillyMapY,
+    x: lillyConfig.initialPosition.x,
+    y: lillyConfig.initialPosition.y,
   };
 
   // Store initial position for movement bounds
-  lilly.initialPosition = {
-    x: lillyMapX,
-    y: lillyMapY,
-  };
+  lilly.initialPosition = lillyConfig.initialPosition;
 
   // Create dialog entity
   const dialog = createDialog("dialog-1");

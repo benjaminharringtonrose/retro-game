@@ -199,6 +199,7 @@ export interface PlayerProps {
 }
 
 export interface NPCProps {
+  id: string;
   position: {
     x: number;
     y: number;

@@ -2,50 +2,41 @@ import React, { useEffect } from "react";
 import { StyleSheet, View, TouchableOpacity, Pressable } from "react-native";
 import { Image } from "expo-image";
 import { NPCProps, Direction } from "../types";
-
-const SPRITE_WIDTH = 32;
-const SPRITE_HEIGHT = 41;
-const SPRITE_SCALE = 1.0;
-
-// Import sprite using require with explicit path
-const lillySprite = require("../assets/lilly-spritesheet.png");
+import { NPC_CONFIGS } from "../config/npcs";
 
 // Debug logging
 const debugNPC = (message: string, data?: any) => {
   console.log(`[NPC Debug] ${message}`, data || "");
 };
 
-// Sprite row mapping for each direction
-const SPRITE_ROWS = {
-  [Direction.Down]: 0,
-  [Direction.Left]: 1,
-  [Direction.Up]: 2,
-  [Direction.Right]: 3,
-  // Map diagonal directions to their closest cardinal direction
-  [Direction.UpLeft]: 1, // Use left-facing sprite
-  [Direction.UpRight]: 2, // Use right-facing sprite
-  [Direction.DownLeft]: 1, // Use left-facing sprite
-  [Direction.DownRight]: 2, // Use right-facing sprite
-};
-
-export const NPC: React.FC<NPCProps> = ({ position, movement, animation, onInteract }) => {
+export const NPC: React.FC<NPCProps> = ({ position, movement, animation, onInteract, id }) => {
   const { x, y } = position;
   const { direction, isMoving } = movement;
   const { currentFrame } = animation;
 
+  // Get NPC config
+  const config = NPC_CONFIGS[id];
+  if (!config) {
+    console.error(`No configuration found for NPC: ${id}`);
+    return null;
+  }
+
+  const { sprite } = config;
+
   // Add debug logging
   useEffect(() => {
-    debugNPC("NPC Mounted", { x, y, direction, isMoving });
+    debugNPC("NPC Mounted", { id, x, y, direction, isMoving });
     debugNPC("Sprite Config", {
-      width: SPRITE_WIDTH,
-      height: SPRITE_HEIGHT,
-      scale: SPRITE_SCALE,
-      source: lillySprite,
+      width: sprite.width,
+      height: sprite.height,
+      scale: sprite.scale,
+      source: sprite.source,
     });
   }, []);
 
   // Get the appropriate sprite row based on direction
-  const row = SPRITE_ROWS[direction] ?? SPRITE_ROWS[Direction.Down];
+  const spriteRow = sprite.rows[direction] ?? sprite.rows[Direction.Down];
+  const row = spriteRow ?? 0; // Ensure we always have a number
 
   // Calculate frame position
   const frameX = isMoving ? currentFrame : 1;
@@ -63,33 +54,38 @@ export const NPC: React.FC<NPCProps> = ({ position, movement, animation, onInter
 
   return (
     <Pressable
+      onPress={handlePress}
       style={[
         styles.container,
         {
-          position: "absolute",
-          left: x - (SPRITE_WIDTH * SPRITE_SCALE) / 2,
-          top: y - (SPRITE_HEIGHT * SPRITE_SCALE) / 2,
-          width: SPRITE_WIDTH * SPRITE_SCALE,
-          height: SPRITE_HEIGHT * SPRITE_SCALE,
-          zIndex: 2000,
+          transform: [{ translateX: x - (sprite.width * sprite.scale) / 2 }, { translateY: y - (sprite.height * sprite.scale) / 2 }],
         },
       ]}
-      onPress={handlePress}
     >
-      <View style={styles.spriteWrapper}>
+      <View
+        style={[
+          styles.spriteContainer,
+          {
+            width: sprite.width * sprite.scale,
+            height: sprite.height * sprite.scale,
+          },
+        ]}
+      >
         <Image
-          source={lillySprite}
+          source={sprite.source}
           style={[
             styles.sprite,
             {
               position: "absolute",
-              left: -(frameX * SPRITE_WIDTH),
-              top: -(row * SPRITE_HEIGHT),
-              width: SPRITE_WIDTH * 3, // 3 frames
-              height: SPRITE_HEIGHT * 4, // 4 directions
+              left: -(frameX * sprite.width),
+              top: -(row * sprite.height || 0),
+              width: sprite.width * sprite.frameCount,
+              height: sprite.height * 4,
+              transform: [{ scale: sprite.scale }],
             },
           ]}
           contentFit="contain"
+          cachePolicy="memory-disk"
         />
       </View>
     </Pressable>
@@ -99,13 +95,11 @@ export const NPC: React.FC<NPCProps> = ({ position, movement, animation, onInter
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    justifyContent: "center",
     alignItems: "center",
+    justifyContent: "center",
   },
-  spriteWrapper: {
+  spriteContainer: {
     overflow: "hidden",
-    width: SPRITE_WIDTH,
-    height: SPRITE_HEIGHT,
   },
   sprite: {
     position: "absolute",
