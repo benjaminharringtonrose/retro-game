@@ -3,7 +3,11 @@ import { TILE_SIZE } from "../../constants/map";
 import { DebugRenderer } from "../../components/DebugRenderer";
 
 const isTreeTile = (tile: number): boolean => {
-  return tile === Tile.Tree || tile === Tile.Tree2 || tile === Tile.Cabin;
+  return tile === Tile.Tree || tile === Tile.Tree2;
+};
+
+const isCabinTile = (tile: number): boolean => {
+  return tile === Tile.Cabin;
 };
 
 const getTileCoordinates = (x: number, y: number, tileSize: number) => {
@@ -150,6 +154,7 @@ export const CollisionSystem = (entities: { [key: string]: Entity }, { delta = 1
       }
 
       const tile = tiles[checkY][checkX];
+
       if (isTreeTile(tile)) {
         // Calculate tile boundaries
         const tileLeft = checkX * tileSize;
@@ -163,6 +168,44 @@ export const CollisionSystem = (entities: { [key: string]: Entity }, { delta = 1
           y: tileTop,
           width: tileSize,
           height: tileSize,
+          color: "#ff0000",
+        });
+
+        // Check if the next position would result in a collision
+        if (checkCollision(nextPlayerLeft, nextPlayerRight, nextPlayerTop, nextPlayerBottom, tileLeft, tileRight, tileTop, tileBottom)) {
+          // Determine which direction to block based on current position
+          if (nextPlayerRight > tileLeft && playerRight <= tileLeft) {
+            player.collision.blocked.right = true;
+          }
+          if (nextPlayerLeft < tileRight && playerLeft >= tileRight) {
+            player.collision.blocked.left = true;
+          }
+          if (nextPlayerBottom > tileTop && playerBottom <= tileTop) {
+            player.collision.blocked.down = true;
+          }
+          if (nextPlayerTop < tileBottom && playerTop >= tileBottom) {
+            player.collision.blocked.up = true;
+          }
+        }
+      } else if (isCabinTile(tile)) {
+        // Calculate cabin boundaries (slightly smaller than visual size for better gameplay)
+        const cabinScale = 2.5; // Reduced from 3 to 2.5 for collision
+        const cabinSize = tileSize * cabinScale;
+        const cabinOffset = (cabinSize - tileSize) / 2;
+        const collisionHeight = cabinSize * 0.6; // Reduced height for better gameplay
+        const verticalOffset = (cabinSize - collisionHeight) / 2; // Center the collision box vertically
+
+        const tileLeft = checkX * tileSize - cabinOffset;
+        const tileRight = tileLeft + cabinSize;
+        const tileTop = checkY * tileSize - cabinSize + tileSize + verticalOffset; // Center vertically
+        const tileBottom = tileTop + collisionHeight;
+
+        // Add cabin collision box
+        debugBoxes.push({
+          x: tileLeft,
+          y: tileTop,
+          width: cabinSize,
+          height: collisionHeight,
           color: "#ff0000",
         });
 

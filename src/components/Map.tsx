@@ -134,6 +134,7 @@ const CabinTile: React.FC<{ tile: number; tileSize: number; onImageLoad?: (asset
   if (tile !== Tile.Cabin) return null;
 
   const scaledSize = tileSize * CABIN_SCALE;
+  const offset = (scaledSize - tileSize) / 2;
 
   const handleLoadEnd = () => {
     if (!hasLoaded) {
@@ -162,8 +163,8 @@ const CabinTile: React.FC<{ tile: number; tileSize: number; onImageLoad?: (asset
             width: scaledSize,
             height: scaledSize,
             position: "absolute",
-            left: -((scaledSize - tileSize) / 2),
-            top: scaledSize - tileSize,
+            left: -offset,
+            bottom: 0, // Align to bottom of tile
           },
         ]}
         contentFit="contain"
