@@ -8,6 +8,19 @@ const SPRITE_HEIGHT = 41;
 const SPRITE_SCALE = 1.0;
 const lillySprite = require("../assets/lilly-spritesheet.png");
 
+// Sprite row mapping for each direction
+const SPRITE_ROWS = {
+  [Direction.Down]: 0,
+  [Direction.Left]: 1,
+  [Direction.Right]: 2,
+  [Direction.Up]: 3,
+  // Map diagonal directions to their closest cardinal direction
+  [Direction.UpLeft]: 1, // Use left-facing sprite
+  [Direction.UpRight]: 2, // Use right-facing sprite
+  [Direction.DownLeft]: 1, // Use left-facing sprite
+  [Direction.DownRight]: 2, // Use right-facing sprite
+};
+
 export const NPC: React.FC<NPCProps> = ({ position, movement, animation, onInteract }) => {
   const { x, y } = position;
   const { direction, isMoving } = movement;
@@ -16,35 +29,17 @@ export const NPC: React.FC<NPCProps> = ({ position, movement, animation, onInter
   const spriteWidth = SPRITE_WIDTH * SPRITE_SCALE;
   const spriteHeight = SPRITE_HEIGHT * SPRITE_SCALE;
 
-  // Calculate sprite position based on direction and animation frame
-  const getSpritePosition = () => {
-    let row = 0; // Default to facing down
-    switch (direction) {
-      case Direction.Up:
-      case Direction.UpLeft:
-      case Direction.UpRight:
-        row = 3;
-        break;
-      case Direction.Right:
-        row = 2;
-        break;
-      case Direction.Down:
-      case Direction.DownLeft:
-      case Direction.DownRight:
-        row = 0;
-        break;
-      case Direction.Left:
-        row = 1;
-        break;
-    }
+  // Get the appropriate sprite row based on direction
+  const row = SPRITE_ROWS[direction] ?? SPRITE_ROWS[Direction.Down]; // Default to down if direction not found
 
-    // Calculate frame position (0, 1, or 2)
-    const frameX = isMoving ? currentFrame % 3 : 1;
+  // Calculate frame position
+  // When moving: use the current animation frame (0, 1, or 2)
+  // When idle: use frame 1 (middle frame) for a neutral stance
+  const frameX = isMoving ? currentFrame : 1;
 
-    return {
-      left: -(frameX * SPRITE_WIDTH),
-      top: -(row * SPRITE_HEIGHT),
-    };
+  const spritePosition = {
+    left: -(frameX * SPRITE_WIDTH),
+    top: -(row * SPRITE_HEIGHT),
   };
 
   const handlePress = () => {
@@ -57,8 +52,6 @@ export const NPC: React.FC<NPCProps> = ({ position, movement, animation, onInter
       }
     }
   };
-
-  const spritePosition = getSpritePosition();
 
   return (
     <TouchableOpacity
@@ -82,11 +75,9 @@ export const NPC: React.FC<NPCProps> = ({ position, movement, animation, onInter
           style={[
             styles.sprite,
             {
-              position: "absolute",
-              width: SPRITE_WIDTH * 3, // 3 frames per row
-              height: SPRITE_HEIGHT * 4, // 4 rows (directions)
-              left: spritePosition.left,
-              top: spritePosition.top,
+              width: spriteWidth * 3, // 3 frames per row
+              height: spriteHeight * 4, // 4 directions
+              transform: [{ translateX: spritePosition.left }, { translateY: spritePosition.top }],
             },
           ]}
           contentFit="cover"
@@ -100,11 +91,13 @@ export const NPC: React.FC<NPCProps> = ({ position, movement, animation, onInter
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
+    justifyContent: "center",
+    alignItems: "center",
   },
   spriteWrapper: {
-    width: "100%",
-    height: "100%",
     overflow: "hidden",
+    width: SPRITE_WIDTH,
+    height: SPRITE_HEIGHT,
   },
   sprite: {
     position: "absolute",

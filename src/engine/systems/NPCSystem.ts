@@ -59,6 +59,10 @@ const FLOWER_BED = {
 // Movement speed factor (reduce speed in flower bed)
 const FLOWER_BED_SPEED_FACTOR = 0.3; // 30% of normal speed
 
+// Constants for movement transitions
+const DIRECTION_CHANGE_THRESHOLD = TILE_SIZE * 0.1; // Minimum distance moved before allowing direction change
+const MOVEMENT_SMOOTHING = 0.85; // Factor for smoothing movement transitions
+
 export const NPCSystem = (entities: { [key: string]: Entity }, { time, delta = 16.666 }: SystemProps) => {
   // Ensure delta is a valid number
   const deltaMs = typeof delta === "number" && !isNaN(delta) ? delta : 16.666;
@@ -193,6 +197,11 @@ export const NPCSystem = (entities: { [key: string]: Entity }, { time, delta = 1
       debugLog("Applying movement", true);
       // Apply reduced speed in flower bed
       const speed = npc.movement.speed * (deltaMs / 1000) * FLOWER_BED_SPEED_FACTOR;
+
+      // Store previous position for movement smoothing
+      const prevX = npc.absolutePosition.x;
+      const prevY = npc.absolutePosition.y;
+
       let deltaX = 0;
       let deltaY = 0;
 
@@ -212,6 +221,10 @@ export const NPCSystem = (entities: { [key: string]: Entity }, { time, delta = 1
           break;
       }
 
+      // Apply movement smoothing
+      deltaX *= MOVEMENT_SMOOTHING;
+      deltaY *= MOVEMENT_SMOOTHING;
+
       debugLog(`Movement calculation - speed: ${speed.toFixed(2)}, deltas: (${deltaX.toFixed(2)}, ${deltaY.toFixed(2)})`, true);
 
       // Calculate next position in map coordinates
@@ -219,6 +232,9 @@ export const NPCSystem = (entities: { [key: string]: Entity }, { time, delta = 1
       const nextY = npc.absolutePosition.y + deltaY;
       const nextTile = getTileCoords(nextX, nextY);
       const currentTile = getTileCoords(npc.absolutePosition.x, npc.absolutePosition.y);
+
+      // Calculate distance moved since last direction change
+      const distanceMoved = Math.sqrt(Math.pow(nextX - prevX, 2) + Math.pow(nextY - prevY, 2));
 
       // Add extra boundary check to prevent getting too close to edges
       const withinFlowerBed = nextTile.tileX >= FLOWER_BED.minX && nextTile.tileX <= FLOWER_BED.maxX && nextTile.tileY >= FLOWER_BED.minY && nextTile.tileY <= FLOWER_BED.maxY;
@@ -232,13 +248,18 @@ export const NPCSystem = (entities: { [key: string]: Entity }, { time, delta = 1
 
       // Only allow movement if within flower bed and near tile center
       if (withinFlowerBed && isWalkable(nextTile.tileX, nextTile.tileY, map.tileData.tiles) && (nearTileCenter || (currentTile.tileX === nextTile.tileX && currentTile.tileY === nextTile.tileY))) {
-        // Update absolute position (map-relative)
+        // Update absolute position (map-relative) with smoothing
         npc.absolutePosition.x = nextX;
         npc.absolutePosition.y = nextY;
 
         // Update screen position based on map position
         npc.position.x = nextX + map.position.x;
         npc.position.y = nextY + map.position.y;
+
+        // Only allow direction changes after moving a minimum distance
+        if (distanceMoved >= DIRECTION_CHANGE_THRESHOLD) {
+          state.lastMoveTime = time;
+        }
 
         debugLog(`Updated position - abs: (${nextX}, ${nextY}), screen: (${npc.position.x}, ${npc.position.y})`);
       } else {
