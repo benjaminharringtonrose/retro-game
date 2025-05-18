@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { StyleSheet, View, TouchableOpacity } from "react-native";
+import { StyleSheet, View, TouchableOpacity, Pressable } from "react-native";
 import { Image } from "expo-image";
 import { NPCProps, Direction } from "../types";
 
@@ -62,7 +62,7 @@ export const NPC: React.FC<NPCProps> = ({ position, movement, animation, onInter
   };
 
   return (
-    <TouchableOpacity
+    <Pressable
       style={[
         styles.container,
         {
@@ -75,7 +75,6 @@ export const NPC: React.FC<NPCProps> = ({ position, movement, animation, onInter
         },
       ]}
       onPress={handlePress}
-      activeOpacity={0.7}
     >
       <View style={styles.spriteWrapper}>
         <Image
@@ -93,7 +92,7 @@ export const NPC: React.FC<NPCProps> = ({ position, movement, animation, onInter
           contentFit="contain"
         />
       </View>
-    </TouchableOpacity>
+    </Pressable>
   );
 };
 
