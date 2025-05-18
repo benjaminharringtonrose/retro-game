@@ -214,7 +214,7 @@ export interface NPCProps {
     frameCount: number;
     frameRate: number;
   };
-  onInteract?: () => void;
+  onInteract?: () => GameEvent;
 }
 
 export interface DialogComponent extends Component {
@@ -231,4 +231,15 @@ export interface DialogProps {
   message: string;
   isVisible: boolean;
   onClose?: () => void;
+}
+
+export interface GameEngine {
+  dispatch: (event: GameEvent) => void;
+  entities: { [key: string]: Entity };
+}
+
+declare global {
+  interface Window {
+    gameEngine: GameEngine | null;
+  }
 }

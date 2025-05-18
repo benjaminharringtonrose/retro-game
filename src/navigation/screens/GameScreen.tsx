@@ -4,7 +4,7 @@ import { GameEngine as RNGameEngine } from "react-native-game-engine";
 import { setupGameEntities } from "../../engine/entities";
 import { Systems } from "../../engine/systems";
 import { Pad } from "../../components/Pad";
-import { Direction, Entity, GameEvent } from "../../types";
+import { Direction, Entity, GameEngine, GameEvent } from "../../types";
 
 interface GameEngineType extends RNGameEngine {
   dispatch: (event: any) => void;
@@ -15,7 +15,7 @@ const initialEntities = setupGameEntities();
 
 declare global {
   interface Window {
-    gameEngine: GameEngineType | null;
+    gameEngine: GameEngine | null;
   }
 }
 

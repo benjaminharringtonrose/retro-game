@@ -144,10 +144,9 @@ const createDialog = (id: string): Entity => ({
   message: "",
   onClose: () => {
     console.log("Dialog onClose triggered");
-    const gameEngine = (window as any).gameEngine;
-    if (gameEngine?.dispatch) {
+    if (window.gameEngine?.dispatch) {
       console.log("Dispatching dialog-close event");
-      gameEngine.dispatch({
+      window.gameEngine.dispatch({
         type: "dialog-close",
         payload: { id },
       });
