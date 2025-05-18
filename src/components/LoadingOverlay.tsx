@@ -12,24 +12,17 @@ export const createLoadingHandler = (totalAssets: number) => {
   let loadedCount = 0;
   const subscribers = new Set<() => void>();
   const loadedAssets = new Set<string>();
-  let loadProgress = 0;
 
   console.log(`[LoadingHandler] Created with ${totalAssets} total assets`);
 
   const notifySubscribers = () => {
-    console.log(`[LoadingHandler] Notifying subscribers: ${loadedCount}/${totalAssets} (${loadProgress}%)`);
+    const progress = (loadedCount / totalAssets) * 100;
+    console.log(`[LoadingHandler] Notifying subscribers: ${loadedCount}/${totalAssets} (${progress.toFixed(1)}%)`);
     subscribers.forEach((subscriber) => subscriber());
   };
 
   return {
-    handleImageLoad: (assetId?: string, progress?: number) => {
-      // If progress is provided, update the progress without counting as a full asset
-      if (progress !== undefined) {
-        loadProgress = Math.min(progress, 100);
-        notifySubscribers();
-        return;
-      }
-
+    handleImageLoad: (assetId?: string) => {
       // If no assetId provided, generate one based on the stack trace
       const id = assetId || new Error().stack?.split("\n")[2] || String(Math.random());
 
@@ -37,7 +30,6 @@ export const createLoadingHandler = (totalAssets: number) => {
       if (!loadedAssets.has(id)) {
         loadedAssets.add(id);
         loadedCount = Math.min(loadedCount + 1, totalAssets);
-        loadProgress = (loadedCount / totalAssets) * 100;
         console.log(`[LoadingHandler] Image loaded (${loadedCount}/${totalAssets}) - ${id}`);
         notifySubscribers();
       }
@@ -48,7 +40,6 @@ export const createLoadingHandler = (totalAssets: number) => {
       return () => subscribers.delete(callback);
     },
     getProgress: () => loadedCount,
-    getLoadProgress: () => loadProgress,
     getTotalAssets: () => totalAssets,
   };
 };
@@ -56,45 +47,22 @@ export const createLoadingHandler = (totalAssets: number) => {
 export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ totalAssets, loadedAssets, onAllLoaded }) => {
   const [fadeAnim] = useState(new Animated.Value(1));
   const [dots, setDots] = useState("");
-  const [displayedPercentage, setDisplayedPercentage] = useState(0);
   const progressAnim = useRef(new Animated.Value(0)).current;
+  const percentage = Math.min((loadedAssets / totalAssets) * 100, 100);
 
+  // Update progress animation whenever loadedAssets changes
   useEffect(() => {
-    const percentage = Math.min((loadedAssets / totalAssets) * 100, 100);
+    console.log(`[LoadingOverlay] Progress: ${loadedAssets}/${totalAssets} (${percentage.toFixed(1)}%)`);
 
-    // Animate both the displayed percentage and progress bar
-    const step = (percentage - displayedPercentage) / 5;
-    if (Math.abs(step) > 0.1) {
-      const timeout = setTimeout(() => {
-        const newPercentage = Math.min(displayedPercentage + step, 100);
-        setDisplayedPercentage(newPercentage);
+    Animated.spring(progressAnim, {
+      toValue: percentage / 100,
+      useNativeDriver: false,
+      tension: 20,
+      friction: 7,
+    }).start();
 
-        // Animate progress bar
-        Animated.spring(progressAnim, {
-          toValue: newPercentage / 100,
-          useNativeDriver: false,
-          tension: 20,
-          friction: 7,
-        }).start();
-      }, 16);
-      return () => clearTimeout(timeout);
-    } else if (percentage !== displayedPercentage) {
-      setDisplayedPercentage(percentage);
-      Animated.spring(progressAnim, {
-        toValue: percentage / 100,
-        useNativeDriver: false,
-        tension: 20,
-        friction: 7,
-      }).start();
-    }
-  }, [loadedAssets, totalAssets, displayedPercentage, progressAnim]);
-
-  useEffect(() => {
-    console.log(`[LoadingOverlay] Progress: ${loadedAssets}/${totalAssets}`);
-
-    if (loadedAssets === totalAssets || displayedPercentage >= 99.9) {
+    if (loadedAssets === totalAssets) {
       console.log("[LoadingOverlay] All assets loaded!");
-      // Fade out animation
       Animated.timing(fadeAnim, {
         toValue: 0,
         duration: 500,
@@ -103,7 +71,7 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ totalAssets, loa
         onAllLoaded?.();
       });
     }
-  }, [loadedAssets, totalAssets, onAllLoaded, fadeAnim, displayedPercentage]);
+  }, [loadedAssets, totalAssets, onAllLoaded, fadeAnim, progressAnim, percentage]);
 
   // Animate loading dots
   useEffect(() => {
@@ -128,7 +96,7 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ totalAssets, loa
       <View style={styles.progressBarContainer}>
         <Animated.View style={[styles.progressBar, { width: progressBarWidth }]} />
       </View>
-      <Text style={styles.progress}>{displayedPercentage.toFixed(1)}%</Text>
+      <Text style={styles.progress}>{percentage.toFixed(1)}%</Text>
     </Animated.View>
   );
 };

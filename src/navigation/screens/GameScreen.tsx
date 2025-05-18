@@ -62,8 +62,7 @@ const GameScreen: React.FC = () => {
     const trackLoading = () => {
       if (progressRef.current < 100) {
         progressRef.current += 2; // Increment faster
-        const progress = Math.min((progressRef.current / 100) * TOTAL_GAME_ASSETS, TOTAL_GAME_ASSETS);
-        loadingHandler.handleImageLoad(undefined, progressRef.current);
+        loadingHandler.handleImageLoad(`loading-progress-${progressRef.current}`);
 
         if (progressRef.current < 100) {
           animationFrameRef.current = requestAnimationFrame(trackLoading);
