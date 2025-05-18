@@ -142,7 +142,6 @@ const createDialog = (id: string): Entity => ({
   id,
   isVisible: false,
   message: "",
-  inRange: false,
   onClose: () => {
     console.log("Dialog onClose triggered");
     const gameEngine = (window as any).gameEngine;
