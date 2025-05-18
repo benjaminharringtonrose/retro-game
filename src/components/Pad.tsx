@@ -3,7 +3,7 @@ import { View, StyleSheet, PanResponder, Animated, Dimensions } from "react-nati
 import { Direction } from "../types";
 
 interface PadProps {
-  onDirectionChange: (direction: Direction | null) => void;
+  onDirectionChange: (direction: Direction | null, angle?: number) => void;
 }
 
 const STICK_RADIUS = 25;
@@ -40,30 +40,38 @@ export const Pad: React.FC<PadProps> = ({ onDirectionChange }) => {
           const degrees = angle * (180 / Math.PI);
 
           let newDirection: Direction;
-          if (degrees > -45 && degrees <= 45) {
+          // Split into 8 directions (45 degree segments)
+          if (degrees > -22.5 && degrees <= 22.5) {
             newDirection = Direction.Right;
-          } else if (degrees > 45 && degrees <= 135) {
+          } else if (degrees > 22.5 && degrees <= 67.5) {
+            newDirection = Direction.DownRight;
+          } else if (degrees > 67.5 && degrees <= 112.5) {
             newDirection = Direction.Down;
-          } else if (degrees > 135 || degrees <= -135) {
+          } else if (degrees > 112.5 && degrees <= 157.5) {
+            newDirection = Direction.DownLeft;
+          } else if (degrees > 157.5 || degrees <= -157.5) {
             newDirection = Direction.Left;
-          } else {
+          } else if (degrees > -157.5 && degrees <= -112.5) {
+            newDirection = Direction.UpLeft;
+          } else if (degrees > -112.5 && degrees <= -67.5) {
             newDirection = Direction.Up;
+          } else {
+            newDirection = Direction.UpRight;
           }
 
           if (newDirection !== currentDirection) {
             setCurrentDirection(newDirection);
-            onDirectionChange(newDirection);
+            onDirectionChange(newDirection, degrees);
+          }
+        } else {
+          if (currentDirection !== null) {
+            setCurrentDirection(null);
+            onDirectionChange(null);
           }
         }
       },
       onPanResponderRelease: () => {
         pan.flattenOffset();
-        // Reset position with animation
-        Animated.spring(pan, {
-          toValue: { x: 0, y: 0 },
-          useNativeDriver: false,
-        }).start();
-        // Clear direction
         setCurrentDirection(null);
         onDirectionChange(null);
       },

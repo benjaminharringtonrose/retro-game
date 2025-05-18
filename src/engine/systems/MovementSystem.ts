@@ -18,6 +18,15 @@ const debugLog = (message: string, force = false) => {
   }
 };
 
+// Helper to get the closest cardinal direction based on movement deltas
+const getClosestDirection = (deltaX: number, deltaY: number): Direction => {
+  if (Math.abs(deltaX) > Math.abs(deltaY)) {
+    return deltaX > 0 ? Direction.Right : Direction.Left;
+  } else {
+    return deltaY > 0 ? Direction.Down : Direction.Up;
+  }
+};
+
 export const MovementSystem = (entities: { [key: string]: Entity }, { time, delta = 16.666 }: SystemProps) => {
   const player = entities["player-1"];
   const map = entities["map-1"];
@@ -41,30 +50,35 @@ export const MovementSystem = (entities: { [key: string]: Entity }, { time, delt
     right: false,
   };
 
+  // Calculate movement deltas based on controls
   if (player.controls.up && !blocked.up) {
     deltaY = -speed;
-    player.movement.direction = Direction.Up;
-    player.movement.isMoving = true;
-  } else if (player.controls.down && !blocked.down) {
-    deltaY = speed;
-    player.movement.direction = Direction.Down;
-    player.movement.isMoving = true;
   }
-
+  if (player.controls.down && !blocked.down) {
+    deltaY = speed;
+  }
   if (player.controls.left && !blocked.left) {
     deltaX = -speed;
-    player.movement.direction = Direction.Left;
-    player.movement.isMoving = true;
-  } else if (player.controls.right && !blocked.right) {
+  }
+  if (player.controls.right && !blocked.right) {
     deltaX = speed;
-    player.movement.direction = Direction.Right;
-    player.movement.isMoving = true;
   }
 
-  if (!deltaX && !deltaY) {
+  // If moving diagonally, normalize the speed
+  if (deltaX !== 0 && deltaY !== 0) {
+    const normalizer = Math.sqrt(2);
+    deltaX /= normalizer;
+    deltaY /= normalizer;
+  }
+
+  if (deltaX === 0 && deltaY === 0) {
     player.movement.isMoving = false;
     return entities;
   }
+
+  // Update movement direction based on the dominant axis
+  player.movement.direction = getClosestDirection(deltaX, deltaY);
+  player.movement.isMoving = true;
 
   // Calculate center position
   const centerX = screenWidth / 2;

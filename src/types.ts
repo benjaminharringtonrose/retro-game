@@ -3,6 +3,10 @@ export enum Direction {
   Right = "right",
   Up = "up",
   Down = "down",
+  UpLeft = "up-left",
+  UpRight = "up-right",
+  DownLeft = "down-left",
+  DownRight = "down-right",
 }
 
 export enum Tile {
