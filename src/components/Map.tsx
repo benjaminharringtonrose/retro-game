@@ -8,6 +8,7 @@ import { DebugRenderer } from "./DebugRenderer";
 const TREE_SCALE = 1.5; // Scale for tree sprites
 const TREE_1 = require("../assets/tree.png");
 const TREE_2 = require("../assets/tree-2.png");
+const FLOWER = require("../assets/flowers.png");
 
 // Separate component for ground tiles
 const GroundTile: React.FC<{ tile: number; tileSize: number }> = React.memo(({ tile, tileSize }) => {
@@ -72,6 +73,38 @@ const TreeTile: React.FC<{ tile: number; tileSize: number }> = React.memo(({ til
   );
 });
 
+// Separate component for flowers
+const FlowerTile: React.FC<{ tile: number; tileSize: number }> = React.memo(({ tile, tileSize }) => {
+  if (tile !== Tile.Flower) return null;
+
+  return (
+    <View
+      style={[
+        styles.tile,
+        {
+          width: tileSize,
+          height: tileSize,
+          position: "absolute",
+        },
+      ]}
+    >
+      <Image
+        source={FLOWER}
+        style={[
+          styles.tileImage,
+          {
+            width: tileSize,
+            height: tileSize,
+            position: "absolute",
+          },
+        ]}
+        contentFit="contain"
+        cachePolicy={"memory-disk"}
+      />
+    </View>
+  );
+});
+
 interface RowData {
   rowIndex: number;
   tiles: number[];
@@ -103,6 +136,7 @@ const MapRow: React.FC<{ item: RowData }> = React.memo(({ item }) => {
             }}
           >
             <TreeTile key={`tree-${rowIndex}-${colIndex}`} tile={tile} tileSize={tileSize} />
+            <FlowerTile key={`flower-${rowIndex}-${colIndex}`} tile={tile} tileSize={tileSize} />
           </View>
         ))}
       </View>
@@ -198,6 +232,8 @@ const getTileColor = (tile: number) => {
       return "transparent";
     case Tile.Rock:
       return "rgba(128, 128, 128, 0.3)";
+    case Tile.Flower:
+      return "transparent";
     default:
       return "transparent";
   }

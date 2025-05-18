@@ -12,6 +12,7 @@ export enum Tile {
   Tree = 3,
   Tree2 = 3.2,
   Rock = 4,
+  Flower = 5,
 }
 
 export enum MapType {
