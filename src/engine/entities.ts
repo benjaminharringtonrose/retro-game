@@ -169,9 +169,11 @@ export const setupGameEntities = (): { [key: string]: Entity } => {
   map.position.x = -TILE_SIZE * 12; // Move map to position player in clear area
   map.position.y = -TILE_SIZE * 12; // Move map to position player in clear area
 
-  // Create Lilly NPC just one tile to the right of player's starting position
-  const lillyMapX = -map.position.x + playerX + TILE_SIZE; // One tile right of player
-  const lillyMapY = -map.position.y + playerY; // Same Y as player
+  // Create Lilly NPC with a fixed position on the map (e.g., at tile position 15,15)
+  const lillyTileX = 23;
+  const lillyTileY = 15;
+  const lillyMapX = lillyTileX * TILE_SIZE;
+  const lillyMapY = lillyTileY * TILE_SIZE;
 
   const lilly = createNPC("npc-lilly", lillyMapX + map.position.x, lillyMapY + map.position.y, {
     minX: 0,
