@@ -55,7 +55,7 @@ const createPlayer = (id: string, x: number, y: number): Entity => ({
   renderer: Player,
 });
 
-const createNPC = (id: string, x: number, y: number): Entity => {
+const createNPC = (id: string, x: number, y: number, onImageLoad?: () => void): Entity => {
   // Get NPC config
   const config = NPC_CONFIGS[id];
   if (!config) {
@@ -99,6 +99,7 @@ const createNPC = (id: string, x: number, y: number): Entity => {
       currentFrame: 0,
       frameCount: config.sprite.frameCount,
       frameRate: config.sprite.frameRate,
+      onImageLoad,
     },
     onInteract: () => {
       return {
@@ -110,7 +111,7 @@ const createNPC = (id: string, x: number, y: number): Entity => {
   };
 };
 
-const createMap = (id: string, mapType: MapType): Entity => {
+const createMap = (id: string, mapType: MapType, onImageLoad?: () => void): Entity => {
   const mapData = DEFAULT_MAPS[mapType];
   const mapTiles = mapData.mapData;
   const mapWidth = mapTiles[0].length * TILE_SIZE;
@@ -132,6 +133,7 @@ const createMap = (id: string, mapType: MapType): Entity => {
       id: `${id}-tiledata`,
       tileSize: TILE_SIZE,
       tiles: mapTiles,
+      onImageLoad,
     },
     bounds: {
       id: `${id}-bounds`,
@@ -165,12 +167,12 @@ const createDialog = (id: string): Entity => ({
   renderer: DialogBoxRenderer,
 });
 
-export const setupGameEntities = (): { [key: string]: Entity } => {
+export const setupGameEntities = (onImageLoad?: () => void): { [key: string]: Entity } => {
   // Position player in a clear area in the middle of the map
   const playerX = screenWidth / 2;
   const playerY = screenHeight / 2;
 
-  const map = createMap("map-1", MapType.FOREST);
+  const map = createMap("map-1", MapType.FOREST, onImageLoad);
   const player = createPlayer("player-1", playerX, playerY);
 
   // Adjust initial map position to ensure player starts in a clear area
@@ -179,7 +181,7 @@ export const setupGameEntities = (): { [key: string]: Entity } => {
 
   // Create Lilly NPC with config-based position
   const lillyConfig = NPC_CONFIGS["npc-lilly"];
-  const lilly = createNPC("npc-lilly", lillyConfig.initialPosition.x + map.position.x, lillyConfig.initialPosition.y + map.position.y);
+  const lilly = createNPC("npc-lilly", lillyConfig.initialPosition.x + map.position.x, lillyConfig.initialPosition.y + map.position.y, onImageLoad);
 
   // Store absolute position for map-relative positioning
   lilly.absolutePosition = {

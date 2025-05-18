@@ -49,6 +49,7 @@ export interface AnimationComponent extends Component {
   frameCount: number;
   frameRate: number;
   accumulatedTime?: number;
+  onImageLoad?: (assetId?: string) => void;
 }
 
 export interface RenderComponent extends Component {
@@ -58,6 +59,7 @@ export interface RenderComponent extends Component {
 export interface TileDataComponent extends Component {
   tileSize: number;
   tiles: number[][];
+  onImageLoad?: (assetId?: string) => void;
 }
 
 export interface ControlsComponent extends Component {
@@ -160,6 +162,7 @@ export interface MapProps {
   tileData: {
     tileSize: number;
     tiles: number[][];
+    onImageLoad?: (assetId?: string) => void;
   };
   boxes?: Array<{
     x: number;
@@ -219,6 +222,7 @@ export interface NPCProps {
     currentFrame: number;
     frameCount: number;
     frameRate: number;
+    onImageLoad?: (assetId?: string) => void;
   };
   onInteract?: () => GameEvent;
 }

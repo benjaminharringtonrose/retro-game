@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { StyleSheet, View, TouchableOpacity, Pressable } from "react-native";
 import { Image } from "expo-image";
 import { NPCProps, Direction } from "../types";
@@ -10,9 +10,10 @@ const debugNPC = (message: string, data?: any) => {
 };
 
 export const NPC: React.FC<NPCProps> = ({ position, movement, animation, onInteract, id }) => {
+  const [hasLoaded, setHasLoaded] = useState(false);
   const { x, y } = position;
   const { direction, isMoving } = movement;
-  const { currentFrame } = animation;
+  const { currentFrame, onImageLoad } = animation;
 
   // Get NPC config
   const config = NPC_CONFIGS[id];
@@ -86,6 +87,13 @@ export const NPC: React.FC<NPCProps> = ({ position, movement, animation, onInter
           ]}
           contentFit="contain"
           cachePolicy="memory-disk"
+          onLoad={() => {
+            if (!hasLoaded) {
+              debugNPC("Sprite image loaded", { id });
+              onImageLoad?.("npc-" + id);
+              setHasLoaded(true);
+            }
+          }}
         />
       </View>
     </Pressable>

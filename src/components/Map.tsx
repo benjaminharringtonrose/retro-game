@@ -1,5 +1,5 @@
 // components/Map.tsx
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useCallback, useEffect } from "react";
 import { StyleSheet, View, ImageBackground, FlatList, TouchableOpacity, Text } from "react-native";
 import { Image } from "expo-image";
 import { MapProps, Tile } from "../types";
@@ -37,11 +37,12 @@ const GroundTile: React.FC<{ tile: number; tileSize: number }> = React.memo(({ t
 });
 
 // Separate component for trees
-const TreeTile: React.FC<{ tile: number; tileSize: number }> = React.memo(({ tile, tileSize }) => {
+const TreeTile: React.FC<{ tile: number; tileSize: number; onImageLoad?: (assetId?: string) => void }> = React.memo(({ tile, tileSize, onImageLoad }) => {
   if (tile !== Tile.Tree && tile !== Tile.Tree2) return null;
 
   const treeSource = tile === Tile.Tree2 ? TREE_2 : TREE_1;
   const scaledSize = tileSize * TREE_SCALE;
+  const assetId = tile === Tile.Tree2 ? "tree-2" : "tree-1";
 
   return (
     <View
@@ -63,18 +64,19 @@ const TreeTile: React.FC<{ tile: number; tileSize: number }> = React.memo(({ til
             height: scaledSize,
             position: "absolute",
             left: -((scaledSize - tileSize) / 2),
-            top: -(scaledSize - tileSize), // Place tree at bottom of tile
+            top: -(scaledSize - tileSize),
           },
         ]}
         contentFit="contain"
         cachePolicy={"memory-disk"}
+        onLoadEnd={() => onImageLoad?.(assetId)}
       />
     </View>
   );
 });
 
 // Separate component for flowers
-const FlowerTile: React.FC<{ tile: number; tileSize: number }> = React.memo(({ tile, tileSize }) => {
+const FlowerTile: React.FC<{ tile: number; tileSize: number; onImageLoad?: (assetId?: string) => void }> = React.memo(({ tile, tileSize, onImageLoad }) => {
   if (tile !== Tile.Flower) return null;
 
   return (
@@ -100,6 +102,7 @@ const FlowerTile: React.FC<{ tile: number; tileSize: number }> = React.memo(({ t
         ]}
         contentFit="contain"
         cachePolicy={"memory-disk"}
+        onLoadEnd={() => onImageLoad?.("flower")}
       />
     </View>
   );
@@ -111,10 +114,11 @@ interface RowData {
   startCol: number;
   endCol: number;
   tileSize: number;
+  onImageLoad?: () => void;
 }
 
 const MapRow: React.FC<{ item: RowData }> = React.memo(({ item }) => {
-  const { rowIndex, tiles, startCol, endCol, tileSize } = item;
+  const { rowIndex, tiles, startCol, endCol, tileSize, onImageLoad } = item;
 
   return (
     <View style={[styles.row, { height: tileSize }]}>
@@ -135,8 +139,8 @@ const MapRow: React.FC<{ item: RowData }> = React.memo(({ item }) => {
               position: "relative",
             }}
           >
-            <TreeTile key={`tree-${rowIndex}-${colIndex}`} tile={tile} tileSize={tileSize} />
-            <FlowerTile key={`flower-${rowIndex}-${colIndex}`} tile={tile} tileSize={tileSize} />
+            <TreeTile key={`tree-${rowIndex}-${colIndex}`} tile={tile} tileSize={tileSize} onImageLoad={onImageLoad} />
+            <FlowerTile key={`flower-${rowIndex}-${colIndex}`} tile={tile} tileSize={tileSize} onImageLoad={onImageLoad} />
           </View>
         ))}
       </View>
@@ -164,9 +168,16 @@ const GridOverlay: React.FC<{ tileSize: number; width: number; height: number }>
 export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileData, debug }) => {
   const [showGrid, setShowGrid] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
+  const [backgroundLoaded, setBackgroundLoaded] = useState(false);
   const { x, y } = position;
   const { width, height } = dimensions;
-  const { tileSize, tiles } = tileData;
+  const { tileSize, tiles, onImageLoad } = tileData;
+
+  useEffect(() => {
+    if (backgroundLoaded) {
+      onImageLoad?.("background");
+    }
+  }, [backgroundLoaded, onImageLoad]);
 
   // Get debug boxes if they exist
   const debugBoxes = debug?.boxes || [];
@@ -179,8 +190,9 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
       startCol: 0,
       endCol: row.length,
       tileSize,
+      onImageLoad,
     }));
-  }, [tiles, tileSize]);
+  }, [tiles, tileSize, onImageLoad]);
 
   const keyExtractor = (item: RowData) => `row-${item.rowIndex}`;
   const renderItem = ({ item }: { item: RowData }) => <MapRow item={item} />;
@@ -197,7 +209,11 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
           },
         ]}
       >
-        <ImageBackground source={require("../assets/forest-background.png")} style={styles.background} resizeMode="repeat">
+        <ImageBackground 
+          source={require("../assets/forest-background.png")} 
+          style={styles.background} 
+          resizeMode="repeat" 
+          onLoad={(() => setBackgroundLoaded(true)) as () => void}>
           <FlatList data={rowData} renderItem={renderItem} keyExtractor={keyExtractor} showsVerticalScrollIndicator={false} scrollEnabled={false} style={styles.list} initialNumToRender={tiles.length} />
           {showGrid && <GridOverlay tileSize={tileSize} width={width} height={height} />}
           {showDebug && debugBoxes.length > 0 && (
