@@ -1,10 +1,10 @@
 import React, { useEffect, useRef } from "react";
-import { View, Text, StyleSheet, Dimensions, Animated } from "react-native";
+import { View, Text, StyleSheet, Dimensions, Animated, TouchableOpacity } from "react-native";
 import { DialogProps } from "../types";
 
 const { width: screenWidth } = Dimensions.get("window");
 
-export const DialogBoxRenderer: React.FC<DialogProps> = ({ isVisible, message }) => {
+export const DialogBoxRenderer: React.FC<DialogProps> = ({ isVisible, message, onClose }) => {
   const arrowOpacity = useRef(new Animated.Value(1)).current;
   const animationRef = useRef<Animated.CompositeAnimation | null>(null);
 
@@ -42,13 +42,23 @@ export const DialogBoxRenderer: React.FC<DialogProps> = ({ isVisible, message })
     };
   }, [isVisible]);
 
+  const handleClose = () => {
+    console.log("Dialog close button pressed");
+    if (onClose) {
+      onClose();
+    }
+  };
+
   if (!isVisible) {
     return null;
   }
 
   return (
-    <View style={styles.container} pointerEvents="none">
+    <View style={styles.container} pointerEvents="box-none">
       <View style={styles.box}>
+        <TouchableOpacity style={styles.closeButton} onPress={handleClose} hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}>
+          <Text style={styles.closeButtonText}>×</Text>
+        </TouchableOpacity>
         <Text style={styles.text}>{message}</Text>
         <Animated.View style={[styles.arrow, { opacity: arrowOpacity }]}>
           <Text style={styles.arrowText}>▼</Text>
@@ -98,6 +108,17 @@ const styles = StyleSheet.create({
   arrowText: {
     color: "#ffffff",
     fontSize: 14,
+    fontWeight: "bold",
+  },
+  closeButton: {
+    position: "absolute",
+    top: 0,
+    right: 5,
+    zIndex: 3001,
+  },
+  closeButtonText: {
+    color: "#ffffff",
+    fontSize: 24,
     fontWeight: "bold",
   },
 });

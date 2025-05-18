@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 import { GameEngine as RNGameEngine } from "react-native-game-engine";
 import { setupGameEntities } from "../../engine/entities";
@@ -13,8 +13,24 @@ interface GameEngineType extends RNGameEngine {
 
 const initialEntities = setupGameEntities();
 
+declare global {
+  interface Window {
+    gameEngine: GameEngineType | null;
+  }
+}
+
 const GameScreen: React.FC = () => {
   const engineRef = useRef<GameEngineType>(null);
+
+  useEffect(() => {
+    if (engineRef.current) {
+      // Store the game engine reference globally
+      window.gameEngine = engineRef.current;
+    }
+    return () => {
+      window.gameEngine = null;
+    };
+  }, []);
 
   const handleDirectionChange = (direction: Direction | null) => {
     if (!engineRef.current) return;
@@ -25,18 +41,26 @@ const GameScreen: React.FC = () => {
     });
   };
 
+  const handleEvent = (event: GameEvent) => {
+    console.log("Game Event:", event);
+
+    // Make sure we have access to entities
+    if (!engineRef.current?.entities) return;
+
+    const dialog = engineRef.current.entities["dialog-1"];
+
+    if (event.type === "dialog-close") {
+      if (dialog) {
+        dialog.isVisible = false;
+        dialog.message = "";
+        dialog.inRange = false;
+      }
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <RNGameEngine
-        ref={engineRef}
-        style={StyleSheet.absoluteFill}
-        systems={Systems}
-        entities={initialEntities}
-        running={true}
-        onEvent={(event: GameEvent) => {
-          console.log("Game Event:", event);
-        }}
-      />
+      <RNGameEngine ref={engineRef} style={StyleSheet.absoluteFill} systems={Systems} entities={initialEntities} running={true} onEvent={handleEvent} />
       <Pad onDirectionChange={handleDirectionChange} />
     </View>
   );

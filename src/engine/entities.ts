@@ -92,6 +92,12 @@ const createNPC = (id: string, x: number, y: number, boundsTiles: { minX: number
       frameCount: 3,
       frameRate: 12,
     },
+    onInteract: () => {
+      return {
+        type: "npc-click",
+        payload: { npcId: id },
+      };
+    },
     renderer: NPC,
   };
 };
@@ -137,6 +143,19 @@ const createDialog = (id: string): Entity => ({
   isVisible: false,
   message: "",
   inRange: false,
+  onClose: () => {
+    console.log("Dialog onClose triggered");
+    const gameEngine = (window as any).gameEngine;
+    if (gameEngine?.dispatch) {
+      console.log("Dispatching dialog-close event");
+      gameEngine.dispatch({
+        type: "dialog-close",
+        payload: { id },
+      });
+    } else {
+      console.warn("Game engine not found for dialog close");
+    }
+  },
   renderer: DialogBoxRenderer,
 });
 

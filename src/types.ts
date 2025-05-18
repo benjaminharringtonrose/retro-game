@@ -214,6 +214,7 @@ export interface NPCProps {
     frameCount: number;
     frameRate: number;
   };
+  onInteract?: () => void;
 }
 
 export interface DialogComponent extends Component {
@@ -229,4 +230,5 @@ export interface DialogState {
 export interface DialogProps {
   message: string;
   isVisible: boolean;
+  onClose?: () => void;
 }
