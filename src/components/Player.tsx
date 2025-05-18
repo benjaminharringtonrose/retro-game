@@ -13,6 +13,10 @@ const SPRITE_ROWS = {
   [Direction.Left]: 1,
   [Direction.Up]: 2,
   [Direction.Right]: 3,
+  [Direction.UpLeft]: 1, // Use left-facing sprite
+  [Direction.UpRight]: 3, // Use right-facing sprite
+  [Direction.DownLeft]: 1, // Use left-facing sprite
+  [Direction.DownRight]: 3, // Use right-facing sprite
 };
 
 export const Player: React.FC<PlayerProps> = ({ position, movement, animation }) => {

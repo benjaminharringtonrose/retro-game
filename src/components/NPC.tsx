@@ -19,8 +19,8 @@ const debugNPC = (message: string, data?: any) => {
 const SPRITE_ROWS = {
   [Direction.Down]: 0,
   [Direction.Left]: 1,
-  [Direction.Right]: 2,
-  [Direction.Up]: 3,
+  [Direction.Up]: 2,
+  [Direction.Right]: 3,
   // Map diagonal directions to their closest cardinal direction
   [Direction.UpLeft]: 1, // Use left-facing sprite
   [Direction.UpRight]: 2, // Use right-facing sprite
@@ -71,7 +71,6 @@ export const NPC: React.FC<NPCProps> = ({ position, movement, animation, onInter
           top: y - (SPRITE_HEIGHT * SPRITE_SCALE) / 2,
           width: SPRITE_WIDTH * SPRITE_SCALE,
           height: SPRITE_HEIGHT * SPRITE_SCALE,
-          backgroundColor: __DEV__ ? "rgba(255,0,0,0.2)" : "transparent", // Debug rectangle in dev mode
           zIndex: 2000,
         },
       ]}
