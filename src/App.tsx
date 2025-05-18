@@ -3,22 +3,34 @@ import React, { useEffect, useState } from "react";
 import * as ScreenOrientation from "expo-screen-orientation";
 import * as SplashScreen from "expo-splash-screen";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { useFonts } from "expo-font";
 
 import GameScreen from "./navigation/screens/GameScreen";
 import { HomeScreen } from "./navigation/screens/HomeScreen";
 import { useCachedAssets } from "./hooks/useCachedAssets";
 
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync();
+
 const App = () => {
   const [started, setStarted] = useState(false);
-  const ready = useCachedAssets();
+  const assetsReady = useCachedAssets();
+
+  const [fontsLoaded] = useFonts({
+    PressStart2P: require("./assets/fonts/PressStart2P-Regular.ttf"),
+  });
 
   useEffect(() => {
     ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
-    SplashScreen.hide();
   }, []);
 
-  if (!ready) {
-    // you can render a splash or null until assets are cached
+  useEffect(() => {
+    if (assetsReady && fontsLoaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [assetsReady, fontsLoaded]);
+
+  if (!assetsReady || !fontsLoaded) {
     return null;
   }
 
