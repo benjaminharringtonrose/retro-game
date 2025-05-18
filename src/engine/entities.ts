@@ -78,7 +78,7 @@ const createNPC = (id: string, x: number, y: number, boundsTiles: { minX: number
       id: `${id}-movement`,
       speed: MOVEMENT_SPEED * 0.5,
       direction: Direction.Down,
-      isMoving: true,
+      isMoving: false,
       bounds: {
         minX: boundsTiles.minX * TILE_SIZE,
         maxX: boundsTiles.maxX * TILE_SIZE,
@@ -175,15 +175,29 @@ export const setupGameEntities = (): { [key: string]: Entity } => {
   const lillyMapX = lillyTileX * TILE_SIZE;
   const lillyMapY = lillyTileY * TILE_SIZE;
 
+  // Calculate Lilly's movement bounds in map coordinates
+  const boundsTiles = {
+    minX: lillyTileX - 5, // 5 tiles to the left
+    maxX: lillyTileX + 5, // 5 tiles to the right
+    minY: lillyTileY - 5, // 5 tiles up
+    maxY: lillyTileY + 5, // 5 tiles down
+  };
+
   const lilly = createNPC("npc-lilly", lillyMapX + map.position.x, lillyMapY + map.position.y, {
-    minX: 0,
-    maxX: screenWidth,
-    minY: 0,
-    maxY: screenHeight,
+    minX: boundsTiles.minX * TILE_SIZE,
+    maxX: boundsTiles.maxX * TILE_SIZE,
+    minY: boundsTiles.minY * TILE_SIZE,
+    maxY: boundsTiles.maxY * TILE_SIZE,
   });
 
   // Store absolute position for map-relative positioning
   lilly.absolutePosition = {
+    x: lillyMapX,
+    y: lillyMapY,
+  };
+
+  // Store initial position for movement bounds
+  lilly.initialPosition = {
     x: lillyMapX,
     y: lillyMapY,
   };

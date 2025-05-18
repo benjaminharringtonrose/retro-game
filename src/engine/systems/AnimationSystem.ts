@@ -28,8 +28,9 @@ export const AnimationSystem = (entities: { [key: string]: Entity }, { time, del
         entity.animation.accumulatedTime = entity.animation.accumulatedTime % FRAME_DURATION;
       }
     } else {
-      // Reset to middle frame (1) when not moving
-      entity.animation.currentFrame = 1;
+      // For NPCs, reset to frame 0, for players reset to frame 1
+      const isNPC = id.startsWith("npc");
+      entity.animation.currentFrame = isNPC ? 0 : 1;
       entity.animation.accumulatedTime = 0;
     }
   });

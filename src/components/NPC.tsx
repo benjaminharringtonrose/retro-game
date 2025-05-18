@@ -1,29 +1,64 @@
 import React from "react";
 import { StyleSheet, View, TouchableOpacity } from "react-native";
 import { Image } from "expo-image";
-import { NPCProps } from "../types";
+import { NPCProps, Direction } from "../types";
 
 const SPRITE_WIDTH = 32;
 const SPRITE_HEIGHT = 41;
 const SPRITE_SCALE = 1.0;
 const lillySprite = require("../assets/lilly-spritesheet.png");
 
-export const NPC: React.FC<NPCProps> = ({ position, onInteract }) => {
+export const NPC: React.FC<NPCProps> = ({ position, movement, animation, onInteract }) => {
   const { x, y } = position;
+  const { direction, isMoving } = movement;
+  const { currentFrame } = animation;
 
   const spriteWidth = SPRITE_WIDTH * SPRITE_SCALE;
   const spriteHeight = SPRITE_HEIGHT * SPRITE_SCALE;
+
+  // Calculate sprite position based on direction and animation frame
+  const getSpritePosition = () => {
+    let row = 0; // Default to facing down
+    switch (direction) {
+      case Direction.Up:
+      case Direction.UpLeft:
+      case Direction.UpRight:
+        row = 3;
+        break;
+      case Direction.Right:
+        row = 2;
+        break;
+      case Direction.Down:
+      case Direction.DownLeft:
+      case Direction.DownRight:
+        row = 0;
+        break;
+      case Direction.Left:
+        row = 1;
+        break;
+    }
+
+    // Calculate frame position (0, 1, or 2)
+    const frameX = isMoving ? currentFrame % 3 : 1;
+
+    return {
+      left: -(frameX * SPRITE_WIDTH),
+      top: -(row * SPRITE_HEIGHT),
+    };
+  };
 
   const handlePress = () => {
     if (onInteract) {
       const event = onInteract();
       // Get the game engine instance and dispatch the event
-      const gameEngine = (window as any).gameEngine;
+      const gameEngine = window.gameEngine;
       if (gameEngine?.dispatch) {
         gameEngine.dispatch(event);
       }
     }
   };
+
+  const spritePosition = getSpritePosition();
 
   return (
     <TouchableOpacity
@@ -35,6 +70,7 @@ export const NPC: React.FC<NPCProps> = ({ position, onInteract }) => {
           top: y - spriteHeight / 2,
           width: spriteWidth,
           height: spriteHeight,
+          zIndex: 2000,
         },
       ]}
       onPress={handlePress}
@@ -46,11 +82,15 @@ export const NPC: React.FC<NPCProps> = ({ position, onInteract }) => {
           style={[
             styles.sprite,
             {
-              width: SPRITE_WIDTH * 3,
-              height: SPRITE_HEIGHT * 4,
+              position: "absolute",
+              width: SPRITE_WIDTH * 3, // 3 frames per row
+              height: SPRITE_HEIGHT * 4, // 4 rows (directions)
+              left: spritePosition.left,
+              top: spritePosition.top,
             },
           ]}
           contentFit="cover"
+          cachePolicy="memory-disk"
         />
       </View>
     </TouchableOpacity>
@@ -59,7 +99,7 @@ export const NPC: React.FC<NPCProps> = ({ position, onInteract }) => {
 
 const styles = StyleSheet.create({
   container: {
-    zIndex: 2000,
+    position: "absolute",
   },
   spriteWrapper: {
     width: "100%",
@@ -68,7 +108,5 @@ const styles = StyleSheet.create({
   },
   sprite: {
     position: "absolute",
-    left: 0,
-    top: 0,
   },
 });
