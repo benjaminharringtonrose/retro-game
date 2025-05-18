@@ -95,6 +95,7 @@ export const NPC: React.FC<NPCProps> = ({ position, movement, animation, onInter
           ]}
           contentFit="contain"
           cachePolicy="memory-disk"
+          recyclingKey={id}
           onLoadEnd={handleLoadEnd}
         />
       </View>
