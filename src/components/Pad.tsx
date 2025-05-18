@@ -71,7 +71,14 @@ export const Pad: React.FC<PadProps> = ({ onDirectionChange }) => {
         }
       },
       onPanResponderRelease: () => {
-        pan.flattenOffset();
+        // Animate back to center with spring animation
+        Animated.spring(pan, {
+          toValue: { x: 0, y: 0 },
+          useNativeDriver: false,
+          tension: 40,
+          friction: 5,
+        }).start();
+
         setCurrentDirection(null);
         onDirectionChange(null);
       },
