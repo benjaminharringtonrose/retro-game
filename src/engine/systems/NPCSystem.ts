@@ -35,33 +35,44 @@ const getRandomNumber = (min: number, max: number) => {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
-// Helper to check if a tile is walkable
-const isWalkable = (tileX: number, tileY: number, mapTiles: number[][]): boolean => {
-  if (tileY < 0 || tileY >= mapTiles.length || tileX < 0 || tileX >= mapTiles[0].length) {
-    debugLog(`Tile (${tileX}, ${tileY}) is out of bounds`, true);
-    return false;
-  }
-  const tileType = mapTiles[tileY][tileX];
-  // Only allow walking on flower tiles
-  const walkable = tileType === Tile.Flower;
-  debugLog(`Tile (${tileX}, ${tileY}) type: ${tileType} is walkable: ${walkable}`);
-  return walkable;
-};
-
-// Constants for flower bed boundaries
+// Constants for flower bed boundaries - matched to actual flower tiles in map
 const FLOWER_BED = {
-  minX: 22,
-  maxX: 24,
-  minY: 15,
-  maxY: 16,
+  minX: 22, // Matches first flower tile
+  maxX: 24, // Matches last flower tile
+  minY: 14, // Matches first flower tile row
+  maxY: 15, // Matches last flower tile row
 };
 
 // Movement speed factor (reduce speed in flower bed)
-const FLOWER_BED_SPEED_FACTOR = 0.3; // 30% of normal speed
+const FLOWER_BED_SPEED_FACTOR = 0.15; // Further reduced for more precise control
 
 // Constants for movement transitions
 const DIRECTION_CHANGE_THRESHOLD = TILE_SIZE * 0.1; // Minimum distance moved before allowing direction change
 const MOVEMENT_SMOOTHING = 0.85; // Factor for smoothing movement transitions
+
+// Helper to check if a tile is walkable
+const isWalkable = (tileX: number, tileY: number, mapTiles: number[][]): boolean => {
+  // First check if within map bounds
+  if (tileY < 0 || tileY >= mapTiles.length || tileX < 0 || tileX >= mapTiles[0].length) {
+    debugLog(`Tile (${tileX}, ${tileY}) is out of map bounds`, true);
+    return false;
+  }
+
+  const tileType = mapTiles[tileY][tileX];
+  // Strict check for flower tiles only
+  if (tileType !== Tile.Flower) {
+    debugLog(`Tile (${tileX}, ${tileY}) is not a flower tile (type: ${tileType})`, true);
+    return false;
+  }
+
+  // Then check if within flower bed bounds (after tile type check)
+  if (tileX < FLOWER_BED.minX || tileX > FLOWER_BED.maxX || tileY < FLOWER_BED.minY || tileY > FLOWER_BED.maxY) {
+    debugLog(`Tile (${tileX}, ${tileY}) is outside flower bed bounds`, true);
+    return false;
+  }
+
+  return true;
+};
 
 export const NPCSystem = (entities: { [key: string]: Entity }, { time, delta = 16.666 }: SystemProps) => {
   // Ensure delta is a valid number
@@ -233,16 +244,22 @@ export const NPCSystem = (entities: { [key: string]: Entity }, { time, delta = 1
       const nextTile = getTileCoords(nextX, nextY);
       const currentTile = getTileCoords(npc.absolutePosition.x, npc.absolutePosition.y);
 
-      // Calculate distance moved since last direction change
-      const distanceMoved = Math.sqrt(Math.pow(nextX - prevX, 2) + Math.pow(nextY - prevY, 2));
+      // Strict boundary check including corners
+      const withinFlowerBed =
+        nextTile.tileX >= FLOWER_BED.minX &&
+        nextTile.tileX <= FLOWER_BED.maxX &&
+        nextTile.tileY >= FLOWER_BED.minY &&
+        nextTile.tileY <= FLOWER_BED.maxY &&
+        // Strict pixel-level boundary check with tighter margins
+        nextX >= FLOWER_BED.minX * TILE_SIZE + TILE_SIZE * 0.25 &&
+        nextX <= FLOWER_BED.maxX * TILE_SIZE + TILE_SIZE * 0.75 &&
+        nextY >= FLOWER_BED.minY * TILE_SIZE + TILE_SIZE * 0.25 &&
+        nextY <= FLOWER_BED.maxY * TILE_SIZE + TILE_SIZE * 0.75;
 
-      // Add extra boundary check to prevent getting too close to edges
-      const withinFlowerBed = nextTile.tileX >= FLOWER_BED.minX && nextTile.tileX <= FLOWER_BED.maxX && nextTile.tileY >= FLOWER_BED.minY && nextTile.tileY <= FLOWER_BED.maxY;
-
-      // Add position check within tile to prevent crossing tile boundaries too much
+      // More restrictive tile center check
       const nextXInTile = nextX % TILE_SIZE;
       const nextYInTile = nextY % TILE_SIZE;
-      const nearTileCenter = nextXInTile > TILE_SIZE * 0.25 && nextXInTile < TILE_SIZE * 0.75 && nextYInTile > TILE_SIZE * 0.25 && nextYInTile < TILE_SIZE * 0.75;
+      const nearTileCenter = nextXInTile > TILE_SIZE * 0.4 && nextXInTile < TILE_SIZE * 0.6 && nextYInTile > TILE_SIZE * 0.4 && nextYInTile < TILE_SIZE * 0.6;
 
       debugLog(`Next position - map: (${nextX}, ${nextY}), tile: (${nextTile.tileX}, ${nextTile.tileY}), within flower bed: ${withinFlowerBed}, near center: ${nearTileCenter}`);
 
@@ -257,7 +274,7 @@ export const NPCSystem = (entities: { [key: string]: Entity }, { time, delta = 1
         npc.position.y = nextY + map.position.y;
 
         // Only allow direction changes after moving a minimum distance
-        if (distanceMoved >= DIRECTION_CHANGE_THRESHOLD) {
+        if (Math.sqrt(Math.pow(nextX - prevX, 2) + Math.pow(nextY - prevY, 2)) >= DIRECTION_CHANGE_THRESHOLD) {
           state.lastMoveTime = time;
         }
 
