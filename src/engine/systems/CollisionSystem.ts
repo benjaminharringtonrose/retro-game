@@ -3,7 +3,7 @@ import { TILE_SIZE } from "../../constants/map";
 import { DebugRenderer } from "../../components/DebugRenderer";
 
 const isTreeTile = (tile: number): boolean => {
-  return tile === Tile.Tree || tile === Tile.Tree2;
+  return tile === Tile.Tree || tile === Tile.Tree2 || tile === Tile.Cabin;
 };
 
 const getTileCoordinates = (x: number, y: number, tileSize: number) => {

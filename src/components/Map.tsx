@@ -6,9 +6,11 @@ import { MapProps, Tile } from "../types";
 import { DebugRenderer } from "./DebugRenderer";
 
 const TREE_SCALE = 1.5; // Scale for tree sprites
+const CABIN_SCALE = 3.5; // Scale for cabin sprite
 const TREE_1 = require("../assets/tree.png");
 const TREE_2 = require("../assets/tree-2.png");
 const FLOWER = require("../assets/flowers.png");
+const CABIN = require("../assets/cabin.png");
 
 // Separate component for ground tiles
 const GroundTile: React.FC<{ tile: number; tileSize: number }> = React.memo(({ tile, tileSize }) => {
@@ -126,6 +128,52 @@ const FlowerTile: React.FC<{ tile: number; tileSize: number; onImageLoad?: (asse
   );
 });
 
+// Separate component for cabin
+const CabinTile: React.FC<{ tile: number; tileSize: number; onImageLoad?: (assetId?: string) => void }> = React.memo(({ tile, tileSize, onImageLoad }) => {
+  const [hasLoaded, setHasLoaded] = useState(false);
+  if (tile !== Tile.Cabin) return null;
+
+  const scaledSize = tileSize * CABIN_SCALE;
+
+  const handleLoadEnd = () => {
+    if (!hasLoaded) {
+      console.log("[Map] Cabin loaded");
+      onImageLoad?.("cabin");
+      setHasLoaded(true);
+    }
+  };
+
+  return (
+    <View
+      style={[
+        styles.tile,
+        {
+          width: tileSize,
+          height: tileSize,
+          position: "absolute",
+        },
+      ]}
+    >
+      <Image
+        source={CABIN}
+        style={[
+          styles.tileImage,
+          {
+            width: scaledSize,
+            height: scaledSize,
+            position: "absolute",
+            left: -((scaledSize - tileSize) / 2),
+            top: scaledSize - tileSize,
+          },
+        ]}
+        contentFit="contain"
+        cachePolicy={"memory-disk"}
+        onLoadEnd={handleLoadEnd}
+      />
+    </View>
+  );
+});
+
 interface RowData {
   rowIndex: number;
   tiles: number[];
@@ -146,7 +194,7 @@ const MapRow: React.FC<{ item: RowData }> = React.memo(({ item }) => {
           <GroundTile key={`ground-${rowIndex}-${colIndex}`} tile={tile} tileSize={tileSize} />
         ))}
       </View>
-      {/* Tree layer */}
+      {/* Tree and Object layer */}
       <View style={styles.layerContainer}>
         {tiles.map((tile: number, colIndex: number) => (
           <View
@@ -159,6 +207,7 @@ const MapRow: React.FC<{ item: RowData }> = React.memo(({ item }) => {
           >
             <TreeTile key={`tree-${rowIndex}-${colIndex}`} tile={tile} tileSize={tileSize} onImageLoad={onImageLoad} />
             <FlowerTile key={`flower-${rowIndex}-${colIndex}`} tile={tile} tileSize={tileSize} onImageLoad={onImageLoad} />
+            <CabinTile key={`cabin-${rowIndex}-${colIndex}`} tile={tile} tileSize={tileSize} onImageLoad={onImageLoad} />
           </View>
         ))}
       </View>
@@ -274,6 +323,8 @@ const getTileColor = (tile: number) => {
     case Tile.Rock:
       return "rgba(128, 128, 128, 0.3)";
     case Tile.Flower:
+      return "transparent";
+    case Tile.Cabin:
       return "transparent";
     default:
       return "transparent";

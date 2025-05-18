@@ -176,8 +176,8 @@ export const setupGameEntities = (onImageLoad?: () => void): { [key: string]: En
   const player = createPlayer("player-1", playerX, playerY);
 
   // Adjust initial map position to ensure player starts in a clear area
-  map.position.x = -TILE_SIZE * 12;
-  map.position.y = -TILE_SIZE * 12;
+  map.position.x = -TILE_SIZE * 13;
+  map.position.y = -TILE_SIZE * 13;
 
   // Create Lilly NPC with config-based position
   const lillyConfig = NPC_CONFIGS["npc-lilly"];
