@@ -209,11 +209,7 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
           },
         ]}
       >
-        <ImageBackground 
-          source={require("../assets/forest-background.png")} 
-          style={styles.background} 
-          resizeMode="repeat" 
-          onLoad={(() => setBackgroundLoaded(true)) as () => void}>
+        <ImageBackground source={require("../assets/forest-background.png")} style={styles.background} resizeMode="repeat" onLoad={(() => setBackgroundLoaded(true)) as () => void}>
           <FlatList data={rowData} renderItem={renderItem} keyExtractor={keyExtractor} showsVerticalScrollIndicator={false} scrollEnabled={false} style={styles.list} initialNumToRender={tiles.length} />
           {showGrid && <GridOverlay tileSize={tileSize} width={width} height={height} />}
           {showDebug && debugBoxes.length > 0 && (
