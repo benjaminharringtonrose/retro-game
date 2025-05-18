@@ -36,6 +36,8 @@ const GameScreen: React.FC = () => {
   const engineRef = useRef<GameEngineType>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadedAssets, setLoadedAssets] = useState(0);
+  const progressRef = useRef(0);
+  const animationFrameRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     if (engineRef.current) {
@@ -49,14 +51,35 @@ const GameScreen: React.FC = () => {
       setLoadedAssets(progress);
 
       if (progress === TOTAL_GAME_ASSETS) {
-        console.log("[GameScreen] All assets loaded, hiding overlay");
-        setIsLoading(false);
+        console.log("[GameScreen] All assets loaded, preparing to hide overlay");
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+        }
       }
     });
+
+    // Start tracking initial asset loading
+    const trackLoading = () => {
+      if (progressRef.current < 100) {
+        progressRef.current += 2; // Increment faster
+        const progress = Math.min((progressRef.current / 100) * TOTAL_GAME_ASSETS, TOTAL_GAME_ASSETS);
+        loadingHandler.handleImageLoad(undefined, progressRef.current);
+
+        if (progressRef.current < 100) {
+          animationFrameRef.current = requestAnimationFrame(trackLoading);
+        }
+      }
+    };
+
+    // Start the loading animation
+    trackLoading();
 
     return () => {
       window.gameEngine = null;
       unsubscribe();
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
     };
   }, []);
 
