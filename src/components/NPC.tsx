@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { StyleSheet, View, TouchableOpacity } from "react-native";
 import { Image } from "expo-image";
 import { NPCProps, Direction } from "../types";
@@ -6,7 +6,14 @@ import { NPCProps, Direction } from "../types";
 const SPRITE_WIDTH = 32;
 const SPRITE_HEIGHT = 41;
 const SPRITE_SCALE = 1.0;
+
+// Import sprite using require with explicit path
 const lillySprite = require("../assets/lilly-spritesheet.png");
+
+// Debug logging
+const debugNPC = (message: string, data?: any) => {
+  console.log(`[NPC Debug] ${message}`, data || "");
+};
 
 // Sprite row mapping for each direction
 const SPRITE_ROWS = {
@@ -26,21 +33,22 @@ export const NPC: React.FC<NPCProps> = ({ position, movement, animation, onInter
   const { direction, isMoving } = movement;
   const { currentFrame } = animation;
 
-  const spriteWidth = SPRITE_WIDTH * SPRITE_SCALE;
-  const spriteHeight = SPRITE_HEIGHT * SPRITE_SCALE;
+  // Add debug logging
+  useEffect(() => {
+    debugNPC("NPC Mounted", { x, y, direction, isMoving });
+    debugNPC("Sprite Config", {
+      width: SPRITE_WIDTH,
+      height: SPRITE_HEIGHT,
+      scale: SPRITE_SCALE,
+      source: lillySprite,
+    });
+  }, []);
 
   // Get the appropriate sprite row based on direction
-  const row = SPRITE_ROWS[direction] ?? SPRITE_ROWS[Direction.Down]; // Default to down if direction not found
+  const row = SPRITE_ROWS[direction] ?? SPRITE_ROWS[Direction.Down];
 
   // Calculate frame position
-  // When moving: use the current animation frame (0, 1, or 2)
-  // When idle: use frame 1 (middle frame) for a neutral stance
   const frameX = isMoving ? currentFrame : 1;
-
-  const spritePosition = {
-    left: -(frameX * SPRITE_WIDTH),
-    top: -(row * SPRITE_HEIGHT),
-  };
 
   const handlePress = () => {
     if (onInteract) {
@@ -59,10 +67,11 @@ export const NPC: React.FC<NPCProps> = ({ position, movement, animation, onInter
         styles.container,
         {
           position: "absolute",
-          left: x - spriteWidth / 2,
-          top: y - spriteHeight / 2,
-          width: spriteWidth,
-          height: spriteHeight,
+          left: x - (SPRITE_WIDTH * SPRITE_SCALE) / 2,
+          top: y - (SPRITE_HEIGHT * SPRITE_SCALE) / 2,
+          width: SPRITE_WIDTH * SPRITE_SCALE,
+          height: SPRITE_HEIGHT * SPRITE_SCALE,
+          backgroundColor: __DEV__ ? "rgba(255,0,0,0.2)" : "transparent", // Debug rectangle in dev mode
           zIndex: 2000,
         },
       ]}
@@ -75,13 +84,14 @@ export const NPC: React.FC<NPCProps> = ({ position, movement, animation, onInter
           style={[
             styles.sprite,
             {
-              width: spriteWidth * 3, // 3 frames per row
-              height: spriteHeight * 4, // 4 directions
-              transform: [{ translateX: spritePosition.left }, { translateY: spritePosition.top }],
+              position: "absolute",
+              left: -(frameX * SPRITE_WIDTH),
+              top: -(row * SPRITE_HEIGHT),
+              width: SPRITE_WIDTH * 3, // 3 frames
+              height: SPRITE_HEIGHT * 4, // 4 directions
             },
           ]}
-          contentFit="cover"
-          cachePolicy="memory-disk"
+          contentFit="contain"
         />
       </View>
     </TouchableOpacity>
