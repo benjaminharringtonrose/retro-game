@@ -6,8 +6,11 @@ import { NPCConfig } from "../types/npc";
 const lillySprite = require("../assets/lilly-spritesheet.png");
 console.log("[NPCs Config] Lilly sprite loaded:", lillySprite);
 
-const willowSprite = require("../assets/willow.png");
+const willowSprite = require("../assets/willow-spritesheet.png");
 console.log("[NPCs Config] Willow sprite loaded:", willowSprite);
+
+const rosieSprite = require("../assets/rosie-spritesheet.png");
+console.log("[NPCs Config] Rosie sprite loaded:", rosieSprite);
 
 // Sprite configurations
 const LILLY_SPRITE = {
@@ -31,6 +34,25 @@ const LILLY_SPRITE = {
 
 const WILLOW_SPRITE = {
   source: willowSprite,
+  width: 34,
+  height: 36,
+  scale: 1,
+  frameCount: 3,
+  frameRate: 8,
+  rows: {
+    [Direction.Down]: 0,
+    [Direction.Left]: 1,
+    [Direction.Up]: 2,
+    [Direction.Right]: 3,
+    [Direction.UpLeft]: 1,
+    [Direction.UpRight]: 3,
+    [Direction.DownLeft]: 1,
+    [Direction.DownRight]: 3,
+  },
+};
+
+const ROSIE_SPRITE = {
+  source: rosieSprite,
   width: 34,
   height: 36,
   scale: 1,
@@ -111,6 +133,38 @@ export const NPC_CONFIGS: { [key: string]: NPCConfig } = {
     initialPosition: {
       x: 16 * TILE_SIZE,
       y: 16 * TILE_SIZE,
+    },
+  },
+  "npc-rosie": {
+    id: "npc-rosie",
+    name: "Rosie",
+    sprite: ROSIE_SPRITE,
+    behavior: {
+      type: "wander",
+      moveSpeed: 85, // Slightly faster than Willow
+      moveIntervalRange: {
+        min: 3500,
+        max: 6000,
+      },
+      waitTimeRange: {
+        min: 2000,
+        max: 4500,
+      },
+      boundary: {
+        minX: 19, // Different area than Willow
+        maxX: 22,
+        minY: 14,
+        maxY: 17,
+      },
+      allowedTiles: [0],
+    },
+    dialogue: {
+      triggerDistance: 2,
+      messages: ["*playful bark*", "*rolls over for belly rubs*", "*chases her tail*"],
+    },
+    initialPosition: {
+      x: 20 * TILE_SIZE,
+      y: 15 * TILE_SIZE,
     },
   },
   // Add more NPCs here as needed

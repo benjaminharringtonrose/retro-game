@@ -39,7 +39,7 @@ export const AnimationSystem = (entities: { [key: string]: Entity }, { time, del
       }
     } else if (!isMoving) {
       // Reset animation for non-moving entities to idle frame
-      entity.animation.currentFrame = 1; // Middle frame is usually standing still
+      entity.animation.currentFrame = 0; // First frame is standing still
     }
   });
 
