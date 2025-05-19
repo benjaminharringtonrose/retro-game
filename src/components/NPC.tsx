@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { StyleSheet, View, TouchableOpacity, Pressable } from "react-native";
-import { Image } from "expo-image";
+import React from "react";
+import { StyleSheet, View, Pressable, Image } from "react-native";
 import { NPCProps, Direction } from "../types";
 import { NPC_CONFIGS } from "../config/npcs";
 
@@ -10,10 +9,9 @@ const debugNPC = (message: string, data?: any) => {
 };
 
 export const NPC: React.FC<NPCProps> = ({ position, movement, animation, onInteract, id }) => {
-  const [hasLoaded, setHasLoaded] = useState(false);
   const { x, y } = position;
   const { direction, isMoving } = movement;
-  const { currentFrame, onImageLoad } = animation;
+  const { currentFrame } = animation;
 
   // Get NPC config
   const config = NPC_CONFIGS[id];
@@ -24,40 +22,21 @@ export const NPC: React.FC<NPCProps> = ({ position, movement, animation, onInter
 
   const { sprite } = config;
 
-  // Add debug logging
-  useEffect(() => {
-    debugNPC("NPC Mounted", { id, x, y, direction, isMoving });
-    debugNPC("Sprite Config", {
-      width: sprite.width,
-      height: sprite.height,
-      scale: sprite.scale,
-      source: sprite.source,
-    });
-  }, []);
-
   // Get the appropriate sprite row based on direction
   const spriteRow = sprite.rows[direction] ?? sprite.rows[Direction.Down];
-  const row = spriteRow ?? 0; // Ensure we always have a number
+  const row = spriteRow ?? 0;
 
   // Calculate frame position
   const frameX = isMoving ? currentFrame : 1;
 
   const handlePress = () => {
+    debugNPC(`NPC ${id} clicked`);
     if (onInteract) {
       const event = onInteract();
-      // Get the game engine instance and dispatch the event
       const gameEngine = window.gameEngine;
       if (gameEngine?.dispatch) {
         gameEngine.dispatch(event);
       }
-    }
-  };
-
-  const handleLoadEnd = () => {
-    if (!hasLoaded) {
-      debugNPC("Sprite image loaded", { id });
-      onImageLoad?.("npc-" + id);
-      setHasLoaded(true);
     }
   };
 
@@ -70,6 +49,8 @@ export const NPC: React.FC<NPCProps> = ({ position, movement, animation, onInter
           transform: [{ translateX: x - (sprite.width * sprite.scale) / 2 }, { translateY: y - (sprite.height * sprite.scale) / 2 }],
         },
       ]}
+      testID={`npc-${id}`}
+      hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
     >
       <View
         style={[
@@ -93,10 +74,9 @@ export const NPC: React.FC<NPCProps> = ({ position, movement, animation, onInter
               transform: [{ scale: sprite.scale }],
             },
           ]}
-          contentFit="contain"
-          cachePolicy="memory-disk"
-          recyclingKey={id}
-          onLoadEnd={handleLoadEnd}
+          onError={(error) => {
+            console.error(`[NPC] Failed to load sprite for ${id}:`, error);
+          }}
         />
       </View>
     </Pressable>
@@ -108,6 +88,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     alignItems: "center",
     justifyContent: "center",
+    zIndex: 1000, // Ensure NPCs are above everything
   },
   spriteContainer: {
     overflow: "hidden",

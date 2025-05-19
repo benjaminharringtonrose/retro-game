@@ -1,60 +1,45 @@
 import { Entity, SystemProps } from "../../types";
 
-const TOTAL_COLUMNS = 3; // Spritesheet has 3 columns per row
-const FRAME_DURATION = 200; // Increased duration for slower animation to match slower movement
-const TRANSITION_FRAMES = 2; // Number of frames to transition when changing direction
-
 export const AnimationSystem = (entities: { [key: string]: Entity }, { time, delta = 16.666 }: SystemProps) => {
-  Object.keys(entities).forEach((id) => {
-    const entity = entities[id];
+  // This accumulates time for frame updates
+  const timeElapsed = delta;
 
-    if (!entity.animation || !entity.movement) {
-      return;
-    }
+  // Process all entities with animation components
+  Object.keys(entities).forEach((entityKey) => {
+    const entity = entities[entityKey];
 
-    // Initialize or update accumulated time
-    if (!entity.animation.accumulatedTime) {
-      entity.animation.accumulatedTime = 0;
-    }
+    // Skip entities without animation components
+    if (!entity.animation) return;
 
-    // For NPCs, adjust animation based on movement state
-    if (id.startsWith("npc")) {
-      if (entity.movement.isMoving) {
-        // Accumulate time
-        entity.animation.accumulatedTime += delta;
+    const { frameRate, frameCount } = entity.animation;
+    const isMoving = entity.movement?.isMoving || false;
 
-        // Check if enough time has passed for next frame
-        if (entity.animation.accumulatedTime >= FRAME_DURATION) {
-          // Update frame with smoother transition
-          const nextFrame = (entity.animation.currentFrame + 1) % TOTAL_COLUMNS;
-          entity.animation.currentFrame = nextFrame;
+    // For NPCs and moving objects, update animation frames
+    if (entityKey.startsWith("npc") || isMoving) {
+      // Calculate time per frame based on frame rate (higher frameRate = faster animation)
+      const timePerFrame = 1000 / frameRate;
 
-          // Reset accumulated time, keeping remainder for smoother animation
-          entity.animation.accumulatedTime = entity.animation.accumulatedTime % FRAME_DURATION;
-        }
-      } else {
-        // When not moving, gradually return to idle frame (1)
-        if (entity.animation.currentFrame !== 1) {
-          entity.animation.accumulatedTime += delta;
-          if (entity.animation.accumulatedTime >= FRAME_DURATION / 2) {
-            // Faster transition to idle
-            entity.animation.currentFrame = 1;
-            entity.animation.accumulatedTime = 0;
-          }
+      // Debug animation every 5 seconds for NPCs
+      if (entityKey.startsWith("npc") && time % 5000 < 20) {
+        console.log(`[AnimationSystem] NPC animation for ${entityKey}: frameCount=${frameCount}, frameRate=${frameRate}, isMoving=${isMoving}`);
+      }
+
+      // Increment frame if enough time has passed
+      entity.animation.frameAccumulator = (entity.animation.frameAccumulator || 0) + timeElapsed;
+
+      if (entity.animation.frameAccumulator >= timePerFrame) {
+        // Move to next frame and reset accumulator
+        entity.animation.currentFrame = (entity.animation.currentFrame + 1) % frameCount;
+        entity.animation.frameAccumulator = 0;
+
+        // Extra debug log for frame changes on NPCs
+        if (entityKey.startsWith("npc") && time % 1000 < 20) {
+          console.log(`[AnimationSystem] NPC ${entityKey} frame change: ${entity.animation.currentFrame}`);
         }
       }
-    } else {
-      // For non-NPCs (like player), use original animation logic
-      if (entity.movement.isMoving) {
-        entity.animation.accumulatedTime += delta;
-        if (entity.animation.accumulatedTime >= FRAME_DURATION) {
-          entity.animation.currentFrame = (entity.animation.currentFrame + 1) % TOTAL_COLUMNS;
-          entity.animation.accumulatedTime = entity.animation.accumulatedTime % FRAME_DURATION;
-        }
-      } else {
-        entity.animation.currentFrame = 1;
-        entity.animation.accumulatedTime = 0;
-      }
+    } else if (!isMoving) {
+      // Reset animation for non-moving entities to idle frame
+      entity.animation.currentFrame = 1; // Middle frame is usually standing still
     }
   });
 

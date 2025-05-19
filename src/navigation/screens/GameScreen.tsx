@@ -1,30 +1,16 @@
 import React, { useRef, useEffect, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, ActivityIndicator, Text } from "react-native";
 import { GameEngine as RNGameEngine } from "react-native-game-engine";
 import { setupGameEntities } from "../../engine/entities";
 import { Systems } from "../../engine/systems";
 import { Pad } from "../../components/Pad";
 import { Direction, Entity, GameEngine, GameEvent } from "../../types";
-import { LoadingOverlay, createLoadingHandler } from "../../components/LoadingOverlay";
+import { useGameAssets } from "../../hooks/useAssets";
 
 interface GameEngineType extends RNGameEngine {
   dispatch: (event: any) => void;
   entities: { [key: string]: Entity };
 }
-
-// Calculate total assets:
-// 1 background image
-// 2 tree types
-// 1 flower type
-// 1 NPC sprite sheet
-const TOTAL_GAME_ASSETS = 5;
-
-// Create a loading handler for the game's assets
-const loadingHandler = createLoadingHandler(TOTAL_GAME_ASSETS);
-
-const initialEntities = setupGameEntities((assetId?: string) => {
-  loadingHandler.handleImageLoad(assetId);
-});
 
 declare global {
   interface Window {
@@ -34,53 +20,29 @@ declare global {
 
 const GameScreen: React.FC = () => {
   const engineRef = useRef<GameEngineType>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadedAssets, setLoadedAssets] = useState(0);
-  const progressRef = useRef(0);
-  const animationFrameRef = useRef<number | undefined>(undefined);
+  const [gameRunning, setGameRunning] = useState(false);
+
+  // Use our renamed game assets hook
+  const { isLoaded: assetsLoaded, progress: loadingProgress, error: assetError } = useGameAssets();
+
+  // Initialize entities once assets are loaded
+  const entities = assetsLoaded ? setupGameEntities() : {};
 
   useEffect(() => {
     if (engineRef.current) {
       window.gameEngine = engineRef.current;
     }
 
-    // Subscribe to loading updates
-    const unsubscribe = loadingHandler.subscribe(() => {
-      const progress = loadingHandler.getProgress();
-      console.log(`[GameScreen] Loading progress update: ${progress}/${TOTAL_GAME_ASSETS}`);
-      setLoadedAssets(progress);
-
-      if (progress === TOTAL_GAME_ASSETS) {
-        console.log("[GameScreen] All assets loaded, preparing to hide overlay");
-        if (animationFrameRef.current) {
-          cancelAnimationFrame(animationFrameRef.current);
-        }
-      }
-    });
-
-    // Start tracking initial asset loading
-    const trackLoading = () => {
-      if (progressRef.current < 100) {
-        progressRef.current += 2; // Increment faster
-        loadingHandler.handleImageLoad(`loading-progress-${progressRef.current}`);
-
-        if (progressRef.current < 100) {
-          animationFrameRef.current = requestAnimationFrame(trackLoading);
-        }
-      }
-    };
-
-    // Start the loading animation
-    trackLoading();
+    // Start game when assets are loaded
+    if (assetsLoaded && !gameRunning) {
+      console.log("[GameScreen] Assets loaded, starting game");
+      setGameRunning(true);
+    }
 
     return () => {
       window.gameEngine = null;
-      unsubscribe();
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
     };
-  }, []);
+  }, [assetsLoaded, gameRunning]);
 
   const handleDirectionChange = (direction: Direction | null) => {
     if (!engineRef.current) return;
@@ -108,18 +70,20 @@ const GameScreen: React.FC = () => {
     }
   };
 
+  if (!assetsLoaded) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#fff" />
+        <Text style={styles.loadingText}>Loading game assets... {Math.round(loadingProgress * 100)}%</Text>
+        {assetError && <Text style={styles.errorText}>{assetError}</Text>}
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <RNGameEngine ref={engineRef} style={StyleSheet.absoluteFill} systems={Systems} entities={initialEntities} running={!isLoading} onEvent={handleEvent} />
+      <RNGameEngine ref={engineRef} style={StyleSheet.absoluteFill} systems={Systems} entities={entities} running={gameRunning} onEvent={handleEvent} />
       <Pad onDirectionChange={handleDirectionChange} />
-      <LoadingOverlay
-        totalAssets={TOTAL_GAME_ASSETS}
-        loadedAssets={loadedAssets}
-        onAllLoaded={() => {
-          console.log("[GameScreen] LoadingOverlay completed");
-          setIsLoading(false);
-        }}
-      />
     </View>
   );
 };
@@ -128,6 +92,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#000",
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: "#000",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    color: "#fff",
+    marginTop: 20,
+    fontSize: 18,
+  },
+  errorText: {
+    color: "red",
+    marginTop: 10,
+    fontSize: 16,
+    maxWidth: "80%",
+    textAlign: "center",
   },
 });
 

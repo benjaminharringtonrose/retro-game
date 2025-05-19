@@ -2,6 +2,9 @@ import { Entity, SystemProps, Direction } from "../../types";
 import { TILE_SIZE } from "../../constants/map";
 import { getTileCoords } from "../../utils/pathfinding";
 import { NPC_CONFIGS } from "../../config/npcs";
+import { Dimensions } from "react-native";
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 // Debug logging helper
 let lastLogTime = 0;
@@ -37,14 +40,45 @@ const isWalkable = (tileX: number, tileY: number, mapTiles: number[][], allowedT
   return true;
 };
 
+// Helper to check if NPC is on screen
+const isOnScreen = (npcX: number, npcY: number, npcWidth: number, npcHeight: number): boolean => {
+  const buffer = 200; // Buffer zone around screen
+  return npcX + npcWidth / 2 > -buffer && npcX - npcWidth / 2 < screenWidth + buffer && npcY + npcHeight / 2 > -buffer && npcY - npcHeight / 2 < screenHeight + buffer;
+};
+
 export const NPCSystem = (entities: { [key: string]: Entity }, { time, delta = 16.666 }: SystemProps) => {
   // Ensure delta is a valid number
   const deltaMs = typeof delta === "number" && !isNaN(delta) ? delta : 16.666;
 
-  const npcs = Object.values(entities).filter((entity) => entity.id.startsWith("npc"));
+  // Get the map first - we need it to position NPCs
   const map = entities["map-1"];
+  if (!map?.position || !map.tileData?.tiles) {
+    debugLog("Map not found or missing critical data", true);
+    return entities;
+  }
 
-  if (!map?.position || !map.tileData?.tiles) return entities;
+  // Every 5 seconds, log all NPCs for debugging
+  if (time % 5000 < 20) {
+    const npcsInEntities = Object.keys(entities).filter((id) => id.startsWith("npc"));
+    debugLog(`Active NPCs: ${npcsInEntities.join(", ")}`, true);
+  }
+
+  // Get all NPCs
+  const npcs = Object.entries(entities)
+    .filter(([id]) => id.startsWith("npc"))
+    .map(([, entity]) => entity);
+
+  // Check for missing NPCs - this should help debug when NPCs aren't showing up
+  const configIds = Object.keys(NPC_CONFIGS);
+  const entityIds = Object.keys(entities).filter((id) => id.startsWith("npc"));
+
+  if (configIds.length !== entityIds.length) {
+    debugLog(`Missing NPCs: Config has ${configIds.length} but only ${entityIds.length} in entities`, true);
+    const missingNpcs = configIds.filter((id) => !entityIds.includes(id));
+    if (missingNpcs.length > 0) {
+      debugLog(`Missing NPCs: ${missingNpcs.join(", ")}`, true);
+    }
+  }
 
   npcs.forEach((npc) => {
     if (!npc.position || !npc.movement) {
@@ -92,6 +126,7 @@ export const NPCSystem = (entities: { [key: string]: Entity }, { time, delta = 1
         x: npc.initialPosition.x,
         y: npc.initialPosition.y,
       };
+      debugLog(`Setting absolutePosition for ${npc.id}: (${npc.absolutePosition.x}, ${npc.absolutePosition.y})`, true);
     }
 
     // Handle AI movement based on behavior type
@@ -208,6 +243,13 @@ export const NPCSystem = (entities: { [key: string]: Entity }, { time, delta = 1
     // Always update screen position based on map movement
     npc.position.x = npc.absolutePosition.x + map.position.x;
     npc.position.y = npc.absolutePosition.y + map.position.y;
+
+    // Check if NPC is on screen and log it every so often
+    if (time % 5000 < 20) {
+      const isNpcOnScreen = isOnScreen(npc.position.x, npc.position.y, config.sprite.width * config.sprite.scale, config.sprite.height * config.sprite.scale);
+
+      debugLog(`NPC ${npc.id} visibility check - on screen: ${isNpcOnScreen}. Position: (${npc.position.x}, ${npc.position.y})`, true);
+    }
   });
 
   return entities;

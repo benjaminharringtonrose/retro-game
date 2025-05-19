@@ -2,9 +2,16 @@ import { Direction, Tile } from "../types";
 import { TILE_SIZE } from "../constants/map";
 import { NPCConfig } from "../types/npc";
 
+// Debug the assets to make sure they're loading correctly
+const lillySprite = require("../assets/lilly-spritesheet.png");
+console.log("[NPCs Config] Lilly sprite loaded:", lillySprite);
+
+const willowSprite = require("../assets/willow.png");
+console.log("[NPCs Config] Willow sprite loaded:", willowSprite);
+
 // Sprite configurations
 const LILLY_SPRITE = {
-  source: require("../assets/lilly-spritesheet.png"),
+  source: lillySprite,
   width: 32,
   height: 41,
   scale: 1.0,
@@ -23,21 +30,21 @@ const LILLY_SPRITE = {
 };
 
 const WILLOW_SPRITE = {
-  source: require("../assets/willow.png"),
-  width: 32,
-  height: 32,
-  scale: 1.5,
+  source: willowSprite,
+  width: 34,
+  height: 36,
+  scale: 1,
   frameCount: 3,
   frameRate: 8,
   rows: {
     [Direction.Down]: 0,
     [Direction.Left]: 1,
-    [Direction.Right]: 2,
-    [Direction.Up]: 3,
+    [Direction.Up]: 2,
+    [Direction.Right]: 3,
     [Direction.UpLeft]: 1,
-    [Direction.UpRight]: 2,
+    [Direction.UpRight]: 3,
     [Direction.DownLeft]: 1,
-    [Direction.DownRight]: 2,
+    [Direction.DownRight]: 3,
   },
 };
 
@@ -90,9 +97,9 @@ export const NPC_CONFIGS: { [key: string]: NPCConfig } = {
         max: 5000,
       },
       boundary: {
-        minX: 12,
+        minX: 14,
         maxX: 18,
-        minY: 12,
+        minY: 14,
         maxY: 18,
       },
       allowedTiles: [0],
@@ -102,8 +109,8 @@ export const NPC_CONFIGS: { [key: string]: NPCConfig } = {
       messages: ["Woof woof!", "*wags tail excitedly*", "*sniffs around curiously*"],
     },
     initialPosition: {
-      x: 23 * TILE_SIZE,
-      y: 15 * TILE_SIZE,
+      x: 16 * TILE_SIZE,
+      y: 16 * TILE_SIZE,
     },
   },
   // Add more NPCs here as needed
