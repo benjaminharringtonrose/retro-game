@@ -4,9 +4,11 @@ import { Direction, MapType, Entity } from "../types";
 import { Player } from "../components/Player";
 import { Map } from "../components/Map";
 import { NPC } from "../components/NPC";
+import { Portal } from "../components/Portal";
 import { DialogBoxRenderer } from "../components/DialogBoxRenderer";
 import { DEFAULT_MAPS, TILE_SIZE } from "../constants/map";
 import { NPC_CONFIGS } from "../config/npcs";
+import { PORTAL_CONFIGS, getPortalsForMap } from "../config/portals";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -110,6 +112,59 @@ const createNPC = (id: string, x: number, y: number): Entity => {
   };
 };
 
+export const createPortal = (id: string, mapPosition: { x: number; y: number }): Entity => {
+  // Get portal config
+  const config = PORTAL_CONFIGS[id];
+  if (!config) {
+    console.error(`No configuration found for Portal: ${id}`);
+    return {
+      id,
+      position: { id: `${id}-position`, x: 0, y: 0 },
+      dimensions: { id: `${id}-dimensions`, width: 0, height: 0 },
+      renderer: Portal,
+    } as Entity;
+  }
+
+  // Store the absolute position on the map for collision detection
+  const absolutePosition = {
+    x: config.position.x,
+    y: config.position.y,
+  };
+
+  // For rendering, we need to offset the position by the map position
+  // This ensures the portal stays fixed relative to the map's position
+  const x = config.position.x + mapPosition.x;
+  const y = config.position.y + mapPosition.y;
+
+  console.log(`[Portal] Creating portal ${id} at map position (${absolutePosition.x}, ${absolutePosition.y}), ` + `screen position (${x}, ${y}), map offset (${mapPosition.x}, ${mapPosition.y})`);
+
+  return {
+    id,
+    position: {
+      id: `${id}-position`,
+      x,
+      y,
+    },
+    dimensions: {
+      id: `${id}-dimensions`,
+      width: config.dimensions.width,
+      height: config.dimensions.height,
+    },
+    portal: {
+      id: `${id}-portal`,
+      targetMapType: config.targetMapType,
+      targetPosition: config.targetPosition,
+      isActive: true,
+      triggerDistance: config.triggerDistance,
+    },
+    // Store the absolute position for collision detection
+    absolutePosition,
+    // Include mapId for easier reference to the parent map
+    mapId: "map-1",
+    renderer: Portal,
+  };
+};
+
 const createMap = (id: string, mapType: MapType): Entity => {
   const mapData = DEFAULT_MAPS[mapType];
   const mapTiles = mapData.mapData;
@@ -118,6 +173,7 @@ const createMap = (id: string, mapType: MapType): Entity => {
 
   return {
     id,
+    mapType, // Store current map type
     position: {
       id: `${id}-position`,
       x: mapData.initialPosition.x,
@@ -132,6 +188,7 @@ const createMap = (id: string, mapType: MapType): Entity => {
       id: `${id}-tiledata`,
       tileSize: TILE_SIZE,
       tiles: mapTiles,
+      background: mapData.background,
     },
     bounds: {
       id: `${id}-bounds`,
@@ -177,6 +234,8 @@ export const setupGameEntities = (): { [key: string]: Entity } => {
   map.position.x = -TILE_SIZE * 13;
   map.position.y = -TILE_SIZE * 13;
 
+  console.log(`[Entities] Initial map position: (${map.position.x}, ${map.position.y}) for map type ${map.mapType}`);
+
   // Create all NPCs from config
   const entities: { [key: string]: Entity } = {
     "map-1": map,
@@ -201,7 +260,17 @@ export const setupGameEntities = (): { [key: string]: Entity } => {
     entities[npcId] = npc;
   });
 
-  console.log("YIPPPPPPP entities", entities);
+  // Dynamically add all portals from config
+  Object.keys(PORTAL_CONFIGS).forEach((portalId) => {
+    // Only create portals that belong to the current map type
+    const portalConfig = PORTAL_CONFIGS[portalId];
+    if (portalConfig.sourceMapType === map.mapType) {
+      const portal = createPortal(portalId, map.position);
+      entities[portalId] = portal;
+    }
+  });
+
+  console.log("Game entities setup complete:", Object.keys(entities));
 
   return entities;
 };

@@ -18,10 +18,12 @@ export enum Tile {
   Rock = 4,
   Flower = 5,
   Cabin = 6,
+  Portal = 7,
 }
 
 export enum MapType {
   FOREST = "FOREST",
+  CABIN_INTERIOR = "CABIN_INTERIOR",
 }
 
 // Base component types
@@ -61,6 +63,7 @@ export interface TileDataComponent extends Component {
   tileSize: number;
   tiles: number[][];
   onImageLoad?: (assetId?: string) => void;
+  background?: any;
 }
 
 export interface ControlsComponent extends Component {
@@ -164,6 +167,7 @@ export interface MapProps {
     tileSize: number;
     tiles: number[][];
     onImageLoad?: (assetId?: string) => void;
+    background?: any;
   };
   boxes?: Array<{
     x: number;
@@ -271,4 +275,51 @@ declare global {
   interface Window {
     gameEngine: GameEngine | null;
   }
+}
+
+// Portal related types
+export interface PortalComponent extends Component {
+  targetMapType: MapType;
+  targetPosition: {
+    x: number;
+    y: number;
+  };
+  isActive: boolean;
+  triggerDistance: number;
+}
+
+export interface PortalEntity extends Entity {
+  position: {
+    x: number;
+    y: number;
+  };
+  dimensions: {
+    width: number;
+    height: number;
+  };
+  portal: PortalComponent;
+  absolutePosition: {
+    x: number;
+    y: number;
+  };
+}
+
+export interface PortalConfig {
+  id: string;
+  position: {
+    x: number;
+    y: number;
+  };
+  dimensions: {
+    width: number;
+    height: number;
+  };
+  targetMapType: MapType;
+  targetPosition: {
+    x: number;
+    y: number;
+  };
+  triggerDistance: number;
+  sprite?: any;
+  sourceMapType: MapType;
 }

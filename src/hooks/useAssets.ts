@@ -6,7 +6,15 @@ import { NPC_CONFIGS } from "../config/npcs";
  */
 export const useGameAssets = () => {
   // Collect all assets that need to be loaded
-  const mapAssets = [require("../assets/forest-background.png"), require("../assets/tree.png"), require("../assets/tree-2.png"), require("../assets/flowers.png"), require("../assets/cabin.png")];
+  const mapAssets = [
+    require("../assets/forest-background.png"),
+    require("../assets/tree.png"),
+    require("../assets/tree-2.png"),
+    require("../assets/flowers.png"),
+    require("../assets/cabin.png"),
+    require("../assets/cabin-background.png"),
+    require("../assets/portal.png"),
+  ];
 
   // Collect NPC sprites
   const npcAssets = Object.values(NPC_CONFIGS).map((config) => config.sprite.source);

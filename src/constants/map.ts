@@ -54,4 +54,32 @@ export const DEFAULT_MAPS: MapConfig = {
       maxY: 0,
     },
   },
+  [MapType.CABIN_INTERIOR]: {
+    name: "Cabin Interior",
+    initialPosition: {
+      x: 0,
+      y: 0,
+    },
+    background: require("../assets/cabin-background.png"),
+    mapData: [
+      [4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+      [4, 0, 0, 0, 0, 0, 0, 0, 0, 4],
+      [4, 0, 0, 0, 0, 0, 0, 0, 0, 4],
+      [4, 0, 0, 0, 0, 0, 0, 0, 0, 4],
+      [4, 0, 0, 0, 0, 0, 0, 0, 0, 4],
+      [4, 0, 0, 0, 0, 0, 0, 0, 0, 4],
+      [4, 0, 0, 0, 0, 0, 0, 0, 0, 4],
+      [4, 0, 0, 0, 0, 0, 0, 0, 0, 4],
+      [4, 0, 0, 0, 7, 7, 0, 0, 0, 4],
+      [4, 4, 4, 4, 0, 0, 4, 4, 4, 4],
+    ],
+    bounds: {
+      width: 10 * TILE_SIZE,
+      height: 10 * TILE_SIZE,
+      minX: -WINDOW_WIDTH,
+      maxX: WINDOW_WIDTH,
+      minY: -WINDOW_HEIGHT,
+      maxY: WINDOW_HEIGHT,
+    },
+  },
 };

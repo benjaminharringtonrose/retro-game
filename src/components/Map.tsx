@@ -239,7 +239,7 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
   const [backgroundLoaded, setBackgroundLoaded] = useState(false);
   const { x, y } = position;
   const { width, height } = dimensions;
-  const { tileSize, tiles, onImageLoad } = tileData;
+  const { tileSize, tiles, onImageLoad, background } = tileData;
 
   useEffect(() => {
     if (backgroundLoaded) {
@@ -279,9 +279,9 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
         ]}
       >
         <ImageBackground
-          source={require("../assets/forest-background.png")}
+          source={background || require("../assets/forest-background.png")}
           style={styles.background}
-          resizeMode="repeat"
+          resizeMode="contain"
           onLoadEnd={() => {
             if (!backgroundLoaded) {
               console.log("[Map] Background load ended");

@@ -5,6 +5,7 @@ import { CollisionSystem } from "./CollisionSystem";
 import { NPCSystem } from "./NPCSystem";
 import { DialogSystem } from "./DialogSystem";
 import { InteractionSystem } from "./InteractionSystem";
+import { PortalSystem } from "./PortalSystem";
 import { Entity, SystemProps } from "../../types";
 
 // Simple performance tracking
@@ -47,6 +48,7 @@ const TrackedInteractionSystem = trackSystemPerformance(InteractionSystem, "Inte
 const TrackedCollisionSystem = trackSystemPerformance(CollisionSystem, "CollisionSystem");
 const TrackedMovementSystem = trackSystemPerformance(MovementSystem, "MovementSystem");
 const TrackedAnimationSystem = trackSystemPerformance(AnimationSystem, "AnimationSystem");
+const TrackedPortalSystem = trackSystemPerformance(PortalSystem, "PortalSystem");
 
 export { MovementSystem } from "./MovementSystem";
 export { AnimationSystem } from "./AnimationSystem";
@@ -55,13 +57,15 @@ export { CollisionSystem } from "./CollisionSystem";
 export { NPCSystem } from "./NPCSystem";
 export { DialogSystem } from "./DialogSystem";
 export { InteractionSystem } from "./InteractionSystem";
+export { PortalSystem } from "./PortalSystem";
 
-// Order matters: Controls -> Dialog -> Interaction -> Movement -> Animation
+// Order matters: Controls -> Dialog -> Interaction -> Portal -> Collision -> Movement -> Animation
 export const Systems = [
   TrackedControlSystem, // First handle input
   TrackedDialogSystem, // Handle dialog interactions immediately
   TrackedNPCSystem, // Then update NPCs
   TrackedInteractionSystem, // Then handle walking to NPCs
+  TrackedPortalSystem, // Check for portal interactions
   TrackedCollisionSystem, // Then check for potential collisions
   TrackedMovementSystem, // Apply movement respecting collision flags
   TrackedAnimationSystem, // Finally update visuals
