@@ -1,6 +1,6 @@
 // components/Map.tsx
 import React, { useMemo, useState, useCallback, useEffect } from "react";
-import { StyleSheet, View, ImageBackground, FlatList, TouchableOpacity, Text } from "react-native";
+import { StyleSheet, View, ImageBackground, FlatList, TouchableOpacity, Text, Image as RNImage } from "react-native";
 import { Image } from "expo-image";
 import { MapProps, Tile } from "../types";
 import { DebugRenderer } from "./DebugRenderer";
@@ -241,6 +241,9 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
   const { width, height } = dimensions;
   const { tileSize, tiles, onImageLoad, background } = tileData;
 
+  // Check if this is the cabin interior map
+  const isCabin = background?.toString().includes("cabin");
+
   useEffect(() => {
     if (backgroundLoaded) {
       console.log("[Map] Background loaded");
@@ -278,25 +281,42 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
           },
         ]}
       >
-        <ImageBackground
-          source={background || require("../assets/forest-background.png")}
-          style={styles.background}
-          resizeMode="contain"
-          onLoadEnd={() => {
-            if (!backgroundLoaded) {
-              console.log("[Map] Background load ended");
-              setBackgroundLoaded(true);
-            }
-          }}
-        >
-          <FlatList data={rowData} renderItem={renderItem} keyExtractor={keyExtractor} showsVerticalScrollIndicator={false} scrollEnabled={false} style={styles.list} initialNumToRender={tiles.length} />
-          {showGrid && <GridOverlay tileSize={tileSize} width={width} height={height} />}
-          {showDebug && debugBoxes.length > 0 && (
-            <View style={StyleSheet.absoluteFill}>
-              <DebugRenderer boxes={debugBoxes} />
-            </View>
-          )}
-        </ImageBackground>
+        {isCabin ? (
+          <View style={[styles.cabinContainer, { width, height }]}>
+            <RNImage
+              source={background}
+              style={styles.cabinBackground}
+              resizeMode="contain"
+              onLoadEnd={() => {
+                if (!backgroundLoaded) {
+                  console.log("[Map] Cabin background loaded");
+                  setBackgroundLoaded(true);
+                }
+              }}
+            />
+            <FlatList data={rowData} renderItem={renderItem} keyExtractor={keyExtractor} showsVerticalScrollIndicator={false} scrollEnabled={false} style={styles.list} initialNumToRender={tiles.length} />
+          </View>
+        ) : (
+          <ImageBackground
+            source={background || require("../assets/forest-background.png")}
+            style={styles.background}
+            resizeMode="repeat"
+            onLoadEnd={() => {
+              if (!backgroundLoaded) {
+                console.log("[Map] Background load ended");
+                setBackgroundLoaded(true);
+              }
+            }}
+          >
+            <FlatList data={rowData} renderItem={renderItem} keyExtractor={keyExtractor} showsVerticalScrollIndicator={false} scrollEnabled={false} style={styles.list} initialNumToRender={tiles.length} />
+            {showGrid && <GridOverlay tileSize={tileSize} width={width} height={height} />}
+            {showDebug && debugBoxes.length > 0 && (
+              <View style={StyleSheet.absoluteFill}>
+                <DebugRenderer boxes={debugBoxes} />
+              </View>
+            )}
+          </ImageBackground>
+        )}
       </View>
       <View style={styles.devControls}>
         <TouchableOpacity style={styles.devToggle} onPress={() => setShowGrid(!showGrid)}>
@@ -322,7 +342,7 @@ const getTileColor = (tile: number) => {
     case Tile.Tree2:
       return "transparent";
     case Tile.Rock:
-      return "rgba(128, 128, 128, 0.3)";
+      return "transparent";
     case Tile.Flower:
       return "transparent";
     case Tile.Cabin:
@@ -337,10 +357,12 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 0,
     top: 0,
+    backgroundColor: "#000",
   },
   background: {
     width: "100%",
     height: "100%",
+    backgroundColor: "#000",
   },
   list: {
     flex: 1,
@@ -406,5 +428,22 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 14,
     fontWeight: "bold",
+  },
+  cabinContainer: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "#000",
+  },
+  cabinBackground: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    right: 0,
+    bottom: 0,
+    width: "100%",
+    height: "100%",
   },
 });

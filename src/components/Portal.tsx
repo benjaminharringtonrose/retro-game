@@ -1,7 +1,10 @@
-import React, { useEffect } from "react";
-import { StyleSheet, View, Image, Text } from "react-native";
+import React, { useEffect, useState, useRef } from "react";
+import { StyleSheet, View, Image as RNImage, Text } from "react-native";
 import { PortalEntity } from "../types";
 import { PORTAL_CONFIGS } from "../config/portals";
+
+// Set to true to show debug info about the portal
+const SHOW_PORTAL_DEBUG = true;
 
 interface PortalProps {
   id: string;
@@ -24,17 +27,41 @@ export const Portal: React.FC<PortalProps> = ({ id, position, dimensions, portal
   const { width, height } = dimensions;
   const { isActive } = portal;
 
-  // Log position when the component mounts or position changes
-  useEffect(() => {
-    console.log(`[Portal] Rendering portal ${id} at (${x}, ${y}) with active=${isActive}`);
-  }, [id, x, y, isActive]);
-
   // Get portal config
   const config = PORTAL_CONFIGS[id];
   if (!config) {
     console.error(`No configuration found for Portal: ${id}`);
     return null;
   }
+
+  // Animation state
+  const [currentFrame, setCurrentFrame] = useState(0);
+  const animationTimer = useRef<NodeJS.Timeout | null>(null);
+  const FRAME_COUNT = config.animation?.frameCount || 3; // Number of frames in the sprite sheet
+  const FRAME_RATE = config.animation?.frameRate || 200; // Time in ms between frame changes
+
+  // Set up animation
+  useEffect(() => {
+    // Start animation timer
+    if (isActive) {
+      animationTimer.current = setInterval(() => {
+        setCurrentFrame((prev) => (prev + 1) % FRAME_COUNT);
+      }, FRAME_RATE);
+    }
+
+    // Clean up timer when component unmounts or becomes inactive
+    return () => {
+      if (animationTimer.current) {
+        clearInterval(animationTimer.current);
+        animationTimer.current = null;
+      }
+    };
+  }, [isActive, FRAME_COUNT, FRAME_RATE]);
+
+  // Log position when the component mounts or position changes
+  useEffect(() => {
+    console.log(`[Portal] Rendering portal ${id} at (${x}, ${y}) with active=${isActive}, frame=${currentFrame}`);
+  }, [id, x, y, isActive, currentFrame]);
 
   // Skip rendering inactive portals
   if (!isActive) {
@@ -77,38 +104,59 @@ export const Portal: React.FC<PortalProps> = ({ id, position, dimensions, portal
       ]}
       testID={`portal-${id}`}
     >
-      <Image
-        source={config.sprite}
-        style={[
-          styles.sprite,
-          {
-            width,
-            height,
-          },
-        ]}
-        onError={(error) => {
-          console.error(`[Portal] Failed to load sprite for ${id}:`, error);
-        }}
-      />
-      <Text style={styles.debugText}>{id}</Text>
+      {SHOW_PORTAL_DEBUG && (
+        <View
+          style={{
+            position: "absolute",
+            width: portal.triggerDistance * 2,
+            height: portal.triggerDistance * 2,
+            borderRadius: portal.triggerDistance,
+            backgroundColor: "rgba(255, 0, 255, 0.2)",
+            borderWidth: 1,
+            borderColor: "rgba(255, 0, 255, 0.5)",
+            left: -portal.triggerDistance + width / 2,
+            top: -portal.triggerDistance + height / 2,
+            zIndex: 5,
+          }}
+        />
+      )}
+      <View style={styles.spriteContainer}>
+        <RNImage
+          source={config.sprite}
+          style={[
+            styles.sprite,
+            {
+              width: width * FRAME_COUNT, // Full width of sprite sheet
+              height: height,
+              transform: [
+                { translateX: -currentFrame * width }, // Shift to show current frame
+              ],
+            },
+          ]}
+          onError={(error) => {
+            console.error(`[Portal] Failed to load sprite for ${id}:`, error);
+          }}
+        />
+      </View>
+      {SHOW_PORTAL_DEBUG && <Text style={styles.debugText}>{id}</Text>}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    position: "absolute",
     alignItems: "center",
     justifyContent: "center",
     zIndex: 50, // Below NPCs (1000) but above regular terrain
-    borderWidth: 3,
-    borderColor: "#ff00ff",
-    backgroundColor: "rgba(0, 0, 255, 0.3)",
+  },
+  spriteContainer: {
+    width: "100%",
+    height: "100%",
+    overflow: "hidden",
+    position: "absolute",
   },
   sprite: {
     position: "absolute",
-    width: "100%",
-    height: "100%",
   },
   debugText: {
     color: "#ffffff",

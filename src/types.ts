@@ -322,4 +322,8 @@ export interface PortalConfig {
   triggerDistance: number;
   sprite?: any;
   sourceMapType: MapType;
+  animation?: {
+    frameCount: number;
+    frameRate: number;
+  };
 }

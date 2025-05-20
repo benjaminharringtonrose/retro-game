@@ -30,8 +30,23 @@ export const PortalSystem = (entities: { [key: string]: Entity }, { time, delta 
   }
 
   // Calculate player's current position relative to the map
+  // Note that player position is the center of the player sprite
   const playerMapX = player.position.x - map.position.x;
   const playerMapY = player.position.y - map.position.y;
+
+  // Get player size for more precise collision detection
+  const playerWidth = player.dimensions?.width || TILE_SIZE * 0.6;
+  const playerHeight = player.dimensions?.height || TILE_SIZE * 0.8;
+
+  // Player's feet position (bottom-center of player)
+  const playerFeetX = playerMapX;
+  const playerFeetY = playerMapY + playerHeight / 4; // Slightly below center
+
+  // Log player position occasionally
+  if (time % 1000 < 16) {
+    // Once per second
+    console.log(`[PortalSystem] Player position: map(${playerMapX.toFixed(2)}, ${playerMapY.toFixed(2)}), feet(${playerFeetX.toFixed(2)}, ${playerFeetY.toFixed(2)})`);
+  }
 
   // Update portal positions based on map movement
   const portals = Object.values(entities).filter((entity) => entity.id.startsWith("portal-"));
@@ -51,8 +66,19 @@ export const PortalSystem = (entities: { [key: string]: Entity }, { time, delta 
     const portalX = portal.absolutePosition.x;
     const portalY = portal.absolutePosition.y;
 
-    // Calculate distance to portal
-    const distance = calculateDistance(playerMapX, playerMapY, portalX, portalY);
+    // Try multiple points on the player for portal detection
+    // Check both center point and feet position
+    const distanceFromCenter = calculateDistance(playerMapX, playerMapY, portalX, portalY);
+    const distanceFromFeet = calculateDistance(playerFeetX, playerFeetY, portalX, portalY);
+
+    // Use the smallest distance (most likely to trigger)
+    const distance = Math.min(distanceFromCenter, distanceFromFeet);
+
+    // Debug portal distances occasionally
+    if (time % 1000 < 16) {
+      // Log roughly once per second
+      console.log(`[PortalSystem] Portal ${portal.id}: center=${distanceFromCenter.toFixed(2)}, feet=${distanceFromFeet.toFixed(2)}, trigger=${portal.portal.triggerDistance}, portal=(${portalX}, ${portalY})`);
+    }
 
     // Check if player is within trigger distance
     if (distance <= portal.portal.triggerDistance) {
@@ -105,13 +131,12 @@ export const PortalSystem = (entities: { [key: string]: Entity }, { time, delta 
           console.log(`[PortalSystem] Centering cabin interior map (${mapWidth}x${mapHeight}) with offset (${mapOffsetX}, ${mapOffsetY})`);
 
           // Position the map centered on screen
-          map.position.x = mapOffsetX;
-          map.position.y = mapOffsetY;
+          map.position.x = 0; // Let the background handle centering
+          map.position.y = 0; // Let the background handle centering
 
-          // Calculate adjusted player position
-          // We need to place the player directly on the target portal
+          // Calculate player position at entry point (just inside door)
           const adjustedPlayerX = centerX;
-          const adjustedPlayerY = centerY + mapHeight / 4; // Position closer to the bottom
+          const adjustedPlayerY = centerY + 100; // Position player lower on screen inside cabin
 
           player.position.x = adjustedPlayerX;
           player.position.y = adjustedPlayerY;

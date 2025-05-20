@@ -5,14 +5,22 @@ import { TILE_SIZE } from "../constants/map";
 const portalSprite = require("../assets/portal.png");
 console.log("[Portals Config] Portal sprite loaded:", portalSprite);
 
+// Animation configuration for portals
+const PORTAL_ANIMATION = {
+  frameCount: 3,
+  frameRate: 200, // milliseconds between frames
+  spriteWidth: TILE_SIZE, // width of a single frame
+  spriteHeight: TILE_SIZE, // height of a single frame
+};
+
 // Portal configurations
 export const PORTAL_CONFIGS: { [key: string]: PortalConfig } = {
   // Portal in front of the cabin in the forest map
   "portal-cabin-entrance": {
     id: "portal-cabin-entrance",
     position: {
-      x: 17 * TILE_SIZE + TILE_SIZE / 2, // Center of the tile
-      y: 17 * TILE_SIZE - TILE_SIZE / 2, // Just in front of cabin
+      x: 16.3 * TILE_SIZE + TILE_SIZE / 2, // Center of the tile
+      y: 15.5 * TILE_SIZE - TILE_SIZE / 2, // Just in front of cabin
     },
     dimensions: {
       width: TILE_SIZE,
@@ -20,19 +28,23 @@ export const PORTAL_CONFIGS: { [key: string]: PortalConfig } = {
     },
     targetMapType: MapType.CABIN_INTERIOR,
     targetPosition: {
-      x: 6 * TILE_SIZE + TILE_SIZE / 2, // Position inside cabin - centered
-      y: 11 * TILE_SIZE, // Near bottom row of new map
+      x: 4.5 * TILE_SIZE, // Center on the door in cabin interior
+      y: 6 * TILE_SIZE, // Position at row 6 where door is
     },
-    triggerDistance: TILE_SIZE * 0.5,
+    triggerDistance: TILE_SIZE * 1.5, // Much larger trigger area
     sprite: portalSprite,
     sourceMapType: MapType.FOREST, // This portal only appears in the forest map
+    animation: {
+      frameCount: PORTAL_ANIMATION.frameCount,
+      frameRate: PORTAL_ANIMATION.frameRate,
+    },
   },
   // Portal inside the cabin to go back outside
   "portal-cabin-exit": {
     id: "portal-cabin-exit",
     position: {
-      x: 6 * TILE_SIZE + TILE_SIZE / 2, // Center of the tile in new map
-      y: 12 * TILE_SIZE, // Bottom row of new map
+      x: 4.5 * TILE_SIZE, // Center between tiles 4 and 5 in row 6
+      y: 6 * TILE_SIZE, // Row 6 (zero-based) where portal tiles are
     },
     dimensions: {
       width: TILE_SIZE * 1.2,
@@ -43,9 +55,13 @@ export const PORTAL_CONFIGS: { [key: string]: PortalConfig } = {
       x: 17 * TILE_SIZE + TILE_SIZE / 2, // Position outside cabin
       y: 17 * TILE_SIZE + TILE_SIZE / 2, // Just in front of cabin
     },
-    triggerDistance: TILE_SIZE * 0.8, // Make it easier to trigger
+    triggerDistance: TILE_SIZE * 1.5, // Much larger trigger area
     sprite: portalSprite,
     sourceMapType: MapType.CABIN_INTERIOR, // This portal only appears in the cabin map
+    animation: {
+      frameCount: PORTAL_ANIMATION.frameCount,
+      frameRate: PORTAL_ANIMATION.frameRate,
+    },
   },
 };
 
