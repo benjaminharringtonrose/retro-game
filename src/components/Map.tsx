@@ -14,8 +14,6 @@ const CABIN = require("../assets/cabin.png");
 
 // Separate component for ground tiles
 const GroundTile: React.FC<{ tile: number; tileSize: number }> = React.memo(({ tile, tileSize }) => {
-  if (tile === 0 || tile === Tile.Tree || tile === Tile.Tree2) return null;
-
   return (
     <View
       style={[
@@ -200,7 +198,18 @@ const MapRow: React.FC<{ item: RowData }> = React.memo(({ item }) => {
       <View style={styles.layerContainer}>
         {tiles.map((tile: number, colIndex: number) => {
           // Skip cabin tiles as they're rendered in a separate layer
-          if (tile === Tile.Cabin) return null;
+          if (tile === Tile.Cabin) {
+            return (
+              <View
+                key={`tree-container-${rowIndex}-${colIndex}`}
+                style={{
+                  width: tileSize,
+                  height: tileSize,
+                  position: "relative",
+                }}
+              />
+            );
+          }
 
           return (
             <View
