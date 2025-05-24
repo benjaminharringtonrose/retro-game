@@ -6,7 +6,6 @@ import { NPCSystem } from "./NPCSystem";
 import { DialogSystem } from "./DialogSystem";
 import { InteractionSystem } from "./InteractionSystem";
 import { PortalSystem } from "./PortalSystem";
-import { Entity, SystemProps } from "../../types";
 
 // Simple performance tracking
 let lastLogTime = 0;

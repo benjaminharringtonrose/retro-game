@@ -1,4 +1,7 @@
-import { Entity, SystemProps, Tile } from "../../types";
+import { Entity, SystemProps } from "../../types";
+import { Tile } from "../../types/enums";
+import { CollisionState, DebugBox } from "../../types/collision";
+import { getTileCoords } from "../../utils/coordinates";
 
 const isTreeTile = (tile: number): boolean => {
   return tile === Tile.Tree || tile === Tile.Tree2;
@@ -10,12 +13,6 @@ const isCabinTile = (tile: number): boolean => {
 
 const isWallTile = (tile: number): boolean => {
   return tile === Tile.Wall;
-};
-
-const getTileCoordinates = (x: number, y: number, tileSize: number) => {
-  const tileX = Math.floor(x / tileSize);
-  const tileY = Math.floor(y / tileSize);
-  return { tileX, tileY };
 };
 
 const checkCollision = (playerLeft: number, playerRight: number, playerTop: number, playerBottom: number, tileLeft: number, tileRight: number, tileTop: number, tileBottom: number): boolean => {
@@ -41,7 +38,7 @@ export const CollisionSystem = (entities: { [key: string]: Entity }, { delta = 1
         left: false,
         right: false,
       },
-    };
+    } as CollisionState;
   }
 
   const { tileSize, tiles } = map.tileData;
@@ -69,7 +66,7 @@ export const CollisionSystem = (entities: { [key: string]: Entity }, { delta = 1
   };
 
   // Initialize debug boxes array
-  const debugBoxes = [];
+  const debugBoxes: DebugBox[] = [];
 
   // Add player collision box
   debugBoxes.push({
@@ -142,7 +139,7 @@ export const CollisionSystem = (entities: { [key: string]: Entity }, { delta = 1
   });
 
   // Get the tiles to check based on next position
-  const { tileX: nextTileX, tileY: nextTileY } = getTileCoordinates(nextX, nextY, tileSize);
+  const { tileX: nextTileX, tileY: nextTileY } = getTileCoords(nextX, nextY);
 
   // Check surrounding tiles for collisions (3x3 grid around player's next position)
   for (let dy = -1; dy <= 1; dy++) {

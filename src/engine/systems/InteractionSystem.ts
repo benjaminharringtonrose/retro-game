@@ -1,6 +1,7 @@
 import { Entity, SystemProps, Direction } from "../../types";
 import { TILE_SIZE } from "../../constants/map";
-import { findPath, getTileCoords } from "../../utils/pathfinding";
+import { findPath } from "../../utils/pathfinding";
+import { getTileCoords } from "../../utils/coordinates";
 
 interface InteractionState {
   targetNPC: string | null;

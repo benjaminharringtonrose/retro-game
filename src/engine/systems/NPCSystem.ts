@@ -1,6 +1,6 @@
 import { Entity, SystemProps, Direction } from "../../types";
 import { TILE_SIZE } from "../../constants/map";
-import { getTileCoords } from "../../utils/pathfinding";
+import { getTileCoords } from "../../utils/coordinates";
 import { NPC_CONFIGS } from "../../config/npcs";
 import { Dimensions } from "react-native";
 

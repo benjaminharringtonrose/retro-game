@@ -1,29 +1,9 @@
-import { TILE_SIZE } from "../constants/map";
-import { Tile } from "../types";
-
-interface Node {
-  tileX: number;
-  tileY: number;
-  g: number; // Cost from start to current node
-  h: number; // Estimated cost from current node to end
-  f: number; // Total cost (g + h)
-  parent: Node | null;
-}
-
-// Helper to get tile coordinates from map coordinates
-export const getTileCoords = (x: number, y: number): { tileX: number; tileY: number } => ({
-  tileX: Math.floor(x / TILE_SIZE),
-  tileY: Math.floor(y / TILE_SIZE),
-});
-
-// Helper to get map coordinates from tile coordinates
-export const getMapCoords = (tileX: number, tileY: number): { x: number; y: number } => ({
-  x: tileX * TILE_SIZE + TILE_SIZE / 2,
-  y: tileY * TILE_SIZE + TILE_SIZE / 2,
-});
+import { Tile } from "../types/enums";
+import { Node, TileCoordinates, MapCoordinates } from "../types/pathfinding";
+import { getTileCoords, getMapCoords } from "./coordinates";
 
 // Diagonal distance heuristic for tile coordinates
-const heuristic = (nodeA: { tileX: number; tileY: number }, nodeB: { tileX: number; tileY: number }): number => {
+const heuristic = (nodeA: TileCoordinates, nodeB: TileCoordinates): number => {
   const dx = Math.abs(nodeA.tileX - nodeB.tileX);
   const dy = Math.abs(nodeA.tileY - nodeB.tileY);
   // Use diagonal distance: cost of 1.4 for diagonal, 1 for cardinal
@@ -84,7 +64,7 @@ const getNeighbors = (node: Node, mapTiles: number[][]): Node[] => {
   return neighbors;
 };
 
-export const findPath = (startX: number, startY: number, endX: number, endY: number, mapTiles: number[][]): { x: number; y: number }[] => {
+export const findPath = (startX: number, startY: number, endX: number, endY: number, mapTiles: number[][]): MapCoordinates[] => {
   console.log("Finding path from", { startX, startY }, "to", { endX, endY });
 
   // Convert coordinates to tile positions
@@ -160,13 +140,12 @@ export const findPath = (startX: number, startY: number, endX: number, endY: num
     // Check if we've reached the goal
     if (current.tileX === endTile.tileX && current.tileY === endTile.tileY) {
       console.log("Path found in", iterations, "iterations");
-      const path: { x: number; y: number }[] = [];
+      const path: MapCoordinates[] = [];
       let node: Node | null = current;
 
       // Convert tile coordinates back to pixel coordinates for the path
       while (node) {
-        const { x, y } = getMapCoords(node.tileX, node.tileY);
-        path.unshift({ x, y });
+        path.unshift(getMapCoords(node.tileX, node.tileY));
         node = node.parent;
       }
       return path;
