@@ -6,6 +6,7 @@ import { NPCSystem } from "./NPCSystem";
 import { DialogSystem } from "./DialogSystem";
 import { InteractionSystem } from "./InteractionSystem";
 import { PortalSystem } from "./PortalSystem";
+import { RenderingSystem } from "./RenderingSystem";
 
 // Simple performance tracking
 let lastLogTime = 0;
@@ -39,26 +40,18 @@ const trackSystemPerformance = (system: any, name: string) => {
   };
 };
 
-// Tracked systems
-const TrackedControlSystem = trackSystemPerformance(ControlSystem, "ControlSystem");
-const TrackedDialogSystem = trackSystemPerformance(DialogSystem, "DialogSystem");
-const TrackedNPCSystem = trackSystemPerformance(NPCSystem, "NPCSystem");
-const TrackedInteractionSystem = trackSystemPerformance(InteractionSystem, "InteractionSystem");
-const TrackedCollisionSystem = trackSystemPerformance(CollisionSystem, "CollisionSystem");
-const TrackedMovementSystem = trackSystemPerformance(MovementSystem, "MovementSystem");
-const TrackedAnimationSystem = trackSystemPerformance(AnimationSystem, "AnimationSystem");
-const TrackedPortalSystem = trackSystemPerformance(PortalSystem, "PortalSystem");
+// Create tracked versions of each system
+const TrackedMovementSystem = trackSystemPerformance(MovementSystem, "Movement");
+const TrackedAnimationSystem = trackSystemPerformance(AnimationSystem, "Animation");
+const TrackedControlSystem = trackSystemPerformance(ControlSystem, "Control");
+const TrackedCollisionSystem = trackSystemPerformance(CollisionSystem, "Collision");
+const TrackedNPCSystem = trackSystemPerformance(NPCSystem, "NPC");
+const TrackedDialogSystem = trackSystemPerformance(DialogSystem, "Dialog");
+const TrackedInteractionSystem = trackSystemPerformance(InteractionSystem, "Interaction");
+const TrackedPortalSystem = trackSystemPerformance(PortalSystem, "Portal");
+const TrackedRenderingSystem = trackSystemPerformance(RenderingSystem, "Rendering");
 
-export { MovementSystem } from "./MovementSystem";
-export { AnimationSystem } from "./AnimationSystem";
-export { ControlSystem } from "./ControlSystem";
-export { CollisionSystem } from "./CollisionSystem";
-export { NPCSystem } from "./NPCSystem";
-export { DialogSystem } from "./DialogSystem";
-export { InteractionSystem } from "./InteractionSystem";
-export { PortalSystem } from "./PortalSystem";
-
-// Order matters: Controls -> Dialog -> Interaction -> Portal -> Collision -> Movement -> Animation
+// Order matters: Controls -> Dialog -> Interaction -> Portal -> Collision -> Movement -> Animation -> Rendering
 export const Systems = [
   TrackedControlSystem, // First handle input
   TrackedDialogSystem, // Handle dialog interactions immediately
@@ -67,5 +60,6 @@ export const Systems = [
   TrackedPortalSystem, // Check for portal interactions
   TrackedCollisionSystem, // Then check for potential collisions
   TrackedMovementSystem, // Apply movement respecting collision flags
-  TrackedAnimationSystem, // Finally update visuals
+  TrackedAnimationSystem, // Update visuals
+  TrackedRenderingSystem, // Finally handle z-index ordering
 ];

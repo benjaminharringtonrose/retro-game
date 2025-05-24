@@ -68,3 +68,18 @@ export interface PortalComponent extends Component {
   isActive: boolean;
   triggerDistance: number;
 }
+
+export interface PlayerProps {
+  position: {
+    x: number;
+    y: number;
+  };
+  movement: {
+    direction: Direction;
+    isMoving: boolean;
+  };
+  animation: {
+    currentFrame: number;
+  };
+  zIndex?: number;
+}

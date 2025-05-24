@@ -19,7 +19,7 @@ const SPRITE_ROWS = {
   [Direction.DownRight]: 3, // Use right-facing sprite
 };
 
-export const Player: React.FC<PlayerProps> = ({ position, movement, animation }) => {
+export const Player: React.FC<PlayerProps> = ({ position, movement, animation, zIndex = 2000 }) => {
   const { x, y } = position;
   const { direction } = movement;
   const { currentFrame } = animation;
@@ -38,7 +38,7 @@ export const Player: React.FC<PlayerProps> = ({ position, movement, animation })
           width: spriteWidth,
           height: spriteHeight,
           backgroundColor: "transparent",
-          zIndex: 2000,
+          zIndex,
         },
       ]}
     >
@@ -63,7 +63,6 @@ export const Player: React.FC<PlayerProps> = ({ position, movement, animation })
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    zIndex: 2000,
     overflow: "visible",
   },
   spriteWrapper: {

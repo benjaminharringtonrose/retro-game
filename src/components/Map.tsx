@@ -165,6 +165,7 @@ const CabinTile: React.FC<{ tile: number; tileSize: number; onImageLoad?: (asset
             position: "absolute",
             left: -offset,
             bottom: 0, // Align to bottom of tile
+            zIndex: 2400, // Lower than portal (2750)
           },
         ]}
         contentFit="contain"
@@ -197,20 +198,24 @@ const MapRow: React.FC<{ item: RowData }> = React.memo(({ item }) => {
       </View>
       {/* Tree and Object layer */}
       <View style={styles.layerContainer}>
-        {tiles.map((tile: number, colIndex: number) => (
-          <View
-            key={`tree-container-${rowIndex}-${colIndex}`}
-            style={{
-              width: tileSize,
-              height: tileSize,
-              position: "relative",
-            }}
-          >
-            <TreeTile key={`tree-${rowIndex}-${colIndex}`} tile={tile} tileSize={tileSize} onImageLoad={onImageLoad} />
-            <FlowerTile key={`flower-${rowIndex}-${colIndex}`} tile={tile} tileSize={tileSize} onImageLoad={onImageLoad} />
-            <CabinTile key={`cabin-${rowIndex}-${colIndex}`} tile={tile} tileSize={tileSize} onImageLoad={onImageLoad} />
-          </View>
-        ))}
+        {tiles.map((tile: number, colIndex: number) => {
+          // Skip cabin tiles as they're rendered in a separate layer
+          if (tile === Tile.Cabin) return null;
+
+          return (
+            <View
+              key={`tree-container-${rowIndex}-${colIndex}`}
+              style={{
+                width: tileSize,
+                height: tileSize,
+                position: "relative",
+              }}
+            >
+              <TreeTile key={`tree-${rowIndex}-${colIndex}`} tile={tile} tileSize={tileSize} onImageLoad={onImageLoad} />
+              <FlowerTile key={`flower-${rowIndex}-${colIndex}`} tile={tile} tileSize={tileSize} onImageLoad={onImageLoad} />
+            </View>
+          );
+        })}
       </View>
     </View>
   );
@@ -271,10 +276,24 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
   const keyExtractor = (item: RowData) => `row-${item.rowIndex}`;
   const renderItem = ({ item }: { item: RowData }) => <MapRow item={item} />;
 
+  // Find cabin tiles
+  const cabinTiles = useMemo(() => {
+    const cabins: { row: number; col: number }[] = [];
+    tiles.forEach((row, rowIndex) => {
+      row.forEach((tile, colIndex) => {
+        if (tile === Tile.Cabin) {
+          cabins.push({ row: rowIndex, col: colIndex });
+        }
+      });
+    });
+    return cabins;
+  }, [tiles]);
+
   console.log("[Map] Rendering with position:", { x, y, width, height });
 
   return (
     <>
+      {/* Base map layer */}
       <View
         style={[
           styles.map,
@@ -284,13 +303,25 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
             top: y,
             width,
             height,
+            zIndex: 1,
+            overflow: "visible",
           },
         ]}
       >
         <View style={[styles.mapContainer, { width, height }]}>
           <RNImage
             source={background}
-            style={styles.background}
+            style={[
+              styles.background,
+              {
+                width: width,
+                height: height,
+                opacity: 1,
+                position: "absolute",
+                top: 0,
+                left: 0,
+              },
+            ]}
             resizeMode="cover"
             onLoadEnd={() => {
               if (!backgroundLoaded) {
@@ -299,7 +330,7 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
               }
             }}
           />
-          <FlatList data={rowData} renderItem={renderItem} keyExtractor={keyExtractor} showsVerticalScrollIndicator={false} scrollEnabled={false} style={styles.list} initialNumToRender={tiles.length} />
+          <FlatList data={rowData} renderItem={renderItem} keyExtractor={keyExtractor} showsVerticalScrollIndicator={false} scrollEnabled={false} style={[styles.list]} initialNumToRender={tiles.length} />
           {showGrid && <GridOverlay tileSize={tileSize} width={width} height={height} />}
           {showDebug && debugBoxes.length > 0 && (
             <View style={StyleSheet.absoluteFill}>
@@ -308,7 +339,40 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
           )}
         </View>
       </View>
-      <View style={styles.devControls}>
+
+      {/* Cabin layer */}
+      <View
+        style={[
+          styles.map,
+          {
+            position: "absolute",
+            left: x,
+            top: y,
+            width,
+            height,
+            pointerEvents: "none",
+            zIndex: 2400, // Lower than portal (2750)
+          },
+        ]}
+      >
+        {cabinTiles.map(({ row, col }) => (
+          <View
+            key={`cabin-${row}-${col}`}
+            style={{
+              position: "absolute",
+              left: col * tileSize,
+              top: row * tileSize,
+              width: tileSize,
+              height: tileSize,
+            }}
+          >
+            <CabinTile tile={Tile.Cabin} tileSize={tileSize} onImageLoad={onImageLoad} />
+          </View>
+        ))}
+      </View>
+
+      {/* Controls layer */}
+      <View style={[styles.devControls, { zIndex: 4000 }]}>
         <TouchableOpacity style={styles.devToggle} onPress={() => setShowGrid(!showGrid)}>
           <Text style={styles.devToggleText}>{showGrid ? "Hide Grid" : "Show Grid"}</Text>
         </TouchableOpacity>
@@ -345,18 +409,25 @@ const getTileColor = (tile: number) => {
 const styles = StyleSheet.create({
   map: {
     position: "absolute",
-    backgroundColor: "#000",
+    overflow: "visible",
   },
   mapContainer: {
     position: "relative",
+    overflow: "visible",
   },
   background: {
     position: "absolute",
     width: "100%",
     height: "100%",
+    top: 0,
+    left: 0,
+    zIndex: 1,
   },
   list: {
-    flex: 1,
+    position: "absolute",
+    width: "100%",
+    height: "100%",
+    zIndex: 2,
   },
   row: {
     flexDirection: "row",
@@ -393,7 +464,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 0,
     left: 0,
-    zIndex: 100,
+    zIndex: 2000,
     pointerEvents: "none",
   },
   gridLine: {
@@ -408,7 +479,6 @@ const styles = StyleSheet.create({
     right: 20,
     flexDirection: "column",
     gap: 10,
-    zIndex: 1000,
   },
   devToggle: {
     backgroundColor: "rgba(0,0,0,0.7)",

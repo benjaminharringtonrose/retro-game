@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   container: {
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 50, // Below NPCs (1000) but above regular terrain
+    zIndex: 2750, // Above cabin (2500), below UI (3000+)
   },
   spriteContainer: {
     width: "100%",
