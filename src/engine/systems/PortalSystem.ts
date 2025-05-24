@@ -131,8 +131,8 @@ export const PortalSystem = (entities: { [key: string]: Entity }, { time, delta 
           console.log(`[PortalSystem] Centering cabin interior map (${mapWidth}x${mapHeight}) with offset (${mapOffsetX}, ${mapOffsetY})`);
 
           // Position the map centered on screen
-          map.position.x = 0; // Let the background handle centering
-          map.position.y = 0; // Let the background handle centering
+          map.position.x = mapOffsetX;
+          map.position.y = mapOffsetY;
 
           // Calculate player position at entry point (just inside door)
           const adjustedPlayerX = centerX;

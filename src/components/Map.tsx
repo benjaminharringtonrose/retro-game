@@ -275,7 +275,9 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
         style={[
           styles.map,
           {
-            transform: [{ translateX: x }, { translateY: y }],
+            left: isCabin ? x : 0,
+            top: isCabin ? y : 0,
+            transform: isCabin ? [] : [{ translateX: x }, { translateY: y }],
             width,
             height,
           },

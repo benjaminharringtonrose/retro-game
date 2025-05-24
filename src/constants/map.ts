@@ -57,8 +57,8 @@ export const DEFAULT_MAPS: MapConfig = {
   [MapType.CABIN_INTERIOR]: {
     name: "Cabin Interior",
     initialPosition: {
-      x: 0,
-      y: 0,
+      x: (WINDOW_WIDTH - 8 * TILE_SIZE) / 2,
+      y: (WINDOW_HEIGHT - 8 * TILE_SIZE) / 2,
     },
     background: require("../assets/cabin-background.png"),
     mapData: [
