@@ -3,6 +3,7 @@ import { TILE_SIZE } from "../../constants/map";
 import { PORTAL_CONFIGS } from "../../config/portals";
 import { mapManager } from "../../managers/MapManager";
 import { Dimensions } from "react-native";
+import { createPortal } from "../entities";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -80,15 +81,19 @@ export const PortalSystem = (entities: { [key: string]: Entity }, { time, delta 
         // Use MapManager to handle the transition
         mapManager.updateMapForType(map, targetMapType, player);
 
-        // Handle portal visibility for the new map
-        Object.values(entities)
-          .filter((entity) => entity.id.startsWith("portal-"))
-          .forEach((entity) => {
-            const config = PORTAL_CONFIGS[entity.id];
-            if (config) {
-              entity.portal.isActive = config.sourceMapType === targetMapType;
-            }
-          });
+        // Remove all existing portals
+        Object.keys(entities).forEach((key) => {
+          if (key.startsWith("portal-")) {
+            delete entities[key];
+          }
+        });
+
+        // Create new portals for the target map
+        Object.entries(PORTAL_CONFIGS).forEach(([portalId, config]) => {
+          if (config.sourceMapType === targetMapType) {
+            entities[portalId] = createPortal(portalId, map.position);
+          }
+        });
 
         console.log(`[PortalSystem] Transitioned to map ${targetMapType}`);
       }

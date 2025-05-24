@@ -43,17 +43,17 @@ export const PORTAL_CONFIGS: { [key: string]: PortalConfig } = {
   "portal-cabin-exit": {
     id: "portal-cabin-exit",
     position: {
-      x: 4.5 * TILE_SIZE, // Center between tiles 4 and 5 in row 6
-      y: 6 * TILE_SIZE, // Row 6 (zero-based) where portal tiles are
+      x: 3 * TILE_SIZE, // Center between tiles 4 and 5 in row 6
+      y: 4.8 * TILE_SIZE, // Row 6 (zero-based) where portal tiles are
     },
     dimensions: {
-      width: TILE_SIZE * 1.2,
-      height: TILE_SIZE * 1.2,
+      width: TILE_SIZE,
+      height: TILE_SIZE,
     },
     targetMapType: MapType.FOREST,
     targetPosition: {
-      x: 17 * TILE_SIZE + TILE_SIZE / 2, // Position outside cabin
-      y: 17 * TILE_SIZE + TILE_SIZE / 2, // Just in front of cabin
+      x: 3 * TILE_SIZE + TILE_SIZE / 2, // Position outside cabin
+      y: 6 * TILE_SIZE + TILE_SIZE / 2, // Just in front of cabin
     },
     triggerDistance: TILE_SIZE * 1,
     sprite: portalSprite,
