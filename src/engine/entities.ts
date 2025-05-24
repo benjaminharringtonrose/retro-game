@@ -162,6 +162,10 @@ export const createPortal = (id: string, mapPosition: { x: number; y: number }):
     absolutePosition,
     // Include mapId for easier reference to the parent map
     mapId: "map-1",
+    // Add debug property that will be updated by the map's debug state
+    debug: {
+      boxes: [],
+    },
     renderer: Portal,
   };
 };

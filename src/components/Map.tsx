@@ -251,6 +251,11 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
   // Get debug boxes if they exist
   const debugBoxes = debug?.boxes || [];
 
+  // Update debug prop with showDebug state
+  if (debug) {
+    debug.showDebug = showDebug;
+  }
+
   // Prepare data for FlatList - render all tiles without slicing
   const rowData = useMemo(() => {
     return tiles.map((row, index) => ({

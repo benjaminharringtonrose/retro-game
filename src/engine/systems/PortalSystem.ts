@@ -45,6 +45,14 @@ export const PortalSystem = (entities: { [key: string]: Entity }, { time, delta 
   // Update portal positions based on map movement
   const portals = Object.values(entities).filter((entity) => entity.id.startsWith("portal-"));
 
+  // Sync debug state from map to portals
+  portals.forEach((portal) => {
+    portal.debug = {
+      showDebug: map.debug?.showDebug || false,
+      boxes: [],
+    };
+  });
+
   for (const portal of portals) {
     if (!portal.absolutePosition) continue;
 

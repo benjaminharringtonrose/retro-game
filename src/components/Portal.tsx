@@ -1,10 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { StyleSheet, View, Image as RNImage, Text } from "react-native";
-import { PortalEntity } from "../types";
 import { PORTAL_CONFIGS } from "../config/portals";
-
-// Set to true to show debug info about the portal
-const SHOW_PORTAL_DEBUG = false;
 
 interface PortalProps {
   id: string;
@@ -20,9 +16,19 @@ interface PortalProps {
     isActive: boolean;
     triggerDistance: number;
   };
+  debug?: {
+    showDebug?: boolean;
+    boxes: Array<{
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      color: string;
+    }>;
+  };
 }
 
-export const Portal: React.FC<PortalProps> = ({ id, position, dimensions, portal }) => {
+export const Portal: React.FC<PortalProps> = ({ id, position, dimensions, portal, debug }) => {
   const { x, y } = position;
   const { width, height } = dimensions;
   const { isActive } = portal;
@@ -104,7 +110,7 @@ export const Portal: React.FC<PortalProps> = ({ id, position, dimensions, portal
       ]}
       testID={`portal-${id}`}
     >
-      {SHOW_PORTAL_DEBUG && (
+      {debug?.showDebug && (
         <View
           style={{
             position: "absolute",
@@ -138,7 +144,7 @@ export const Portal: React.FC<PortalProps> = ({ id, position, dimensions, portal
           }}
         />
       </View>
-      {SHOW_PORTAL_DEBUG && <Text style={styles.debugText}>{id}</Text>}
+      {debug?.showDebug && <Text style={styles.debugText}>{id}</Text>}
     </View>
   );
 };

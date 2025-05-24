@@ -41,6 +41,7 @@ export interface MapProps {
   };
   boxes?: DebugBox[];
   debug?: {
+    showDebug?: boolean;
     boxes: DebugBox[];
   };
 }
