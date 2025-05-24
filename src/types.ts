@@ -141,6 +141,7 @@ export interface MapData {
   name: string;
   initialPosition: MapPosition;
   mapData: number[][];
+  movementType: "scroll" | "fixed";
   background: any;
   bounds: {
     width: number;

@@ -241,9 +241,6 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
   const { width, height } = dimensions;
   const { tileSize, tiles, onImageLoad, background } = tileData;
 
-  // Check if this is the cabin interior map
-  const isCabin = background?.toString().includes("cabin");
-
   useEffect(() => {
     if (backgroundLoaded) {
       console.log("[Map] Background loaded");
@@ -269,56 +266,42 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
   const keyExtractor = (item: RowData) => `row-${item.rowIndex}`;
   const renderItem = ({ item }: { item: RowData }) => <MapRow item={item} />;
 
+  console.log("[Map] Rendering with position:", { x, y, width, height });
+
   return (
     <>
       <View
         style={[
           styles.map,
           {
-            left: isCabin ? x : 0,
-            top: isCabin ? y : 0,
-            transform: isCabin ? [] : [{ translateX: x }, { translateY: y }],
+            position: "absolute",
+            left: x,
+            top: y,
             width,
             height,
           },
         ]}
       >
-        {isCabin ? (
-          <View style={[styles.cabinContainer, { width, height }]}>
-            <RNImage
-              source={background}
-              style={styles.cabinBackground}
-              resizeMode="contain"
-              onLoadEnd={() => {
-                if (!backgroundLoaded) {
-                  console.log("[Map] Cabin background loaded");
-                  setBackgroundLoaded(true);
-                }
-              }}
-            />
-            <FlatList data={rowData} renderItem={renderItem} keyExtractor={keyExtractor} showsVerticalScrollIndicator={false} scrollEnabled={false} style={styles.list} initialNumToRender={tiles.length} />
-          </View>
-        ) : (
-          <ImageBackground
-            source={background || require("../assets/forest-background.png")}
+        <View style={[styles.mapContainer, { width, height }]}>
+          <RNImage
+            source={background}
             style={styles.background}
             resizeMode="contain"
             onLoadEnd={() => {
               if (!backgroundLoaded) {
-                console.log("[Map] Background load ended");
+                console.log("[Map] Background loaded");
                 setBackgroundLoaded(true);
               }
             }}
-          >
-            <FlatList data={rowData} renderItem={renderItem} keyExtractor={keyExtractor} showsVerticalScrollIndicator={false} scrollEnabled={false} style={styles.list} initialNumToRender={tiles.length} />
-            {showGrid && <GridOverlay tileSize={tileSize} width={width} height={height} />}
-            {showDebug && debugBoxes.length > 0 && (
-              <View style={StyleSheet.absoluteFill}>
-                <DebugRenderer boxes={debugBoxes} />
-              </View>
-            )}
-          </ImageBackground>
-        )}
+          />
+          <FlatList data={rowData} renderItem={renderItem} keyExtractor={keyExtractor} showsVerticalScrollIndicator={false} scrollEnabled={false} style={styles.list} initialNumToRender={tiles.length} />
+          {showGrid && <GridOverlay tileSize={tileSize} width={width} height={height} />}
+          {showDebug && debugBoxes.length > 0 && (
+            <View style={StyleSheet.absoluteFill}>
+              <DebugRenderer boxes={debugBoxes} />
+            </View>
+          )}
+        </View>
       </View>
       <View style={styles.devControls}>
         <TouchableOpacity style={styles.devToggle} onPress={() => setShowGrid(!showGrid)}>
@@ -357,14 +340,15 @@ const getTileColor = (tile: number) => {
 const styles = StyleSheet.create({
   map: {
     position: "absolute",
-    left: 0,
-    top: 0,
     backgroundColor: "#000",
   },
+  mapContainer: {
+    position: "relative",
+  },
   background: {
+    position: "absolute",
     width: "100%",
     height: "100%",
-    backgroundColor: "#000",
   },
   list: {
     flex: 1,
@@ -430,22 +414,5 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 14,
     fontWeight: "bold",
-  },
-  cabinContainer: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "#000",
-  },
-  cabinBackground: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    right: 0,
-    bottom: 0,
-    width: "100%",
-    height: "100%",
   },
 });

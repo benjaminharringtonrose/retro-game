@@ -9,6 +9,7 @@ import { DialogBoxRenderer } from "../components/DialogBoxRenderer";
 import { DEFAULT_MAPS, TILE_SIZE } from "../constants/map";
 import { NPC_CONFIGS } from "../config/npcs";
 import { PORTAL_CONFIGS, getPortalsForMap } from "../config/portals";
+import { mapManager } from "../managers/MapManager";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -166,39 +167,33 @@ export const createPortal = (id: string, mapPosition: { x: number; y: number }):
 };
 
 const createMap = (id: string, mapType: MapType): Entity => {
+  const dimensions = mapManager.getMapDimensions(mapType);
+  const position = mapManager.getMapPosition(mapType);
+  const bounds = mapManager.getMapBounds(mapType);
   const mapData = DEFAULT_MAPS[mapType];
-  const mapTiles = mapData.mapData;
-  const mapWidth = mapTiles[0].length * TILE_SIZE;
-  const mapHeight = mapTiles.length * TILE_SIZE;
+
+  console.log(`[Entities] Creating map ${mapType} with:`, { dimensions, position, bounds });
 
   return {
     id,
-    mapType, // Store current map type
+    mapType,
     position: {
       id: `${id}-position`,
-      x: mapData.initialPosition.x,
-      y: mapData.initialPosition.y,
+      x: position.x,
+      y: position.y,
     },
     dimensions: {
       id: `${id}-dimensions`,
-      width: mapWidth,
-      height: mapHeight,
+      width: dimensions.width,
+      height: dimensions.height,
     },
     tileData: {
       id: `${id}-tiledata`,
       tileSize: TILE_SIZE,
-      tiles: mapTiles,
+      tiles: mapData.mapData,
       background: mapData.background,
     },
-    bounds: {
-      id: `${id}-bounds`,
-      width: mapWidth,
-      height: mapHeight,
-      minX: -(mapWidth - screenWidth),
-      maxX: 0,
-      minY: -(mapHeight - screenHeight),
-      maxY: 0,
-    },
+    bounds,
     renderer: Map,
   };
 };
@@ -230,9 +225,12 @@ export const setupGameEntities = (): { [key: string]: Entity } => {
   const map = createMap("map-1", MapType.FOREST);
   const player = createPlayer("player-1", playerX, playerY);
 
-  // Adjust initial map position to ensure player starts in a clear area
-  map.position.x = -TILE_SIZE * 13;
-  map.position.y = -TILE_SIZE * 13;
+  // For scrolling maps, override the initial position
+  const mapConfig = DEFAULT_MAPS[map.mapType as keyof typeof DEFAULT_MAPS];
+  if (mapConfig.movementType === "scroll") {
+    map.position.x = -TILE_SIZE * 13;
+    map.position.y = -TILE_SIZE * 13;
+  }
 
   console.log(`[Entities] Initial map position: (${map.position.x}, ${map.position.y}) for map type ${map.mapType}`);
 

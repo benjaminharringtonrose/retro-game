@@ -1,5 +1,6 @@
-import { Entity, SystemProps, Direction } from "../../types";
+import { Entity, SystemProps, Direction, MapType } from "../../types";
 import { Dimensions } from "react-native";
+import { DEFAULT_MAPS } from "../../constants/map";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -31,9 +32,13 @@ export const MovementSystem = (entities: { [key: string]: Entity }, { time, delt
   const player = entities["player-1"];
   const map = entities["map-1"];
 
-  if (!player?.controls || !map?.position) {
+  if (!player?.controls || !map?.position || !map.dimensions) {
     return entities;
   }
+
+  // Get movement type from map config
+  const mapData = DEFAULT_MAPS[map.mapType as keyof typeof DEFAULT_MAPS];
+  const isFixedMap = mapData?.movementType === "fixed";
 
   // Ensure delta is a valid number and convert to seconds
   const deltaSeconds = (typeof delta === "number" && delta > 0 ? delta : 16.666) / 1000;
@@ -85,45 +90,62 @@ export const MovementSystem = (entities: { [key: string]: Entity }, { time, delt
   const centerY = screenHeight / 2;
 
   if (map.bounds) {
-    // Handle X movement
-    if (deltaX !== 0) {
-      const newMapX = map.position.x - deltaX;
-      const canMoveMapX = newMapX <= map.bounds.maxX && newMapX >= map.bounds.minX;
+    if (isFixedMap) {
+      // For fixed maps, only move the player within the visible map area
+      const mapLeft = map.position.x;
+      const mapRight = mapLeft + map.dimensions.width;
+      const mapTop = map.position.y;
+      const mapBottom = mapTop + map.dimensions.height;
+      const playerWidth = player.dimensions?.width || 32;
+      const playerHeight = player.dimensions?.height || 40;
+
+      // Calculate new player position
       const newPlayerX = player.position.x + deltaX;
-
-      // Check if player would cross center
-      const wouldCrossCenterX = (deltaX < 0 && player.position.x > centerX && newPlayerX <= centerX) || (deltaX > 0 && player.position.x < centerX && newPlayerX >= centerX);
-
-      if (canMoveMapX && (player.position.x === centerX || wouldCrossCenterX)) {
-        debugLog(`Moving map X: ${map.position.x} -> ${newMapX}`);
-        map.position.x = newMapX;
-        player.position.x = centerX;
-      } else if (!blocked.left && !blocked.right) {
-        player.position.x = Math.min(Math.max(newPlayerX, EDGE_MARGIN), screenWidth - EDGE_MARGIN);
-      }
-    }
-
-    // Handle Y movement
-    if (deltaY !== 0) {
-      const newMapY = map.position.y - deltaY;
-      const canMoveMapY = newMapY <= map.bounds.maxY && newMapY >= map.bounds.minY;
       const newPlayerY = player.position.y + deltaY;
 
-      // Check if player would cross center
-      const wouldCrossCenterY = (deltaY < 0 && player.position.y > centerY && newPlayerY <= centerY) || (deltaY > 0 && player.position.y < centerY && newPlayerY >= centerY);
+      // Keep player within map bounds
+      if (!blocked.left && !blocked.right) {
+        player.position.x = Math.min(Math.max(newPlayerX, mapLeft + playerWidth / 2), mapRight - playerWidth / 2);
+      }
+      if (!blocked.up && !blocked.down) {
+        player.position.y = Math.min(Math.max(newPlayerY, mapTop + playerHeight / 2), mapBottom - playerHeight / 2);
+      }
 
-      debugLog(`Y Movement - Player: ${player.position.y.toFixed(2)}, New: ${newPlayerY.toFixed(2)}, Center: ${centerY}, Delta: ${deltaY.toFixed(2)}, Can move map: ${canMoveMapY}, Would cross: ${wouldCrossCenterY}`);
+      // Log position occasionally for debugging
+      if (time % 1000 < 16) {
+        console.log(`[Movement] Fixed map bounds: left=${mapLeft}, right=${mapRight}, top=${mapTop}, bottom=${mapBottom}`);
+        console.log(`[Movement] Player position: x=${player.position.x}, y=${player.position.y}`);
+      }
+    } else {
+      // Handle scrolling maps
+      // Handle X movement
+      if (deltaX !== 0) {
+        const newMapX = map.position.x - deltaX;
+        const canMoveMapX = newMapX <= map.bounds.maxX && newMapX >= map.bounds.minX;
+        const newPlayerX = player.position.x + deltaX;
+        const wouldCrossCenterX = (deltaX < 0 && player.position.x > centerX && newPlayerX <= centerX) || (deltaX > 0 && player.position.x < centerX && newPlayerX >= centerX);
 
-      if (canMoveMapY && (player.position.y === centerY || wouldCrossCenterY)) {
-        // If map can move and player is at or crossing center, move map and center player
-        debugLog(`Moving map Y: ${map.position.y} -> ${newMapY}`);
-        map.position.y = newMapY;
-        player.position.y = centerY;
-      } else if (!blocked.up && !blocked.down) {
-        // Otherwise move player within screen bounds
-        const boundedY = Math.min(Math.max(newPlayerY, EDGE_MARGIN), screenHeight - EDGE_MARGIN);
-        player.position.y = boundedY;
-        debugLog(`Moving player Y: ${player.position.y} -> ${boundedY}`);
+        if (canMoveMapX && (player.position.x === centerX || wouldCrossCenterX)) {
+          map.position.x = newMapX;
+          player.position.x = centerX;
+        } else if (!blocked.left && !blocked.right) {
+          player.position.x = Math.min(Math.max(newPlayerX, EDGE_MARGIN), screenWidth - EDGE_MARGIN);
+        }
+      }
+
+      // Handle Y movement
+      if (deltaY !== 0) {
+        const newMapY = map.position.y - deltaY;
+        const canMoveMapY = newMapY <= map.bounds.maxY && newMapY >= map.bounds.minY;
+        const newPlayerY = player.position.y + deltaY;
+        const wouldCrossCenterY = (deltaY < 0 && player.position.y > centerY && newPlayerY <= centerY) || (deltaY > 0 && player.position.y < centerY && newPlayerY >= centerY);
+
+        if (canMoveMapY && (player.position.y === centerY || wouldCrossCenterY)) {
+          map.position.y = newMapY;
+          player.position.y = centerY;
+        } else if (!blocked.up && !blocked.down) {
+          player.position.y = Math.min(Math.max(newPlayerY, EDGE_MARGIN), screenHeight - EDGE_MARGIN);
+        }
       }
     }
   }

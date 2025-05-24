@@ -5,14 +5,28 @@ const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get("window");
 
 export const TILE_SIZE = 64;
 
+// Helper function to calculate map position based on dimensions
+const calculateMapPosition = (mapWidth: number, mapHeight: number) => {
+  // Always calculate the centered position
+  const x = Math.floor((WINDOW_WIDTH - mapWidth) / 2);
+  const y = Math.floor((WINDOW_HEIGHT - mapHeight) / 2);
+
+  console.log("[Map] Calculating position for", { mapWidth, mapHeight, windowWidth: WINDOW_WIDTH, windowHeight: WINDOW_HEIGHT, x, y });
+
+  // If map is smaller than screen, return centered position
+  if (mapWidth <= WINDOW_WIDTH && mapHeight <= WINDOW_HEIGHT) {
+    return { x, y };
+  }
+
+  // For larger maps, start from top-left
+  return { x: 0, y: 0 };
+};
+
 export const DEFAULT_MAPS: MapConfig = {
   [MapType.FOREST]: {
     name: "Forest Path",
-    initialPosition: {
-      x: 0,
-      y: 0,
-    },
     background: require("../assets/forest-background.png"),
+    movementType: "scroll",
     mapData: [
       [3.2, 3, 3, 3, 3, 3, 3, 3, 3.2, 3, 3, 0, 0, 0, 3, 3, 3.2, 3, 3, 3, 3.2, 3, 3, 3, 3.2, 3, 3, 3, 3, 3],
       [3, 3.2, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3.2, 3, 3, 3, 3.2, 3, 3, 3, 3.2, 3, 3, 3, 3],
@@ -45,22 +59,28 @@ export const DEFAULT_MAPS: MapConfig = {
       [3, 3.2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3.2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3.2, 3, 3, 3],
       [3.2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3.2, 3, 3, 3.2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
     ],
-    bounds: {
-      width: 30 * TILE_SIZE,
-      height: 30 * TILE_SIZE,
-      minX: -(30 * TILE_SIZE - WINDOW_WIDTH),
-      maxX: 0,
-      minY: -(30 * TILE_SIZE - WINDOW_HEIGHT),
-      maxY: 0,
+    get bounds() {
+      const mapWidth = 30 * TILE_SIZE;
+      const mapHeight = 30 * TILE_SIZE;
+      return {
+        width: mapWidth,
+        height: mapHeight,
+        minX: -(mapWidth - WINDOW_WIDTH),
+        maxX: 0,
+        minY: -(mapHeight - WINDOW_HEIGHT),
+        maxY: 0,
+      };
+    },
+    get initialPosition() {
+      const mapWidth = 30 * TILE_SIZE;
+      const mapHeight = 30 * TILE_SIZE;
+      return calculateMapPosition(mapWidth, mapHeight);
     },
   },
   [MapType.CABIN_INTERIOR]: {
     name: "Cabin Interior",
-    initialPosition: {
-      x: (WINDOW_WIDTH - 8 * TILE_SIZE) / 2,
-      y: (WINDOW_HEIGHT - 8 * TILE_SIZE) / 2,
-    },
     background: require("../assets/cabin-background.png"),
+    movementType: "fixed",
     mapData: [
       [0, 0, 0, 0, 0, 0, 0, 0],
       [0, 0, 0, 0, 0, 0, 0, 0],
@@ -71,13 +91,25 @@ export const DEFAULT_MAPS: MapConfig = {
       [0, 0, 0, 0, 7, 7, 0, 0],
       [0, 0, 0, 0, 0, 0, 0, 0],
     ],
-    bounds: {
-      width: 8 * TILE_SIZE,
-      height: 8 * TILE_SIZE,
-      minX: -WINDOW_WIDTH,
-      maxX: WINDOW_WIDTH,
-      minY: -WINDOW_HEIGHT,
-      maxY: WINDOW_HEIGHT,
+    get bounds() {
+      const mapWidth = 8 * TILE_SIZE;
+      const mapHeight = 8 * TILE_SIZE;
+      const position = calculateMapPosition(mapWidth, mapHeight);
+      return {
+        width: mapWidth,
+        height: mapHeight,
+        minX: position.x,
+        maxX: position.x,
+        minY: position.y,
+        maxY: position.y,
+      };
+    },
+    get initialPosition() {
+      const mapWidth = 8 * TILE_SIZE;
+      const mapHeight = 8 * TILE_SIZE;
+      const position = calculateMapPosition(mapWidth, mapHeight);
+      console.log("[Map] Cabin interior initial position:", position);
+      return position;
     },
   },
 };
