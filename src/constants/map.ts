@@ -79,21 +79,19 @@ export const DEFAULT_MAPS: MapConfig = {
   },
   [MapType.CABIN_INTERIOR]: {
     name: "Cabin Interior",
-    background: require("../assets/cabin-background.png"),
+    background: require("../assets/cabin-interior-1.png"),
     movementType: "fixed",
     mapData: [
-      [0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 7, 7, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0],
+      [8, 8, 8, 8, 8, 8, 8],
+      [8, 8, 8, 8, 8, 8, 8],
+      [8, 0, 0, 0, 0, 0, 8],
+      [8, 0, 0, 0, 0, 0, 8],
+      [8, 0, 0, 0, 0, 0, 8],
+      [8, 0, 0, 7, 0, 0, 8],
     ],
     get bounds() {
-      const mapWidth = 8 * TILE_SIZE;
-      const mapHeight = 8 * TILE_SIZE;
+      const mapWidth = 7 * TILE_SIZE;
+      const mapHeight = 6 * TILE_SIZE;
       const position = calculateMapPosition(mapWidth, mapHeight);
       return {
         width: mapWidth,
@@ -105,8 +103,8 @@ export const DEFAULT_MAPS: MapConfig = {
       };
     },
     get initialPosition() {
-      const mapWidth = 8 * TILE_SIZE;
-      const mapHeight = 8 * TILE_SIZE;
+      const mapWidth = 7 * TILE_SIZE;
+      const mapHeight = 6 * TILE_SIZE;
       const position = calculateMapPosition(mapWidth, mapHeight);
       console.log("[Map] Cabin interior initial position:", position);
       return position;

@@ -38,7 +38,7 @@ const isWalkable = (tileX: number, tileY: number, mapTiles: number[][]): boolean
   }
 
   const tileType = mapTiles[tileY][tileX];
-  return tileType !== Tile.Tree && tileType !== Tile.Tree2;
+  return tileType !== Tile.Tree && tileType !== Tile.Tree2 && tileType !== Tile.Wall;
 };
 
 // Get neighboring tiles

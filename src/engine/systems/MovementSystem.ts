@@ -1,23 +1,12 @@
 import { Entity, SystemProps, Direction, MapType } from "../../types";
 import { Dimensions } from "react-native";
 import { DEFAULT_MAPS } from "../../constants/map";
+import { mapManager } from "../../managers/MapManager";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 // Screen edge margins
 const EDGE_MARGIN = 20;
-
-// Logging helper to prevent spam
-let lastLogTime = 0;
-const LOG_INTERVAL = 500; // Only log every 500ms max
-
-const debugLog = (message: string, force = false) => {
-  const now = Date.now();
-  if (force || now - lastLogTime > LOG_INTERVAL) {
-    console.log(`[Movement] ${message}`);
-    lastLogTime = now;
-  }
-};
 
 // Helper to get the closest cardinal direction based on movement deltas
 const getClosestDirection = (deltaX: number, deltaY: number): Direction => {
@@ -120,14 +109,17 @@ export const MovementSystem = (entities: { [key: string]: Entity }, { time, delt
       // Handle scrolling maps
       // Handle X movement
       if (deltaX !== 0) {
-        const newMapX = map.position.x - deltaX;
-        const canMoveMapX = newMapX <= map.bounds.maxX && newMapX >= map.bounds.minX;
         const newPlayerX = player.position.x + deltaX;
         const wouldCrossCenterX = (deltaX < 0 && player.position.x > centerX && newPlayerX <= centerX) || (deltaX > 0 && player.position.x < centerX && newPlayerX >= centerX);
 
-        if (canMoveMapX && (player.position.x === centerX || wouldCrossCenterX)) {
-          map.position.x = newMapX;
-          player.position.x = centerX;
+        if (player.position.x === centerX || wouldCrossCenterX) {
+          // Try to scroll the map
+          const mapScrolled = mapManager.updateMapScroll(map, deltaX, 0);
+          if (mapScrolled) {
+            player.position.x = centerX;
+          } else if (!blocked.left && !blocked.right) {
+            player.position.x = Math.min(Math.max(newPlayerX, EDGE_MARGIN), screenWidth - EDGE_MARGIN);
+          }
         } else if (!blocked.left && !blocked.right) {
           player.position.x = Math.min(Math.max(newPlayerX, EDGE_MARGIN), screenWidth - EDGE_MARGIN);
         }
@@ -135,14 +127,17 @@ export const MovementSystem = (entities: { [key: string]: Entity }, { time, delt
 
       // Handle Y movement
       if (deltaY !== 0) {
-        const newMapY = map.position.y - deltaY;
-        const canMoveMapY = newMapY <= map.bounds.maxY && newMapY >= map.bounds.minY;
         const newPlayerY = player.position.y + deltaY;
         const wouldCrossCenterY = (deltaY < 0 && player.position.y > centerY && newPlayerY <= centerY) || (deltaY > 0 && player.position.y < centerY && newPlayerY >= centerY);
 
-        if (canMoveMapY && (player.position.y === centerY || wouldCrossCenterY)) {
-          map.position.y = newMapY;
-          player.position.y = centerY;
+        if (player.position.y === centerY || wouldCrossCenterY) {
+          // Try to scroll the map
+          const mapScrolled = mapManager.updateMapScroll(map, 0, deltaY);
+          if (mapScrolled) {
+            player.position.y = centerY;
+          } else if (!blocked.up && !blocked.down) {
+            player.position.y = Math.min(Math.max(newPlayerY, EDGE_MARGIN), screenHeight - EDGE_MARGIN);
+          }
         } else if (!blocked.up && !blocked.down) {
           player.position.y = Math.min(Math.max(newPlayerY, EDGE_MARGIN), screenHeight - EDGE_MARGIN);
         }

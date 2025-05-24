@@ -19,6 +19,7 @@ export enum Tile {
   Flower = 5,
   Cabin = 6,
   Portal = 7,
+  Wall = 8,
 }
 
 export enum MapType {

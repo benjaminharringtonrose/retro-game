@@ -286,7 +286,7 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
           <RNImage
             source={background}
             style={styles.background}
-            resizeMode="contain"
+            resizeMode="cover"
             onLoadEnd={() => {
               if (!backgroundLoaded) {
                 console.log("[Map] Background loaded");

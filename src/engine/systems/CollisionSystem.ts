@@ -1,6 +1,4 @@
 import { Entity, SystemProps, Tile } from "../../types";
-import { TILE_SIZE } from "../../constants/map";
-import { DebugRenderer } from "../../components/DebugRenderer";
 
 const isTreeTile = (tile: number): boolean => {
   return tile === Tile.Tree || tile === Tile.Tree2;
@@ -8,6 +6,10 @@ const isTreeTile = (tile: number): boolean => {
 
 const isCabinTile = (tile: number): boolean => {
   return tile === Tile.Cabin;
+};
+
+const isWallTile = (tile: number): boolean => {
+  return tile === Tile.Wall;
 };
 
 const getTileCoordinates = (x: number, y: number, tileSize: number) => {
@@ -155,20 +157,20 @@ export const CollisionSystem = (entities: { [key: string]: Entity }, { delta = 1
 
       const tile = tiles[checkY][checkX];
 
-      if (isTreeTile(tile)) {
+      if (isTreeTile(tile) || isWallTile(tile)) {
         // Calculate tile boundaries
         const tileLeft = checkX * tileSize;
         const tileRight = tileLeft + tileSize;
         const tileTop = checkY * tileSize;
         const tileBottom = tileTop + tileSize;
 
-        // Add tree collision box
+        // Add collision box
         debugBoxes.push({
           x: tileLeft,
           y: tileTop,
           width: tileSize,
           height: tileSize,
-          color: "#ff0000",
+          color: isWallTile(tile) ? "#666666" : "#ff0000",
         });
 
         // Check if the next position would result in a collision

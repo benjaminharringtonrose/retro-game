@@ -225,12 +225,8 @@ export const setupGameEntities = (): { [key: string]: Entity } => {
   const map = createMap("map-1", MapType.FOREST);
   const player = createPlayer("player-1", playerX, playerY);
 
-  // For scrolling maps, override the initial position
-  const mapConfig = DEFAULT_MAPS[map.mapType as keyof typeof DEFAULT_MAPS];
-  if (mapConfig.movementType === "scroll") {
-    map.position.x = -TILE_SIZE * 13;
-    map.position.y = -TILE_SIZE * 13;
-  }
+  // Initialize map using MapManager
+  mapManager.updateMapForType(map, MapType.FOREST, player);
 
   console.log(`[Entities] Initial map position: (${map.position.x}, ${map.position.y}) for map type ${map.mapType}`);
 

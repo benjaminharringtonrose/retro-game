@@ -40,7 +40,14 @@ class MapManager {
       // Fixed maps are always centered
       return this.calculateMapPosition(width, height);
     } else {
-      // Scrolling maps start at origin unless overridden
+      // For forest map, start at a specific position
+      if (mapType === MapType.FOREST) {
+        return {
+          x: -TILE_SIZE * 13,
+          y: -TILE_SIZE * 13,
+        };
+      }
+      // Other scrolling maps start at origin
       return { x: 0, y: 0 };
     }
   }
@@ -109,6 +116,29 @@ class MapManager {
       bounds,
       playerPosition: { x: player.position.x, y: player.position.y },
     });
+  }
+
+  public updateMapScroll(map: Entity, deltaX: number, deltaY: number): boolean {
+    if (!map.bounds) return false;
+
+    const newMapX = map.position.x - deltaX;
+    const newMapY = map.position.y - deltaY;
+
+    let moved = false;
+
+    // Check X bounds
+    if (newMapX <= map.bounds.maxX && newMapX >= map.bounds.minX) {
+      map.position.x = newMapX;
+      moved = true;
+    }
+
+    // Check Y bounds
+    if (newMapY <= map.bounds.maxY && newMapY >= map.bounds.minY) {
+      map.position.y = newMapY;
+      moved = true;
+    }
+
+    return moved;
   }
 }
 
