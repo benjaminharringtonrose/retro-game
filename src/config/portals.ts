@@ -2,7 +2,7 @@ import { MapType, PortalConfig } from "../types";
 import { TILE_SIZE } from "../constants/map";
 
 // Debug the assets to make sure they're loading correctly
-const portalSprite = require("../assets/portal.png");
+const portalSprite = require("../assets/portal-2.png");
 console.log("[Portals Config] Portal sprite loaded:", portalSprite);
 
 // Animation configuration for portals
@@ -31,7 +31,7 @@ export const PORTAL_CONFIGS: { [key: string]: PortalConfig } = {
       x: 4.5 * TILE_SIZE, // Center on the door in cabin interior
       y: 6 * TILE_SIZE, // Position at row 6 where door is
     },
-    triggerDistance: TILE_SIZE * 1.5, // Much larger trigger area
+    triggerDistance: TILE_SIZE * 1,
     sprite: portalSprite,
     sourceMapType: MapType.FOREST, // This portal only appears in the forest map
     animation: {
@@ -55,7 +55,7 @@ export const PORTAL_CONFIGS: { [key: string]: PortalConfig } = {
       x: 17 * TILE_SIZE + TILE_SIZE / 2, // Position outside cabin
       y: 17 * TILE_SIZE + TILE_SIZE / 2, // Just in front of cabin
     },
-    triggerDistance: TILE_SIZE * 1.5, // Much larger trigger area
+    triggerDistance: TILE_SIZE * 1,
     sprite: portalSprite,
     sourceMapType: MapType.CABIN_INTERIOR, // This portal only appears in the cabin map
     animation: {

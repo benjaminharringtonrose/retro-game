@@ -4,7 +4,7 @@ import { PortalEntity } from "../types";
 import { PORTAL_CONFIGS } from "../config/portals";
 
 // Set to true to show debug info about the portal
-const SHOW_PORTAL_DEBUG = true;
+const SHOW_PORTAL_DEBUG = false;
 
 interface PortalProps {
   id: string;

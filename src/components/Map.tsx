@@ -300,7 +300,7 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
           <ImageBackground
             source={background || require("../assets/forest-background.png")}
             style={styles.background}
-            resizeMode="repeat"
+            resizeMode="contain"
             onLoadEnd={() => {
               if (!backgroundLoaded) {
                 console.log("[Map] Background load ended");
