@@ -111,20 +111,34 @@ export const Portal: React.FC<PortalProps> = ({ id, position, dimensions, portal
       testID={`portal-${id}`}
     >
       {debug?.showDebug && (
-        <View
-          style={{
-            position: "absolute",
-            width: portal.triggerDistance * 2,
-            height: portal.triggerDistance * 2,
-            borderRadius: portal.triggerDistance,
-            backgroundColor: "rgba(255, 0, 255, 0.2)",
-            borderWidth: 1,
-            borderColor: "rgba(255, 0, 255, 0.5)",
-            left: -portal.triggerDistance + width / 2,
-            top: -portal.triggerDistance + height / 2,
-            zIndex: 5,
-          }}
-        />
+        <>
+          {/* Trigger area visualization */}
+          <View
+            style={{
+              position: "absolute",
+              width: portal.triggerDistance * 2,
+              height: portal.triggerDistance * 2,
+              borderRadius: portal.triggerDistance,
+              left: -portal.triggerDistance + width / 2,
+              top: -portal.triggerDistance + height / 2,
+              zIndex: 5,
+            }}
+          />
+          {/* Portal hitbox visualization */}
+          <View
+            style={{
+              position: "absolute",
+              width: width,
+              height: height,
+              backgroundColor: "rgba(255, 255, 0, 0.2)",
+              borderWidth: 1,
+              borderColor: "rgba(255, 255, 0, 0.5)",
+              zIndex: 6,
+            }}
+          />
+          {/* Distance indicator */}
+          <Text style={[styles.debugText, { top: -20 }]}>Trigger: {portal.triggerDistance}px</Text>
+        </>
       )}
       <View style={styles.spriteContainer}>
         <RNImage
