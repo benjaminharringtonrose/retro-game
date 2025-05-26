@@ -42,8 +42,8 @@ export const PORTAL_CONFIGS: { [key: string]: PortalConfig } = {
   "portal-cabin-exit": {
     id: "portal-cabin-exit",
     position: {
-      x: 3 * TILE_SIZE, // Center between tiles 4 and 5 in row 6
-      y: 4.8 * TILE_SIZE, // Row 6 (zero-based) where portal tiles are
+      x: 3 * TILE_SIZE,
+      y: 4.8 * TILE_SIZE,
     },
     dimensions: {
       width: TILE_SIZE,
@@ -52,9 +52,9 @@ export const PORTAL_CONFIGS: { [key: string]: PortalConfig } = {
     targetMapType: MapType.FOREST,
     targetPosition: {
       x: 3 * TILE_SIZE + TILE_SIZE / 2, // Position outside cabin
-      y: 6 * TILE_SIZE + TILE_SIZE / 2, // Just in front of cabin
+      y: 4.8 * TILE_SIZE + TILE_SIZE / 2, // Just in front of cabin
     },
-    triggerDistance: TILE_SIZE * 1,
+    triggerDistance: TILE_SIZE * 0.5,
     sprite: portalSprite,
     sourceMapType: MapType.CABIN_INTERIOR, // This portal only appears in the cabin map
     animation: {
