@@ -22,19 +22,31 @@ declare global {
   }
 }
 
+// Define expected asset types
+const EXPECTED_ASSETS = ["tree-1", "tree-2", "flower", "cabin", "background"];
+
 const GameScreen: React.FC = () => {
   const engineRef = useRef<GameEngineType>(null);
   const [gameRunning, setGameRunning] = useState(false);
   const [renderedAssets, setRenderedAssets] = useState(new Set<string>());
   const [isFullyLoaded, setIsFullyLoaded] = useState(false);
   const [entities, setEntities] = useState<Record<string, Entity>>({});
+  const expectedAssetsRef = useRef(new Set<string>());
+  const [renderStartTime, setRenderStartTime] = useState(0);
+  const [hasStartedRendering, setHasStartedRendering] = useState(false);
+  const lastRenderedAssetTimeRef = useRef(Date.now());
+  const uniqueAssetsRef = useRef(new Set<string>());
 
   // Use our renamed game assets hook
   const { isLoaded: assetsLoaded, progress: loadingProgress, error: assetError } = useGameAssets();
 
   const onImageLoad = useCallback((assetId?: string) => {
     if (assetId) {
-      logger.log("Game", `Image loaded: ${assetId}`);
+      // Add to unique assets set
+      uniqueAssetsRef.current.add(assetId);
+
+      logger.log("Game", `Image rendered: ${assetId} (${uniqueAssetsRef.current.size} unique assets so far)`);
+      lastRenderedAssetTimeRef.current = Date.now();
       setRenderedAssets((prev) => {
         const newSet = new Set(prev);
         newSet.add(assetId);
@@ -43,43 +55,69 @@ const GameScreen: React.FC = () => {
     }
   }, []);
 
-  // Initialize entities once assets are loaded
+  // Initialize entities and track expected assets
   useEffect(() => {
-    if (assetsLoaded) {
-      const gameEntities = setupGameEntities(onImageLoad);
-      setEntities(gameEntities);
-      logger.log("Game", "Entities initialized:", Object.keys(gameEntities));
-    }
-  }, [assetsLoaded, onImageLoad]);
+    if (!assetsLoaded) return;
 
-  // Track when all assets are both loaded and rendered
-  useEffect(() => {
-    if (!assetsLoaded || Object.keys(entities).length === 0) return;
+    const gameEntities = setupGameEntities(onImageLoad);
+    setEntities(gameEntities);
 
-    // Get the total number of expected assets from the entities
-    const expectedAssets = new Set<string>();
-    Object.values(entities).forEach((entity) => {
-      if ("assetId" in entity) {
-        expectedAssets.add(entity.assetId as string);
+    // Collect expected assets
+    const newExpectedAssets = new Set<string>(EXPECTED_ASSETS);
+
+    // Also add any entity-specific assets
+    Object.values(gameEntities).forEach((entity) => {
+      if ("assetId" in entity && entity.assetId && typeof entity.assetId === "string") {
+        newExpectedAssets.add(entity.assetId);
+      }
+      // Check for background assets in map entities
+      if (entity.tileData?.background) {
+        newExpectedAssets.add(entity.tileData.background);
       }
     });
 
-    // Check if all expected assets are rendered
-    const allAssetsRendered = Array.from(expectedAssets).every((assetId) => renderedAssets.has(assetId));
+    expectedAssetsRef.current = newExpectedAssets;
+    logger.log("Game", `Initialized with ${newExpectedAssets.size} expected assets:`, Array.from(newExpectedAssets));
 
-    if (allAssetsRendered) {
-      logger.log("Game", "All assets rendered successfully");
+    // Start tracking render time
+    if (!hasStartedRendering) {
+      setRenderStartTime(Date.now());
+      setHasStartedRendering(true);
+    }
+  }, [assetsLoaded, onImageLoad, hasStartedRendering]);
+
+  // Check if all required assets are loaded
+  const checkAllAssetsLoaded = useCallback(() => {
+    const hasAllRequiredAssets = EXPECTED_ASSETS.every((asset) => uniqueAssetsRef.current.has(asset));
+    const minimumRenderTime = 1000; // 1 second minimum render time
+    const hasMetMinimumTime = Date.now() - renderStartTime >= minimumRenderTime;
+
+    return hasAllRequiredAssets && hasMetMinimumTime;
+  }, [renderStartTime]);
+
+  // Track asset rendering completion
+  useEffect(() => {
+    if (!assetsLoaded || Object.keys(entities).length === 0) return;
+
+    // Check if all required assets are loaded
+    if (checkAllAssetsLoaded()) {
+      logger.log("Game", "All required assets loaded:", {
+        expected: EXPECTED_ASSETS,
+        loaded: Array.from(uniqueAssetsRef.current),
+        renderTime: Date.now() - renderStartTime,
+      });
       setIsFullyLoaded(true);
     }
-  }, [assetsLoaded, renderedAssets, entities]);
+  }, [assetsLoaded, renderedAssets, entities, renderStartTime, checkAllAssetsLoaded]);
 
+  // Handle game engine initialization
   useEffect(() => {
     if (engineRef.current) {
       window.gameEngine = engineRef.current;
     }
 
     // Start game when everything is fully loaded
-    if (isFullyLoaded && !gameRunning && Object.keys(entities).length > 0) {
+    if (isFullyLoaded && !gameRunning) {
       logger.log("Game", "Assets loaded and rendered, starting game");
       setGameRunning(true);
     }
@@ -87,7 +125,7 @@ const GameScreen: React.FC = () => {
     return () => {
       window.gameEngine = null;
     };
-  }, [isFullyLoaded, gameRunning, entities]);
+  }, [isFullyLoaded, gameRunning]);
 
   const handleDirectionChange = useCallback(
     (direction: Direction | null) => {
@@ -118,12 +156,12 @@ const GameScreen: React.FC = () => {
     }
   };
 
-  // Calculate loading progress
+  // Calculate loading progress based on loaded unique assets
   const totalProgress = isFullyLoaded
     ? 100
     : Math.min(
-        90, // Cap at 90% until fully rendered
-        Math.floor((renderedAssets.size / (Object.keys(entities).length || 1)) * 90)
+        95, // Cap at 95% until fully rendered
+        Math.floor((uniqueAssetsRef.current.size / EXPECTED_ASSETS.length) * 95)
       );
 
   const shouldRenderGame = assetsLoaded && Object.keys(entities).length > 0;
