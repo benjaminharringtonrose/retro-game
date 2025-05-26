@@ -138,8 +138,9 @@ class MapManager {
     let movedX = false;
     let movedY = false;
 
-    // Check X bounds
-    if (deltaX !== 0 && newMapX <= map.bounds.right && newMapX >= map.bounds.left) {
+    // Check X bounds with a small buffer to prevent edge cases
+    const X_BUFFER = 1;
+    if (deltaX !== 0 && newMapX <= map.bounds.right + X_BUFFER && newMapX >= map.bounds.left - X_BUFFER) {
       const oldX = map.position.x;
       map.position.x = newMapX;
       movedX = true;
@@ -155,8 +156,9 @@ class MapManager {
       });
     }
 
-    // Check Y bounds
-    if (deltaY !== 0 && newMapY <= map.bounds.bottom && newMapY >= map.bounds.top) {
+    // Check Y bounds with a small buffer to prevent edge cases
+    const Y_BUFFER = 1;
+    if (deltaY !== 0 && newMapY <= map.bounds.bottom + Y_BUFFER && newMapY >= map.bounds.top - Y_BUFFER) {
       const oldY = map.position.y;
       map.position.y = newMapY;
       movedY = true;
@@ -172,8 +174,8 @@ class MapManager {
       });
     }
 
-    // Only return true if we moved in the direction we wanted to
-    const moved = (deltaX !== 0 && movedX) || (deltaY !== 0 && movedY);
+    // Return true if we moved in any direction
+    const moved = movedX || movedY;
 
     logger.log("Map", "Map scroll result:", {
       moved,

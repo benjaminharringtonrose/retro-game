@@ -6,8 +6,9 @@ import { logger } from "../../utils/logger";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
-// Screen edge margins
-const EDGE_MARGIN = 20;
+// Screen edge margins - now based on screen dimensions
+const EDGE_MARGIN_X = screenWidth / 2;
+const EDGE_MARGIN_Y = screenHeight / 2;
 
 // Helper to get the closest cardinal direction based on movement deltas
 const getClosestDirection = (deltaX: number, deltaY: number): Direction => {
@@ -108,160 +109,100 @@ export const MovementSystem = (entities: { [key: string]: Entity }, { time, delt
       }
     } else {
       // Handle scrolling maps
-      // Handle X movement
-      if (deltaX !== 0) {
+      // Handle X and Y movement together for diagonal movement
+      if (deltaX !== 0 || deltaY !== 0) {
         const newPlayerX = player.position.x + deltaX;
+        const newPlayerY = player.position.y + deltaY;
         const mapLeft = map.position.x;
         const mapRight = mapLeft + map.dimensions.width;
+        const mapTop = map.position.y;
+        const mapBottom = mapTop + map.dimensions.height;
         const playerWidth = player.dimensions?.width || 32;
+        const playerHeight = player.dimensions?.height || 40;
 
-        logger.log("Movement", `[X Movement] Current player X: ${player.position.x}, Attempting move to: ${newPlayerX}`);
-        logger.log("Movement", `[X Movement] Map bounds - Left: ${mapLeft}, Right: ${mapRight}`);
-        logger.log("Movement", `[X Movement] Map absolute bounds - Left: ${map.bounds.left}, Right: ${map.bounds.right}`);
+        logger.log("Movement", `[Movement] Current position: (${player.position.x}, ${player.position.y}), Attempting move to: (${newPlayerX}, ${newPlayerY})`);
+        logger.log("Movement", `[Movement] Map bounds - Left: ${mapLeft}, Right: ${mapRight}, Top: ${mapTop}, Bottom: ${mapBottom}`);
 
-        // Check if we're at the absolute edges of the map
-        const isAtLeftEdge = Math.abs(map.position.x - (-map.dimensions.width + screenWidth)) < 1;
-        const isAtRightEdge = Math.abs(map.position.x) < 1;
+        // Check if we're at the absolute edges of the map with a more forgiving threshold
+        const EDGE_THRESHOLD = 60;
+        const isAtLeftEdge = Math.abs(map.position.x - (-map.dimensions.width + screenWidth)) < EDGE_THRESHOLD;
+        const isAtRightEdge = Math.abs(map.position.x) < EDGE_THRESHOLD;
+        const isAtTopEdge = Math.abs(map.position.y - (-map.dimensions.height + screenHeight)) < EDGE_THRESHOLD;
+        const isAtBottomEdge = Math.abs(map.position.y) < EDGE_THRESHOLD;
 
         // Check if we can scroll in either direction
         const canScrollLeft = map.position.x < 0;
         const canScrollRight = map.position.x > -(map.dimensions.width - screenWidth);
-
-        logger.log("Movement", `[X Movement] Can scroll? Left: ${canScrollLeft}, Right: ${canScrollRight}`);
-
-        // Calculate distance from center
-        const distanceFromCenter = Math.abs(player.position.x - centerX);
-
-        // If we're at an edge, allow free movement within bounds
-        if (isAtLeftEdge || isAtRightEdge) {
-          const boundedX = Math.min(Math.max(newPlayerX, mapLeft + playerWidth / 2), mapRight - playerWidth / 2);
-          logger.log("Movement", `[X Movement] At edge, allowing bounded movement to: ${boundedX}`);
-          player.position.x = boundedX;
-          return entities;
-        }
-
-        // If we're moving towards the center, allow free movement within bounds
-        const isMovingTowardsCenter = (player.position.x > centerX && deltaX < 0) || (player.position.x < centerX && deltaX > 0);
-
-        if (isMovingTowardsCenter) {
-          const boundedX = Math.min(Math.max(newPlayerX, mapLeft + playerWidth / 2), mapRight - playerWidth / 2);
-          logger.log("Movement", `[X Movement] Moving towards center, allowing bounded movement to: ${boundedX}`);
-          player.position.x = boundedX;
-          return entities;
-        }
-
-        // If we're moving away from center and within dead zone, allow free movement within bounds
-        if (distanceFromCenter >= screenWidth / 2) {
-          const boundedX = Math.min(Math.max(newPlayerX, mapLeft + playerWidth / 2), mapRight - playerWidth / 2);
-          logger.log("Movement", `[X Movement] Within dead zone (${distanceFromCenter}px from center), allowing bounded movement to: ${boundedX}`);
-          player.position.x = boundedX;
-          return entities;
-        }
-
-        // If we're at or beyond dead zone and moving away from center, try to scroll the map
-        const scrollDelta = deltaX;
-        try {
-          const scrollSuccess = mapManager.updateMapScroll(map, scrollDelta, 0);
-          if (scrollSuccess) {
-            logger.log("Movement", `[X Movement] Map scroll attempt: succeeded`);
-            // Keep player centered when map scrolls
-            player.position.x = centerX;
-            logger.log("Movement", `[X Movement] Keeping player centered at: ${centerX}`);
-            return entities;
-          }
-        } catch (error) {
-          logger.error("Movement", `[X Movement] Error during map scroll: ${error}`);
-          // If scroll fails, allow free movement within bounds
-          const boundedX = Math.min(Math.max(newPlayerX, mapLeft + playerWidth / 2), mapRight - playerWidth / 2);
-          player.position.x = boundedX;
-          return entities;
-        }
-
-        // If map couldn't scroll, allow free movement within bounds
-        const boundedX = Math.min(Math.max(newPlayerX, mapLeft + playerWidth / 2), mapRight - playerWidth / 2);
-        logger.log("Movement", `[X Movement] Map couldn't scroll, allowing bounded movement to: ${boundedX}`);
-        player.position.x = boundedX;
-      }
-
-      // Handle Y movement
-      if (deltaY !== 0) {
-        const newPlayerY = player.position.y + deltaY;
-        const mapTop = map.position.y;
-        const mapBottom = mapTop + map.dimensions.height;
-        const playerHeight = player.dimensions?.height || 40;
-
-        logger.log("Movement", `[Y Movement] Current player Y: ${player.position.y}, Attempting move to: ${newPlayerY}`);
-        logger.log("Movement", `[Y Movement] Map bounds - Top: ${mapTop}, Bottom: ${mapBottom}`);
-        logger.log("Movement", `[Y Movement] Map absolute bounds - Top: ${map.bounds.top}, Bottom: ${map.bounds.bottom}`);
-
-        // Check if we're at the absolute edges of the map
-        const isAtTopEdge = Math.abs(map.position.y - (-map.dimensions.height + screenHeight)) < 1;
-        const isAtBottomEdge = Math.abs(map.position.y) < 1;
-
-        // Check if we can scroll in either direction
         const canScrollUp = map.position.y < 0;
         const canScrollDown = map.position.y > -(map.dimensions.height - screenHeight);
 
-        logger.log("Movement", `[Y Movement] Can scroll? Up: ${canScrollUp}, Down: ${canScrollDown}`);
+        logger.log("Movement", `[Movement] Can scroll? Left: ${canScrollLeft}, Right: ${canScrollRight}, Up: ${canScrollUp}, Down: ${canScrollDown}`);
 
         // Calculate distance from center
-        const distanceFromCenter = Math.abs(player.position.y - centerY);
+        const distanceFromCenterX = Math.abs(player.position.x - centerX);
+        const distanceFromCenterY = Math.abs(player.position.y - centerY);
 
-        // If we're at an edge, allow free movement within bounds
-        if (isAtTopEdge || isAtBottomEdge) {
-          const boundedY = Math.min(Math.max(newPlayerY, mapTop + playerHeight / 2), mapBottom - playerHeight / 2);
-          logger.log("Movement", `[Y Movement] At edge, allowing bounded movement to: ${boundedY}`);
-          player.position.y = boundedY;
-          return entities;
-        }
-
-        // If we're moving towards the center, allow free movement within bounds
-        const isMovingTowardsCenter = (player.position.y > centerY && deltaY < 0) || (player.position.y < centerY && deltaY > 0);
-
-        if (isMovingTowardsCenter) {
-          const boundedY = Math.min(Math.max(newPlayerY, mapTop + playerHeight / 2), mapBottom - playerHeight / 2);
-          logger.log("Movement", `[Y Movement] Moving towards center, allowing bounded movement to: ${boundedY}`);
-          player.position.y = boundedY;
-          return entities;
-        }
-
-        // If we're moving away from center and within dead zone, allow free movement within bounds
-        if (distanceFromCenter >= screenHeight / 2) {
-          const boundedY = Math.min(Math.max(newPlayerY, mapTop + playerHeight / 2), mapBottom - playerHeight / 2);
-          logger.log("Movement", `[Y Movement] Within dead zone (${distanceFromCenter}px from center), allowing bounded movement to: ${boundedY}`);
-          player.position.y = boundedY;
-          return entities;
-        }
-
-        // If we're at or beyond dead zone and moving away from center, try to scroll the map
-        const scrollDelta = deltaY;
+        // Try to scroll the map first
+        let mapScrolledX = false;
+        let mapScrolledY = false;
         try {
-          const scrollSuccess = mapManager.updateMapScroll(map, 0, scrollDelta);
-          if (scrollSuccess) {
-            logger.log("Movement", `[Y Movement] Map scroll attempt: succeeded`);
-            // Keep player centered when map scrolls
-            player.position.y = centerY;
-            logger.log("Movement", `[Y Movement] Keeping player centered at: ${centerY}`);
-            return entities;
+          // Determine if we should scroll based on player position and movement direction
+          const shouldAttemptScrollX =
+            (deltaX > 0 && player.position.x > centerX && canScrollRight) || // Moving right and can scroll right
+            (deltaX < 0 && player.position.x < centerX && canScrollLeft); // Moving left and can scroll left
+
+          const shouldAttemptScrollY =
+            (deltaY > 0 && player.position.y > centerY && canScrollDown) || // Moving down and can scroll down
+            (deltaY < 0 && player.position.y < centerY && canScrollUp); // Moving up and can scroll up
+
+          // Check if we should attempt scrolling in either direction
+          if ((deltaX !== 0 && shouldAttemptScrollX) || (deltaY !== 0 && shouldAttemptScrollY)) {
+            // Only apply the movement vector for the axes that should scroll
+            const scrollDeltaX = shouldAttemptScrollX ? deltaX : 0;
+            const scrollDeltaY = shouldAttemptScrollY ? deltaY : 0;
+
+            logger.log("Movement", `[Movement] Attempting scroll with deltas: (${scrollDeltaX}, ${scrollDeltaY})`);
+
+            // Apply the filtered movement vector
+            const scrolled = mapManager.updateMapScroll(map, scrollDeltaX, scrollDeltaY);
+
+            // Track which axes actually scrolled
+            if (scrolled) {
+              if (shouldAttemptScrollX) mapScrolledX = true;
+              if (shouldAttemptScrollY) mapScrolledY = true;
+            }
+
+            // Only reset position on the axis that actually scrolled
+            // And only if we're moving in that direction
+            if (mapScrolledX && deltaX !== 0) {
+              // Smoothly move towards center when scrolling
+              const distanceToCenterX = centerX - player.position.x;
+              player.position.x += distanceToCenterX * 0.5; // Move 50% of the way to center each frame
+            }
+            if (mapScrolledY && deltaY !== 0) {
+              // Smoothly move towards center when scrolling
+              const distanceToCenterY = centerY - player.position.y;
+              player.position.y += distanceToCenterY * 0.5; // Move 50% of the way to center each frame
+            }
           }
         } catch (error) {
-          logger.error("Movement", `[Y Movement] Error during map scroll: ${error}`);
-          // If scroll fails, allow free movement within bounds
-          const boundedY = Math.min(Math.max(newPlayerY, mapTop + playerHeight / 2), mapBottom - playerHeight / 2);
-          player.position.y = boundedY;
-          return entities;
+          logger.error("Movement", `[Movement] Error during map scroll: ${error}`);
         }
 
-        // If map couldn't scroll, allow free movement within bounds
-        const boundedY = Math.min(Math.max(newPlayerY, mapTop + playerHeight / 2), mapBottom - playerHeight / 2);
-        logger.log("Movement", `[Y Movement] Map couldn't scroll, allowing bounded movement to: ${boundedY}`);
-        player.position.y = boundedY;
-      }
+        // If map didn't scroll on an axis, allow free movement on that axis
+        if (!mapScrolledX || !mapScrolledY) {
+          const boundedX = !mapScrolledX ? Math.min(Math.max(newPlayerX, mapLeft + playerWidth / 2), mapRight - playerWidth / 2) : player.position.x;
+          const boundedY = !mapScrolledY ? Math.min(Math.max(newPlayerY, mapTop + playerHeight / 2), mapBottom - playerHeight / 2) : player.position.y;
+          logger.log("Movement", `[Movement] Allowing bounded movement to: (${boundedX}, ${boundedY})`);
+          player.position.x = boundedX;
+          player.position.y = boundedY;
+        }
 
-      // Log final position and movement state
-      if (deltaX !== 0 || deltaY !== 0) {
-        logger.log("Movement", `[Final Position] Player at (${player.position.x}, ${player.position.y})`);
-        logger.log("Movement", `[Movement State] Direction: ${player.movement.direction}, Moving: ${player.movement.isMoving}`);
+        // Log final position and movement state
+        if (deltaX !== 0 || deltaY !== 0) {
+          logger.log("Movement", `[Final Position] Player at (${player.position.x}, ${player.position.y})`);
+          logger.log("Movement", `[Movement State] Direction: ${player.movement.direction}, Moving: ${player.movement.isMoving}`);
+        }
       }
     }
   }
