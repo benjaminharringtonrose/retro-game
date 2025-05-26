@@ -25,6 +25,9 @@ declare global {
 const GameScreen: React.FC = () => {
   const engineRef = useRef<GameEngineType>(null);
   const [gameRunning, setGameRunning] = useState(false);
+  const [renderedAssets, setRenderedAssets] = useState(new Set<string>());
+  const [isFullyLoaded, setIsFullyLoaded] = useState(false);
+  const [entities, setEntities] = useState<Record<string, Entity>>({});
 
   // Use our renamed game assets hook
   const { isLoaded: assetsLoaded, progress: loadingProgress, error: assetError } = useGameAssets();
@@ -32,27 +35,59 @@ const GameScreen: React.FC = () => {
   const onImageLoad = useCallback((assetId?: string) => {
     if (assetId) {
       logger.log("Game", `Image loaded: ${assetId}`);
+      setRenderedAssets((prev) => {
+        const newSet = new Set(prev);
+        newSet.add(assetId);
+        return newSet;
+      });
     }
   }, []);
 
   // Initialize entities once assets are loaded
-  const entities = assetsLoaded ? setupGameEntities(onImageLoad) : {};
+  useEffect(() => {
+    if (assetsLoaded) {
+      const gameEntities = setupGameEntities(onImageLoad);
+      setEntities(gameEntities);
+      logger.log("Game", "Entities initialized:", Object.keys(gameEntities));
+    }
+  }, [assetsLoaded, onImageLoad]);
+
+  // Track when all assets are both loaded and rendered
+  useEffect(() => {
+    if (!assetsLoaded || Object.keys(entities).length === 0) return;
+
+    // Get the total number of expected assets from the entities
+    const expectedAssets = new Set<string>();
+    Object.values(entities).forEach((entity) => {
+      if ("assetId" in entity) {
+        expectedAssets.add(entity.assetId as string);
+      }
+    });
+
+    // Check if all expected assets are rendered
+    const allAssetsRendered = Array.from(expectedAssets).every((assetId) => renderedAssets.has(assetId));
+
+    if (allAssetsRendered) {
+      logger.log("Game", "All assets rendered successfully");
+      setIsFullyLoaded(true);
+    }
+  }, [assetsLoaded, renderedAssets, entities]);
 
   useEffect(() => {
     if (engineRef.current) {
       window.gameEngine = engineRef.current;
     }
 
-    // Start game when assets are loaded
-    if (assetsLoaded && !gameRunning) {
-      logger.log("Game", "Assets loaded, starting game");
+    // Start game when everything is fully loaded
+    if (isFullyLoaded && !gameRunning && Object.keys(entities).length > 0) {
+      logger.log("Game", "Assets loaded and rendered, starting game");
       setGameRunning(true);
     }
 
     return () => {
       window.gameEngine = null;
     };
-  }, [assetsLoaded, gameRunning]);
+  }, [isFullyLoaded, gameRunning, entities]);
 
   const handleDirectionChange = useCallback(
     (direction: Direction | null) => {
@@ -83,14 +118,21 @@ const GameScreen: React.FC = () => {
     }
   };
 
-  if (!assetsLoaded) {
-    return <LoadingOverlay totalAssets={100} loadedAssets={50} />;
-  }
+  // Calculate loading progress
+  const totalProgress = isFullyLoaded
+    ? 100
+    : Math.min(
+        90, // Cap at 90% until fully rendered
+        Math.floor((renderedAssets.size / (Object.keys(entities).length || 1)) * 90)
+      );
+
+  const shouldRenderGame = assetsLoaded && Object.keys(entities).length > 0;
 
   return (
     <View style={styles.container}>
-      <RNGameEngine ref={engineRef} style={StyleSheet.absoluteFill} systems={Systems} entities={entities} running={gameRunning && assetsLoaded} onEvent={handleEvent} />
-      <Pad onDirectionChange={handleDirectionChange} />
+      {shouldRenderGame && <RNGameEngine ref={engineRef} style={StyleSheet.absoluteFill} systems={Systems} entities={entities} running={gameRunning && isFullyLoaded} onEvent={handleEvent} />}
+      {!isFullyLoaded && <LoadingOverlay totalAssets={100} loadedAssets={totalProgress} />}
+      {isFullyLoaded && <Pad onDirectionChange={handleDirectionChange} />}
     </View>
   );
 };
