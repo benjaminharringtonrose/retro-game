@@ -8,6 +8,7 @@ import { Direction } from "../../types/enums";
 import { Entity } from "../../types/entities";
 import { GameEngine, GameEvent } from "../../types/system";
 import { useGameAssets } from "../../hooks/useAssets";
+import { LoadingOverlay } from "../../components/LoadingOverlay";
 
 interface GameEngineType extends RNGameEngine {
   dispatch: (event: any) => void;
@@ -73,18 +74,12 @@ const GameScreen: React.FC = () => {
   };
 
   if (!assetsLoaded) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#fff" />
-        <Text style={styles.loadingText}>Loading game assets... {Math.round(loadingProgress * 100)}%</Text>
-        {assetError && <Text style={styles.errorText}>{assetError}</Text>}
-      </View>
-    );
+    return <LoadingOverlay totalAssets={100} loadedAssets={50} />;
   }
 
   return (
     <View style={styles.container}>
-      <RNGameEngine ref={engineRef} style={StyleSheet.absoluteFill} systems={Systems} entities={entities} running={gameRunning} onEvent={handleEvent} />
+      <RNGameEngine ref={engineRef} style={StyleSheet.absoluteFill} systems={Systems} entities={entities} running={gameRunning && assetsLoaded} onEvent={handleEvent} />
       <Pad onDirectionChange={handleDirectionChange} />
     </View>
   );
