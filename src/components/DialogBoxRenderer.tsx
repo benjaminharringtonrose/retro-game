@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { View, Text, StyleSheet, Dimensions, Animated, TouchableOpacity } from "react-native";
 import { DialogProps } from "../types";
+import { logger } from "../utils/logger";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -43,7 +44,7 @@ export const DialogBoxRenderer: React.FC<DialogProps> = ({ isVisible, message, o
   }, [isVisible]);
 
   const handleClose = () => {
-    console.log("Dialog close button pressed");
+    logger.log("Dialog", "close button pressed");
     if (onClose) {
       onClose();
     }

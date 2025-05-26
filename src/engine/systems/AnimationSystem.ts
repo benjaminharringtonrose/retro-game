@@ -1,4 +1,5 @@
 import { Entity, SystemProps } from "../../types";
+import { logger } from "../../utils/logger";
 
 export const AnimationSystem = (entities: { [key: string]: Entity }, { time, delta = 16.666 }: SystemProps) => {
   // This accumulates time for frame updates
@@ -21,7 +22,7 @@ export const AnimationSystem = (entities: { [key: string]: Entity }, { time, del
 
       // Debug animation every 5 seconds for NPCs
       if (entityKey.startsWith("npc") && time % 5000 < 20) {
-        console.log(`[AnimationSystem] NPC animation for ${entityKey}: frameCount=${frameCount}, frameRate=${frameRate}, isMoving=${isMoving}`);
+        logger.log("Animation", `[AnimationSystem] NPC animation for ${entityKey}: frameCount=${frameCount}, frameRate=${frameRate}, isMoving=${isMoving}`);
       }
 
       // Increment frame if enough time has passed
@@ -34,7 +35,7 @@ export const AnimationSystem = (entities: { [key: string]: Entity }, { time, del
 
         // Extra debug log for frame changes on NPCs
         if (entityKey.startsWith("npc") && time % 1000 < 20) {
-          console.log(`[AnimationSystem] NPC ${entityKey} frame change: ${entity.animation.currentFrame}`);
+          logger.log("Animation", `[AnimationSystem] NPC ${entityKey} frame change: ${entity.animation.currentFrame}`);
         }
       }
     } else if (!isMoving) {

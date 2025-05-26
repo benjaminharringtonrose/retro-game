@@ -178,7 +178,7 @@ const createMap = (id: string, mapType: MapType): Entity => {
   const bounds = mapManager.getMapBounds(mapType);
   const mapData = DEFAULT_MAPS[mapType];
 
-  console.log(`[Entities] Creating map ${mapType} with:`, { dimensions, position, bounds });
+  logger.log("Map", `Creating map ${mapType} with:`, { dimensions, position, bounds });
 
   return {
     id,

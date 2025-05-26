@@ -13,11 +13,6 @@ interface DebugRendererProps {
 }
 
 export const DebugRenderer: React.FC<DebugRendererProps> = (props) => {
-  console.log("Debug Renderer Props:", {
-    boxCount: props.boxes.length,
-    boxes: props.boxes,
-  });
-
   return (
     <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, pointerEvents: "none" }}>
       {props.boxes?.map((box, index) => (

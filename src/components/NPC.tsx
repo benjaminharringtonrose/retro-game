@@ -3,10 +3,11 @@ import { StyleSheet, View, Pressable, Image } from "react-native";
 import { Direction } from "../types/enums";
 import { NPCProps } from "../types/props";
 import { NPC_CONFIGS } from "../config/npcs";
+import { logger } from "../utils/logger";
 
 // Debug logging
 const debugNPC = (message: string, data?: any) => {
-  console.log(`[NPC Debug] ${message}`, data || "");
+  logger.log("NPC", `[NPC Debug] ${message}`, data || "");
 };
 
 export const NPC: React.FC<NPCProps> = ({ position, movement, animation, onInteract, id }) => {
@@ -17,7 +18,7 @@ export const NPC: React.FC<NPCProps> = ({ position, movement, animation, onInter
   // Get NPC config
   const config = NPC_CONFIGS[id];
   if (!config) {
-    console.error(`No configuration found for NPC: ${id}`);
+    logger.error("NPC", `No configuration found for NPC: ${id}`);
     return null;
   }
 

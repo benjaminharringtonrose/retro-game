@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { View, Text, StyleSheet, Dimensions, Animated } from "react-native";
+import { logger } from "../utils/logger";
 
 interface DialogBoxProps {
   message: string;
@@ -9,14 +10,14 @@ interface DialogBoxProps {
 const { width: screenWidth } = Dimensions.get("window");
 
 export const DialogBox: React.FC<DialogBoxProps> = ({ message, isVisible }) => {
-  console.log("[DialogBox] Props received:", { message, isVisible });
+  logger.log("Dialog", "[DialogBox] Props received:", { message, isVisible });
 
   if (!isVisible) {
-    console.log("[DialogBox] Not rendering - isVisible is false");
+    logger.log("Dialog", "[DialogBox] Not rendering - isVisible is false");
     return null;
   }
 
-  console.log("[DialogBox] Rendering dialog box");
+  logger.log("Dialog", "[DialogBox] Rendering dialog box");
   const arrowOpacity = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {

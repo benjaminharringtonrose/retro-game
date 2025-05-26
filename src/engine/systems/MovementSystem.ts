@@ -2,6 +2,7 @@ import { Entity, SystemProps, Direction, MapType } from "../../types";
 import { Dimensions } from "react-native";
 import { DEFAULT_MAPS } from "../../constants/map";
 import { mapManager } from "../../managers/MapManager";
+import { logger } from "../../utils/logger";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -102,8 +103,8 @@ export const MovementSystem = (entities: { [key: string]: Entity }, { time, delt
 
       // Log position occasionally for debugging
       if (time % 1000 < 16) {
-        console.log(`[Movement] Fixed map bounds: left=${mapLeft}, right=${mapRight}, top=${mapTop}, bottom=${mapBottom}`);
-        console.log(`[Movement] Player position: x=${player.position.x}, y=${player.position.y}`);
+        logger.log("Movement", `[Movement] Fixed map bounds: left=${mapLeft}, right=${mapRight}, top=${mapTop}, bottom=${mapBottom}`);
+        logger.log("Movement", `[Movement] Player position: x=${player.position.x}, y=${player.position.y}`);
       }
     } else {
       // Handle scrolling maps

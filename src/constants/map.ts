@@ -1,5 +1,6 @@
 import { MapType, MapConfig } from "../types";
 import { Dimensions } from "react-native";
+import { logger } from "../utils/logger";
 
 const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get("window");
 
@@ -11,7 +12,7 @@ const calculateMapPosition = (mapWidth: number, mapHeight: number) => {
   const x = Math.floor((WINDOW_WIDTH - mapWidth) / 2);
   const y = Math.floor((WINDOW_HEIGHT - mapHeight) / 2);
 
-  console.log("[Map] Calculating position for", { mapWidth, mapHeight, windowWidth: WINDOW_WIDTH, windowHeight: WINDOW_HEIGHT, x, y });
+  logger.log("Map", "[Map] Calculating position for", { mapWidth, mapHeight, windowWidth: WINDOW_WIDTH, windowHeight: WINDOW_HEIGHT, x, y });
 
   // If map is smaller than screen, return centered position
   if (mapWidth <= WINDOW_WIDTH && mapHeight <= WINDOW_HEIGHT) {
@@ -106,7 +107,7 @@ export const DEFAULT_MAPS: MapConfig = {
       const mapWidth = 7 * TILE_SIZE;
       const mapHeight = 6 * TILE_SIZE;
       const position = calculateMapPosition(mapWidth, mapHeight);
-      console.log("[Map] Cabin interior initial position:", position);
+      logger.log("Map", "[Map] Cabin interior initial position:", position);
       return position;
     },
   },

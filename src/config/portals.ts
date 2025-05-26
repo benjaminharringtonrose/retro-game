@@ -3,7 +3,6 @@ import { TILE_SIZE } from "../constants/map";
 
 // Debug the assets to make sure they're loading correctly
 const portalSprite = require("../assets/portal-2.png");
-console.log("[Portals Config] Portal sprite loaded:", portalSprite);
 
 // Animation configuration for portals
 const PORTAL_ANIMATION = {

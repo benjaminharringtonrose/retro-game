@@ -2,15 +2,9 @@ import { Direction, Tile } from "../types";
 import { TILE_SIZE } from "../constants/map";
 import { NPCConfig } from "../types/npc";
 
-// Debug the assets to make sure they're loading correctly
 const lillySprite = require("../assets/lilly-spritesheet.png");
-console.log("[NPCs Config] Lilly sprite loaded:", lillySprite);
-
 const willowSprite = require("../assets/willow-spritesheet.png");
-console.log("[NPCs Config] Willow sprite loaded:", willowSprite);
-
 const rosieSprite = require("../assets/rosie-spritesheet.png");
-console.log("[NPCs Config] Rosie sprite loaded:", rosieSprite);
 
 // Sprite configurations
 const LILLY_SPRITE = {

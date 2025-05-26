@@ -1,7 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-type LogLevel = "debug" | "info" | "warn" | "error";
-
 export type LogSystem = "Map" | "NPC" | "Player" | "Assets" | "Game" | "Dialog" | "Collision" | "Portal" | "Movement" | "Animation" | "Performance";
 
 interface LoggerState {
