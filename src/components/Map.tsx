@@ -4,6 +4,7 @@ import { StyleSheet, View, FlatList, TouchableOpacity, Text } from "react-native
 import { Image } from "expo-image";
 import { MapProps, Tile } from "../types";
 import { DebugRenderer } from "./DebugRenderer";
+import { DevMenu } from "./DevMenu";
 
 const TREE_SCALE = 1.5; // Scale for tree sprites
 const CABIN_SCALE = 3.5; // Scale for cabin sprite
@@ -250,6 +251,7 @@ const GridOverlay: React.FC<{ tileSize: number; width: number; height: number }>
 export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileData, debug, onImageLoad }) => {
   const [showGrid, setShowGrid] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
+  const [showDevMenu, setShowDevMenu] = useState(false);
   const [backgroundLoaded, setBackgroundLoaded] = useState(false);
   const { x, y } = position;
   const { width, height } = dimensions;
@@ -380,15 +382,15 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
         ))}
       </View>
 
-      {/* Controls layer */}
+      {/* Dev Menu Button */}
       <View style={[styles.devControls, { zIndex: 4000 }]}>
-        <TouchableOpacity style={styles.devToggle} onPress={() => setShowGrid(!showGrid)}>
-          <Text style={styles.devToggleText}>{showGrid ? "Hide Grid" : "Show Grid"}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.devToggle} onPress={() => setShowDebug(!showDebug)}>
-          <Text style={styles.devToggleText}>{showDebug ? `Hide Debug (${debugBoxes.length})` : "Show Debug"}</Text>
+        <TouchableOpacity style={styles.devButton} onPress={() => setShowDevMenu(true)}>
+          <Text style={styles.devButtonText}>⚙️</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Dev Menu Modal */}
+      <DevMenu isVisible={showDevMenu} onClose={() => setShowDevMenu(false)} showGrid={showGrid} onToggleGrid={() => setShowGrid(!showGrid)} showDebug={showDebug} onToggleDebug={() => setShowDebug(!showDebug)} debugBoxCount={debugBoxes.length} />
     </>
   );
 });
@@ -486,17 +488,18 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 20,
     right: 20,
-    flexDirection: "column",
-    gap: 10,
   },
-  devToggle: {
+  devButton: {
     backgroundColor: "rgba(0,0,0,0.7)",
-    padding: 10,
-    borderRadius: 5,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#333",
   },
-  devToggleText: {
-    color: "white",
-    fontSize: 14,
-    fontWeight: "bold",
+  devButtonText: {
+    fontSize: 24,
   },
 });
