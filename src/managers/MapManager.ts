@@ -1,6 +1,7 @@
 import { Dimensions } from "react-native";
 import { Entity, MapType } from "../types";
 import { DEFAULT_MAPS, TILE_SIZE } from "../constants/map";
+import { logger } from "../utils/logger";
 
 const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get("window");
 
@@ -21,7 +22,7 @@ class MapManager {
     const x = Math.floor((WINDOW_WIDTH - mapWidth) / 2);
     const y = Math.floor((WINDOW_HEIGHT - mapHeight) / 2);
 
-    console.log("[MapManager] Calculating position for", { mapWidth, mapHeight, windowWidth: WINDOW_WIDTH, windowHeight: WINDOW_HEIGHT, x, y });
+    logger.log("Map", "Calculating position for", { mapWidth, mapHeight, windowWidth: WINDOW_WIDTH, windowHeight: WINDOW_HEIGHT, x, y });
     return { x, y };
   }
 
@@ -83,7 +84,7 @@ class MapManager {
   public updateMapForType(map: Entity, mapType: MapType, player: Entity) {
     const mapData = DEFAULT_MAPS[mapType];
     if (!mapData) {
-      console.error(`[MapManager] Map type ${mapType} not found`);
+      logger.error("Map", `Map type ${mapType} not found`);
       return;
     }
 
@@ -110,7 +111,7 @@ class MapManager {
     player.position.x = WINDOW_WIDTH / 2;
     player.position.y = WINDOW_HEIGHT / 2;
 
-    console.log(`[MapManager] Updated map to ${mapType}:`, {
+    logger.log("Map", `Updated map to ${mapType}:`, {
       position,
       dimensions,
       bounds,

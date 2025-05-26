@@ -2,6 +2,7 @@ import { Entity, SystemProps, Direction } from "../../types";
 import { TILE_SIZE } from "../../constants/map";
 import { findPath } from "../../utils/pathfinding";
 import { getTileCoords } from "../../utils/coordinates";
+import { logger } from "../../utils/logger";
 
 interface InteractionState {
   targetNPC: string | null;
@@ -42,7 +43,7 @@ export const InteractionSystem = (entities: { [key: string]: Entity }, { events 
   const dialog = entities["dialog-1"];
 
   if (!player || !map || !map.tileData || !map.tileData.tiles) {
-    console.error("Missing required entities or map data");
+    logger.error("Dialog", "Missing required entities or map data");
     return entities;
   }
 
@@ -70,7 +71,7 @@ export const InteractionSystem = (entities: { [key: string]: Entity }, { events 
       const npc = entities[npcId];
 
       if (npc && npc.absolutePosition) {
-        console.log("NPC clicked:", npcId, "at position:", npc.absolutePosition);
+        logger.log("Dialog", `NPC clicked: ${npcId} at position:`, npc.absolutePosition);
 
         // Calculate target position
         const npcMapX = npc.absolutePosition.x;
@@ -80,13 +81,13 @@ export const InteractionSystem = (entities: { [key: string]: Entity }, { events 
         const playerMapX = player.position.x - map.position.x;
         const playerMapY = player.position.y - map.position.y;
 
-        console.log("Player map position:", { playerMapX, playerMapY });
-        console.log("Target position:", { npcMapX, npcMapY });
+        logger.log("Dialog", "Player map position:", { playerMapX, playerMapY });
+        logger.log("Dialog", "Target position:", { npcMapX, npcMapY });
 
         // Log tile data around the path
         const startTile = getTileCoords(playerMapX, playerMapY);
         const endTile = getTileCoords(npcMapX, npcMapY);
-        console.log("Checking tiles from", startTile, "to", endTile);
+        logger.log("Dialog", "Checking tiles from", startTile, "to", endTile);
 
         // Log a 5x5 area around both start and end positions
         for (let dy = -2; dy <= 2; dy++) {
@@ -97,11 +98,11 @@ export const InteractionSystem = (entities: { [key: string]: Entity }, { events 
             const checkEndY = endTile.tileY + dy;
 
             if (checkStartY >= 0 && checkStartY < map.tileData.tiles.length && checkStartX >= 0 && checkStartX < map.tileData.tiles[0].length) {
-              console.log(`Tile at (${checkStartX},${checkStartY}) near start:`, map.tileData.tiles[checkStartY][checkStartX]);
+              logger.debug("Dialog", `Tile at (${checkStartX},${checkStartY}) near start:`, map.tileData.tiles[checkStartY][checkStartX]);
             }
 
             if (checkEndY >= 0 && checkEndY < map.tileData.tiles.length && checkEndX >= 0 && checkEndX < map.tileData.tiles[0].length) {
-              console.log(`Tile at (${checkEndX},${checkEndY}) near end:`, map.tileData.tiles[checkEndY][checkEndX]);
+              logger.debug("Dialog", `Tile at (${checkEndX},${checkEndY}) near end:`, map.tileData.tiles[checkEndY][checkEndX]);
             }
           }
         }
@@ -110,12 +111,12 @@ export const InteractionSystem = (entities: { [key: string]: Entity }, { events 
         const path = findPath(playerMapX, playerMapY, npcMapX, npcMapY, map.tileData.tiles);
 
         if (path.length > 0) {
-          console.log("Found path with", path.length, "waypoints:", path);
+          logger.log("Dialog", "Found path with", path.length, "waypoints:", path);
         } else {
-          console.log("No path found - checking walkability of start and end tiles");
+          logger.log("Dialog", "No path found - checking walkability of start and end tiles");
           const startWalkable = map.tileData.tiles[startTile.tileY][startTile.tileX] !== 3 && map.tileData.tiles[startTile.tileY][startTile.tileX] !== 3.2;
           const endWalkable = map.tileData.tiles[endTile.tileY][endTile.tileX] !== 3 && map.tileData.tiles[endTile.tileY][endTile.tileX] !== 3.2;
-          console.log("Start tile walkable:", startWalkable, "End tile walkable:", endWalkable);
+          logger.log("Dialog", "Start tile walkable:", startWalkable, "End tile walkable:", endWalkable);
         }
 
         // Set interaction target and path
@@ -126,7 +127,7 @@ export const InteractionSystem = (entities: { [key: string]: Entity }, { events 
         player.interaction.currentPath = path;
         player.interaction.currentPathIndex = 0;
       } else {
-        console.error("Invalid NPC or missing absolutePosition:", npcId);
+        logger.error("Dialog", "Invalid NPC or missing absolutePosition:", npcId);
       }
     }
   });
@@ -139,7 +140,7 @@ export const InteractionSystem = (entities: { [key: string]: Entity }, { events 
     const distance = calculateDistance(playerMapX, playerMapY, player.interaction.targetX, player.interaction.targetY);
 
     if (distance <= INTERACTION_RANGE) {
-      console.log("Reached interaction range");
+      logger.log("Dialog", "Reached interaction range");
       // We've reached interaction range
       player.interaction.isMovingToTarget = false;
       player.interaction.currentPath = [];
@@ -168,7 +169,7 @@ export const InteractionSystem = (entities: { [key: string]: Entity }, { events 
       const currentTarget = player.interaction.currentPath[player.interaction.currentPathIndex];
 
       if (!currentTarget) {
-        console.log("No current target in path, moving directly to target");
+        logger.log("Dialog", "No current target in path, moving directly to target");
         // Move directly towards the target
         const dx = player.interaction.targetX - playerMapX;
         const dy = player.interaction.targetY - playerMapY;
@@ -192,10 +193,10 @@ export const InteractionSystem = (entities: { [key: string]: Entity }, { events 
 
       // Calculate distance to current waypoint
       const waypointDistance = calculateDistance(playerMapX, playerMapY, currentTarget.x, currentTarget.y);
-      console.log("Distance to waypoint:", waypointDistance);
+      logger.debug("Dialog", "Distance to waypoint:", waypointDistance);
 
       if (waypointDistance < CLOSE_TO_WAYPOINT_THRESHOLD) {
-        console.log("Moving to next waypoint");
+        logger.log("Dialog", "Moving to next waypoint");
         // Move to next waypoint
         player.interaction.currentPathIndex++;
 
@@ -209,7 +210,7 @@ export const InteractionSystem = (entities: { [key: string]: Entity }, { events 
           const distanceSinceLastRecalculation = calculateDistance(playerMapX, playerMapY, player.interaction.lastRecalculationPos.x, player.interaction.lastRecalculationPos.y);
 
           if (distanceSinceLastRecalculation > MIN_RECALCULATION_DISTANCE) {
-            console.log("Recalculating path after moving sufficient distance");
+            logger.log("Dialog", "Recalculating path after moving sufficient distance");
             const newPath = findPath(playerMapX, playerMapY, player.interaction.targetX, player.interaction.targetY, map.tileData.tiles);
             if (newPath.length > 0) {
               player.interaction.currentPath = newPath;
@@ -217,7 +218,7 @@ export const InteractionSystem = (entities: { [key: string]: Entity }, { events 
               player.interaction.lastRecalculationPos = { x: playerMapX, y: playerMapY };
             } else {
               // If no path found, move directly towards target
-              console.log("No path found, moving directly towards target");
+              logger.log("Dialog", "No path found, moving directly towards target");
               const dx = player.interaction.targetX - playerMapX;
               const dy = player.interaction.targetY - playerMapY;
 
@@ -238,7 +239,7 @@ export const InteractionSystem = (entities: { [key: string]: Entity }, { events 
             }
           } else {
             // If we're too close to the last recalculation position, just keep moving towards the target
-            console.log("Too close to last recalculation position, continuing towards target");
+            logger.log("Dialog", "Too close to last recalculation position, continuing towards target");
             const dx = player.interaction.targetX - playerMapX;
             const dy = player.interaction.targetY - playerMapY;
 
@@ -301,20 +302,20 @@ export const InteractionSystem = (entities: { [key: string]: Entity }, { events 
         }
 
         player.movement.isMoving = true;
-        console.log("Moving in direction:", player.movement.direction);
+        logger.log("Dialog", "Moving in direction:", player.movement.direction);
       }
     } else {
-      console.log("No path available, attempting to find one");
+      logger.log("Dialog", "No path available, attempting to find one");
       // No path, try to find one
       const newPath = findPath(playerMapX, playerMapY, player.interaction.targetX, player.interaction.targetY, map.tileData.tiles);
       if (newPath.length > 0) {
-        console.log("Found initial path with length:", newPath.length);
+        logger.log("Dialog", "Found initial path with length:", newPath.length);
         player.interaction.currentPath = newPath;
         player.interaction.currentPathIndex = 0;
         player.interaction.lastRecalculationPos = { x: playerMapX, y: playerMapY };
       } else {
         // If no path found, move directly towards target
-        console.log("No path found, moving directly towards target");
+        logger.log("Dialog", "No path found, moving directly towards target");
         const dx = player.interaction.targetX - playerMapX;
         const dy = player.interaction.targetY - playerMapY;
 

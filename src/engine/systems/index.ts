@@ -7,6 +7,7 @@ import { DialogSystem } from "./DialogSystem";
 import { InteractionSystem } from "./InteractionSystem";
 import { PortalSystem } from "./PortalSystem";
 import { RenderingSystem } from "./RenderingSystem";
+import { logger } from "../../utils/logger";
 
 // Simple performance tracking
 let lastLogTime = 0;
@@ -32,7 +33,7 @@ const trackSystemPerformance = (system: any, name: string) => {
     const now = Date.now();
     if (now - lastLogTime > LOG_INTERVAL) {
       const totalTime = Object.values(systemTimes).reduce((sum, time) => sum + time, 0);
-      console.log(`System performance: ${JSON.stringify(systemTimes)}`);
+      logger.log("Performance", `System performance: ${JSON.stringify(systemTimes)}`);
       lastLogTime = now;
     }
 

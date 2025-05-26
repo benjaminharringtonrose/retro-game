@@ -5,6 +5,7 @@ import { Image } from "expo-image";
 import { MapProps, Tile } from "../types";
 import { DebugRenderer } from "./DebugRenderer";
 import { DevMenu } from "./DevMenu";
+import { logger } from "../utils/logger";
 
 const TREE_SCALE = 1.5; // Scale for tree sprites
 const CABIN_SCALE = 3.5; // Scale for cabin sprite
@@ -48,7 +49,7 @@ const TreeTile: React.FC<{ tile: number; tileSize: number; onImageLoad?: (assetI
 
   const handleLoadEnd = () => {
     if (!hasLoaded) {
-      console.log(`[Map] Tree loaded: ${assetId}`);
+      logger.log("Map", `Tree loaded: ${assetId}`);
       onImageLoad?.(assetId);
       setHasLoaded(true);
     }
@@ -92,7 +93,7 @@ const FlowerTile: React.FC<{ tile: number; tileSize: number; onImageLoad?: (asse
 
   const handleLoadEnd = () => {
     if (!hasLoaded) {
-      console.log("[Map] Flower loaded");
+      logger.log("Map", "Flower loaded");
       onImageLoad?.("flower");
       setHasLoaded(true);
     }
@@ -137,7 +138,7 @@ const CabinTile: React.FC<{ tile: number; tileSize: number; onImageLoad?: (asset
 
   const handleLoadEnd = () => {
     if (!hasLoaded) {
-      console.log("[Map] Cabin loaded");
+      logger.log("Map", "Cabin loaded");
       onImageLoad?.("cabin");
       setHasLoaded(true);
     }
@@ -259,7 +260,7 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
 
   useEffect(() => {
     if (backgroundLoaded) {
-      console.log("[Map] Background loaded");
+      logger.log("Map", "Background loaded");
       onImageLoad?.("background");
     }
   }, [backgroundLoaded, onImageLoad]);
@@ -300,7 +301,7 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
     return cabins;
   }, [tiles]);
 
-  console.log("[Map] Rendering with position:", { x, y, width, height });
+  logger.log("Map", "Rendering with position:", { x, y, width, height });
 
   return (
     <>
@@ -336,7 +337,7 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
             contentFit="cover"
             onLoadEnd={() => {
               if (!backgroundLoaded) {
-                console.log("[Map] Background loaded");
+                logger.log("Map", "Background loaded");
                 setBackgroundLoaded(true);
               }
             }}

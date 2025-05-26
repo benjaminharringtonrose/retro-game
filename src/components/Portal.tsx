@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { StyleSheet, View, Image as RNImage, Text } from "react-native";
 import { PORTAL_CONFIGS } from "../config/portals";
+import { logger } from "../utils/logger";
 
 interface PortalProps {
   id: string;
@@ -36,7 +37,7 @@ export const Portal: React.FC<PortalProps> = ({ id, position, dimensions, portal
   // Get portal config
   const config = PORTAL_CONFIGS[id];
   if (!config) {
-    console.error(`No configuration found for Portal: ${id}`);
+    logger.error("Portal", `No configuration found for Portal: ${id}`);
     return null;
   }
 
@@ -66,7 +67,7 @@ export const Portal: React.FC<PortalProps> = ({ id, position, dimensions, portal
 
   // Log position when the component mounts or position changes
   useEffect(() => {
-    console.log(`[Portal] Rendering portal ${id} at (${x}, ${y}) with active=${isActive}, frame=${currentFrame}`);
+    logger.log("Portal", `Rendering portal ${id} at (${x}, ${y}) with active=${isActive}, frame=${currentFrame}`);
   }, [id, x, y, isActive, currentFrame]);
 
   // Skip rendering inactive portals
@@ -154,7 +155,7 @@ export const Portal: React.FC<PortalProps> = ({ id, position, dimensions, portal
             },
           ]}
           onError={(error) => {
-            console.error(`[Portal] Failed to load sprite for ${id}:`, error);
+            logger.error("Portal", `Failed to load sprite for ${id}:`, error);
           }}
         />
       </View>

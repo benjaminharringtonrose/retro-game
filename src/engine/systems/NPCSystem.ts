@@ -3,6 +3,7 @@ import { TILE_SIZE } from "../../constants/map";
 import { getTileCoords } from "../../utils/coordinates";
 import { NPC_CONFIGS } from "../../config/npcs";
 import { Dimensions } from "react-native";
+import { logger } from "../../utils/logger";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -12,7 +13,7 @@ const LOG_INTERVAL = 500; // Log every 500ms to avoid spam
 const debugLog = (message: string, force = false) => {
   const now = Date.now();
   if (force || now - lastLogTime > LOG_INTERVAL) {
-    console.log(`[NPCSystem] ${message}`);
+    logger.log("NPC", message);
     lastLogTime = now;
   }
 };
@@ -53,7 +54,7 @@ export const NPCSystem = (entities: { [key: string]: Entity }, { time, delta = 1
   // Get the map first - we need it to position NPCs
   const map = entities["map-1"];
   if (!map?.position || !map.tileData?.tiles) {
-    debugLog("Map not found or missing critical data", true);
+    logger.error("NPC", "Map not found or missing critical data");
     return entities;
   }
 

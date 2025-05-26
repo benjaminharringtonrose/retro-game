@@ -4,6 +4,7 @@ import { PORTAL_CONFIGS } from "../../config/portals";
 import { mapManager } from "../../managers/MapManager";
 import { Dimensions } from "react-native";
 import { createPortal } from "../entities";
+import { logger } from "../../utils/logger";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -76,7 +77,7 @@ export const PortalSystem = (entities: { [key: string]: Entity }, { time, delta 
 
     // Check if player is within trigger distance
     if (distance <= portal.portal.triggerDistance) {
-      console.log(`[PortalSystem] Player entered portal ${portal.id}`);
+      logger.log("Portal", `Player entered portal ${portal.id}`);
 
       // Activate portal
       lastPortalUse = Date.now();
@@ -103,7 +104,7 @@ export const PortalSystem = (entities: { [key: string]: Entity }, { time, delta 
           }
         });
 
-        console.log(`[PortalSystem] Transitioned to map ${targetMapType}`);
+        logger.log("Portal", `Transitioned to map ${targetMapType}`);
       }
 
       // Only handle one portal at a time

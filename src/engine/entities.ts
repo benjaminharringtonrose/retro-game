@@ -11,6 +11,7 @@ import { DEFAULT_MAPS, TILE_SIZE } from "../constants/map";
 import { NPC_CONFIGS } from "../config/npcs";
 import { PORTAL_CONFIGS } from "../config/portals";
 import { mapManager } from "../managers/MapManager";
+import { logger } from "../utils/logger";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -63,7 +64,7 @@ const createNPC = (id: string, x: number, y: number): Entity => {
   // Get NPC config
   const config = NPC_CONFIGS[id];
   if (!config) {
-    console.error(`No configuration found for NPC: ${id}`);
+    logger.error("NPC", `No configuration found for NPC: ${id}`);
     return {
       id,
       position: { id: `${id}-position`, x: 0, y: 0 },
@@ -74,7 +75,7 @@ const createNPC = (id: string, x: number, y: number): Entity => {
 
   // Validate initial position
   if (isNaN(x) || isNaN(y)) {
-    console.error("Invalid initial position:", { x, y });
+    logger.error("NPC", "Invalid initial position:", { x, y });
     x = config.initialPosition.x;
     y = config.initialPosition.y;
   }
@@ -118,7 +119,7 @@ export const createPortal = (id: string, mapPosition: { x: number; y: number }):
   // Get portal config
   const config = PORTAL_CONFIGS[id];
   if (!config) {
-    console.error(`No configuration found for Portal: ${id}`);
+    logger.error("Portal", `No configuration found for Portal: ${id}`);
     return {
       id,
       position: { id: `${id}-position`, x: 0, y: 0 },
@@ -138,7 +139,7 @@ export const createPortal = (id: string, mapPosition: { x: number; y: number }):
   const x = config.position.x + mapPosition.x;
   const y = config.position.y + mapPosition.y;
 
-  console.log(`[Portal] Creating portal ${id} at map position (${absolutePosition.x}, ${absolutePosition.y}), ` + `screen position (${x}, ${y}), map offset (${mapPosition.x}, ${mapPosition.y})`);
+  logger.log("Portal", `Creating portal ${id} at map position (${absolutePosition.x}, ${absolutePosition.y}), screen position (${x}, ${y}), map offset (${mapPosition.x}, ${mapPosition.y})`);
 
   return {
     id,
@@ -208,15 +209,15 @@ const createDialog = (id: string): Entity => ({
   isVisible: false,
   message: "",
   onClose: () => {
-    console.log("Dialog onClose triggered");
+    logger.log("Dialog", "Dialog onClose triggered");
     if (window.gameEngine?.dispatch) {
-      console.log("Dispatching dialog-close event");
+      logger.log("Dialog", "Dispatching dialog-close event");
       window.gameEngine.dispatch({
         type: "dialog-close",
         payload: { id },
       });
     } else {
-      console.warn("Game engine not found for dialog close");
+      logger.warn("Dialog", "Game engine not found for dialog close");
     }
   },
   renderer: DialogBoxRenderer,
@@ -233,7 +234,7 @@ export const setupGameEntities = (): { [key: string]: Entity } => {
   // Initialize map using MapManager
   mapManager.updateMapForType(map, MapType.FOREST, player);
 
-  console.log(`[Entities] Initial map position: (${map.position.x}, ${map.position.y}) for map type ${map.mapType}`);
+  logger.log("Game", `Initial map position: (${map.position.x}, ${map.position.y}) for map type ${map.mapType}`);
 
   // Create all NPCs from config
   const entities: { [key: string]: Entity } = {
@@ -269,7 +270,7 @@ export const setupGameEntities = (): { [key: string]: Entity } => {
     }
   });
 
-  console.log("Game entities setup complete:", Object.keys(entities));
+  logger.log("Game", "Game entities setup complete:", Object.keys(entities));
 
   return entities;
 };

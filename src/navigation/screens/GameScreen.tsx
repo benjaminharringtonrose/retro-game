@@ -9,6 +9,7 @@ import { Entity } from "../../types/entities";
 import { GameEngine, GameEvent } from "../../types/system";
 import { useGameAssets } from "../../hooks/useAssets";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
+import { logger } from "../../utils/logger";
 
 interface GameEngineType extends RNGameEngine {
   dispatch: (event: any) => void;
@@ -38,7 +39,7 @@ const GameScreen: React.FC = () => {
 
     // Start game when assets are loaded
     if (assetsLoaded && !gameRunning) {
-      console.log("[GameScreen] Assets loaded, starting game");
+      logger.log("Game", "Assets loaded, starting game");
       setGameRunning(true);
     }
 
@@ -57,7 +58,7 @@ const GameScreen: React.FC = () => {
   };
 
   const handleEvent = (event: GameEvent) => {
-    console.log("Game Event:", event);
+    logger.log("Game", "Game Event:", event);
 
     // Make sure we have access to entities
     if (!engineRef.current?.entities) return;

@@ -1,5 +1,6 @@
 import { useAssets } from "expo-asset";
 import { NPC_CONFIGS } from "../config/npcs";
+import { logger } from "../utils/logger";
 
 /**
  * Hook to preload and manage all game assets
@@ -27,6 +28,14 @@ export const useGameAssets = () => {
 
   // Use the official useAssets hook
   const [assets, error] = useAssets(allAssets);
+
+  if (error) {
+    logger.error("Assets", "Failed to load assets:", error.message);
+  }
+
+  if (assets) {
+    logger.log("Assets", `Loaded ${assets.length} assets successfully`);
+  }
 
   return {
     isLoaded: !!assets,
