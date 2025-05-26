@@ -1,6 +1,6 @@
 // components/Map.tsx
-import React, { useMemo, useState, useCallback, useEffect } from "react";
-import { StyleSheet, View, ImageBackground, FlatList, TouchableOpacity, Text, Image as RNImage } from "react-native";
+import React, { useMemo, useState, useEffect } from "react";
+import { StyleSheet, View, FlatList, TouchableOpacity, Text } from "react-native";
 import { Image } from "expo-image";
 import { MapProps, Tile } from "../types";
 import { DebugRenderer } from "./DebugRenderer";
@@ -318,7 +318,7 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
         ]}
       >
         <View style={[styles.mapContainer, { width, height }]}>
-          <RNImage
+          <Image
             source={background}
             style={[
               styles.background,
@@ -331,7 +331,7 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
                 left: 0,
               },
             ]}
-            resizeMode="cover"
+            contentFit="cover"
             onLoadEnd={() => {
               if (!backgroundLoaded) {
                 console.log("[Map] Background loaded");
