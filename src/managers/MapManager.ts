@@ -63,20 +63,20 @@ class MapManager {
       return {
         width,
         height,
-        minX: position.x,
-        maxX: position.x,
-        minY: position.y,
-        maxY: position.y,
+        left: position.x,
+        right: position.x,
+        top: position.y,
+        bottom: position.y,
       };
     } else {
       // Scrolling maps have bounds based on screen size
       return {
         width,
         height,
-        minX: -(width - WINDOW_WIDTH),
-        maxX: 0,
-        minY: -(height - WINDOW_HEIGHT),
-        maxY: 0,
+        left: -(width - WINDOW_WIDTH),
+        right: 0,
+        top: -(height - WINDOW_HEIGHT),
+        bottom: 0,
       };
     }
   }
@@ -120,24 +120,67 @@ class MapManager {
   }
 
   public updateMapScroll(map: Entity, deltaX: number, deltaY: number): boolean {
-    if (!map.bounds) return false;
+    if (!map.bounds) {
+      logger.error("Map", "Cannot scroll map - bounds are undefined");
+      return false;
+    }
 
     const newMapX = map.position.x - deltaX;
     const newMapY = map.position.y - deltaY;
 
-    let moved = false;
+    logger.log("Map", "Attempting map scroll:", {
+      currentPosition: { x: map.position.x, y: map.position.y },
+      delta: { x: deltaX, y: deltaY },
+      newPosition: { x: newMapX, y: newMapY },
+      bounds: map.bounds,
+    });
+
+    let movedX = false;
+    let movedY = false;
 
     // Check X bounds
-    if (newMapX <= map.bounds.maxX && newMapX >= map.bounds.minX) {
+    if (deltaX !== 0 && newMapX <= map.bounds.right && newMapX >= map.bounds.left) {
+      const oldX = map.position.x;
       map.position.x = newMapX;
-      moved = true;
+      movedX = true;
+      logger.log("Map", "Map scrolled horizontally:", {
+        oldX,
+        newX: map.position.x,
+        bounds: { left: map.bounds.left, right: map.bounds.right },
+      });
+    } else if (deltaX !== 0) {
+      logger.log("Map", "Horizontal scroll blocked:", {
+        attemptedX: newMapX,
+        bounds: { left: map.bounds.left, right: map.bounds.right },
+      });
     }
 
     // Check Y bounds
-    if (newMapY <= map.bounds.maxY && newMapY >= map.bounds.minY) {
+    if (deltaY !== 0 && newMapY <= map.bounds.bottom && newMapY >= map.bounds.top) {
+      const oldY = map.position.y;
       map.position.y = newMapY;
-      moved = true;
+      movedY = true;
+      logger.log("Map", "Map scrolled vertically:", {
+        oldY,
+        newY: map.position.y,
+        bounds: { top: map.bounds.top, bottom: map.bounds.bottom },
+      });
+    } else if (deltaY !== 0) {
+      logger.log("Map", "Vertical scroll blocked:", {
+        attemptedY: newMapY,
+        bounds: { top: map.bounds.top, bottom: map.bounds.bottom },
+      });
     }
+
+    // Only return true if we moved in the direction we wanted to
+    const moved = (deltaX !== 0 && movedX) || (deltaY !== 0 && movedY);
+
+    logger.log("Map", "Map scroll result:", {
+      moved,
+      movedX,
+      movedY,
+      finalPosition: { x: map.position.x, y: map.position.y },
+    });
 
     return moved;
   }
