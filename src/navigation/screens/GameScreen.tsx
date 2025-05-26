@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import { StyleSheet, View, ActivityIndicator, Text } from "react-native";
 import { GameEngine as RNGameEngine } from "react-native-game-engine";
 import { setupGameEntities } from "../../engine/entities";
@@ -29,8 +29,14 @@ const GameScreen: React.FC = () => {
   // Use our renamed game assets hook
   const { isLoaded: assetsLoaded, progress: loadingProgress, error: assetError } = useGameAssets();
 
+  const onImageLoad = useCallback((assetId?: string) => {
+    if (assetId) {
+      logger.log("Game", `Image loaded: ${assetId}`);
+    }
+  }, []);
+
   // Initialize entities once assets are loaded
-  const entities = assetsLoaded ? setupGameEntities() : {};
+  const entities = assetsLoaded ? setupGameEntities(onImageLoad) : {};
 
   useEffect(() => {
     if (engineRef.current) {
@@ -48,14 +54,17 @@ const GameScreen: React.FC = () => {
     };
   }, [assetsLoaded, gameRunning]);
 
-  const handleDirectionChange = (direction: Direction | null) => {
-    if (!engineRef.current) return;
+  const handleDirectionChange = useCallback(
+    (direction: Direction | null) => {
+      if (!engineRef.current) return;
 
-    engineRef.current.dispatch({
-      type: "move",
-      payload: { direction },
-    });
-  };
+      engineRef.current.dispatch({
+        type: "move",
+        payload: { direction },
+      });
+    },
+    [engineRef]
+  );
 
   const handleEvent = (event: GameEvent) => {
     logger.log("Game", "Game Event:", event);

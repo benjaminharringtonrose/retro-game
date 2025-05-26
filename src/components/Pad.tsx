@@ -1,5 +1,7 @@
-import React, { useRef, useState } from "react";
-import { View, StyleSheet, PanResponder, Animated, Dimensions } from "react-native";
+import React, { memo, useCallback } from "react";
+import { View, StyleSheet } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { Direction } from "../types";
 
 interface PadProps {
@@ -10,99 +12,96 @@ const STICK_RADIUS = 25;
 const BASE_RADIUS = 50;
 const DEAD_ZONE = 10; // Minimum distance to trigger movement
 
-export const Pad: React.FC<PadProps> = ({ onDirectionChange }) => {
-  const pan = useRef(new Animated.ValueXY()).current;
-  const [currentDirection, setCurrentDirection] = useState<Direction | null>(null);
+const springConfig = {
+  damping: 15,
+  stiffness: 400,
+};
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => {
-        const position = { x: 0, y: 0 };
-        pan.extractOffset();
-        pan.setValue(position);
-      },
-      onPanResponderMove: (_, gesture) => {
-        // Calculate distance from center
-        const distance = Math.sqrt(gesture.dx * gesture.dx + gesture.dy * gesture.dy);
+export const Pad: React.FC<PadProps> = memo(({ onDirectionChange }) => {
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+  const currentDirection = useSharedValue<Direction | null>(null);
 
-        // Normalize to base radius
-        const scale = Math.min(distance, BASE_RADIUS) / distance;
-        const x = gesture.dx * scale;
-        const y = gesture.dy * scale;
+  const updateDirection = useCallback(
+    (x: number, y: number) => {
+      const distance = Math.sqrt(x * x + y * y);
 
-        pan.setValue({ x, y });
+      if (distance > DEAD_ZONE) {
+        const angle = Math.atan2(y, x);
+        const degrees = angle * (180 / Math.PI);
 
-        // Determine direction based on angle
-        if (distance > DEAD_ZONE) {
-          const angle = Math.atan2(y, x);
-          const degrees = angle * (180 / Math.PI);
-
-          let newDirection: Direction;
-          // Split into 8 directions (45 degree segments)
-          if (degrees > -22.5 && degrees <= 22.5) {
-            newDirection = Direction.Right;
-          } else if (degrees > 22.5 && degrees <= 67.5) {
-            newDirection = Direction.DownRight;
-          } else if (degrees > 67.5 && degrees <= 112.5) {
-            newDirection = Direction.Down;
-          } else if (degrees > 112.5 && degrees <= 157.5) {
-            newDirection = Direction.DownLeft;
-          } else if (degrees > 157.5 || degrees <= -157.5) {
-            newDirection = Direction.Left;
-          } else if (degrees > -157.5 && degrees <= -112.5) {
-            newDirection = Direction.UpLeft;
-          } else if (degrees > -112.5 && degrees <= -67.5) {
-            newDirection = Direction.Up;
-          } else {
-            newDirection = Direction.UpRight;
-          }
-
-          if (newDirection !== currentDirection) {
-            setCurrentDirection(newDirection);
-            onDirectionChange(newDirection, degrees);
-          }
+        let newDirection: Direction;
+        // Split into 8 directions (45 degree segments)
+        if (degrees > -22.5 && degrees <= 22.5) {
+          newDirection = Direction.Right;
+        } else if (degrees > 22.5 && degrees <= 67.5) {
+          newDirection = Direction.DownRight;
+        } else if (degrees > 67.5 && degrees <= 112.5) {
+          newDirection = Direction.Down;
+        } else if (degrees > 112.5 && degrees <= 157.5) {
+          newDirection = Direction.DownLeft;
+        } else if (degrees > 157.5 || degrees <= -157.5) {
+          newDirection = Direction.Left;
+        } else if (degrees > -157.5 && degrees <= -112.5) {
+          newDirection = Direction.UpLeft;
+        } else if (degrees > -112.5 && degrees <= -67.5) {
+          newDirection = Direction.Up;
         } else {
-          if (currentDirection !== null) {
-            setCurrentDirection(null);
-            onDirectionChange(null);
-          }
+          newDirection = Direction.UpRight;
         }
-      },
-      onPanResponderRelease: () => {
-        // Animate back to center with spring animation
-        Animated.spring(pan, {
-          toValue: { x: 0, y: 0 },
-          useNativeDriver: false,
-          tension: 40,
-          friction: 5,
-        }).start();
 
-        setCurrentDirection(null);
+        if (newDirection !== currentDirection.value) {
+          currentDirection.value = newDirection;
+          onDirectionChange(newDirection, degrees);
+        }
+      } else if (currentDirection.value !== null) {
+        currentDirection.value = null;
         onDirectionChange(null);
-      },
+      }
+    },
+    [onDirectionChange]
+  );
+
+  const gesture = Gesture.Pan()
+    .onBegin(() => {
+      translateX.value = 0;
+      translateY.value = 0;
     })
-  ).current;
+    .onUpdate((e) => {
+      const distance = Math.sqrt(e.translationX * e.translationX + e.translationY * e.translationY);
+      const scale = Math.min(distance, BASE_RADIUS) / distance;
+      const x = e.translationX * scale;
+      const y = e.translationY * scale;
+
+      translateX.value = x;
+      translateY.value = y;
+      runOnJS(updateDirection)(x, y);
+    })
+    .onFinalize(() => {
+      translateX.value = withSpring(0, springConfig);
+      translateY.value = withSpring(0, springConfig);
+      currentDirection.value = null;
+      runOnJS(onDirectionChange)(null);
+    });
+
+  const stickStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateX: translateX.value }, { translateY: translateY.value }],
+    };
+  });
 
   return (
     <View style={styles.container}>
       {/* Base circle */}
       <View style={styles.base}>
         {/* Stick */}
-        <Animated.View
-          style={[
-            styles.stick,
-            {
-              transform: [{ translateX: pan.x }, { translateY: pan.y }],
-            },
-          ]}
-          {...panResponder.panHandlers}
-        />
+        <GestureDetector gesture={gesture}>
+          <Animated.View style={[styles.stick, stickStyle]} />
+        </GestureDetector>
       </View>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {

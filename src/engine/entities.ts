@@ -172,7 +172,7 @@ export const createPortal = (id: string, mapPosition: { x: number; y: number }):
   };
 };
 
-const createMap = (id: string, mapType: MapType): Entity => {
+const createMap = (id: string, mapType: MapType, onImageLoad: (assetId?: string) => void): Entity => {
   const dimensions = mapManager.getMapDimensions(mapType);
   const position = mapManager.getMapPosition(mapType);
   const bounds = mapManager.getMapBounds(mapType);
@@ -201,6 +201,7 @@ const createMap = (id: string, mapType: MapType): Entity => {
     },
     bounds,
     renderer: Map,
+    onImageLoad,
   };
 };
 
@@ -223,12 +224,12 @@ const createDialog = (id: string): Entity => ({
   renderer: DialogBoxRenderer,
 });
 
-export const setupGameEntities = (): { [key: string]: Entity } => {
+export const setupGameEntities = (onImageLoad: (assetId?: string) => void): { [key: string]: Entity } => {
   // Position player in a clear area in the middle of the map
   const playerX = screenWidth / 2;
   const playerY = screenHeight / 2;
 
-  const map = createMap("map-1", MapType.FOREST);
+  const map = createMap("map-1", MapType.FOREST, onImageLoad);
   const player = createPlayer("player-1", playerX, playerY);
 
   // Initialize map using MapManager

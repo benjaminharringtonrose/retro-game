@@ -170,10 +170,7 @@ export const Map: React.FC<MapProps> = ({ position, dimensions, tileData, debug,
             ]}
             resizeMode="cover"
             onLoadEnd={() => {
-              if (!backgroundLoaded) {
-                logger.log("Map", "Background loaded");
-                setBackgroundLoaded(true);
-              }
+              onImageLoad?.("background");
             }}
           />
           <FlatList data={rowData} renderItem={renderItem} keyExtractor={keyExtractor} showsVerticalScrollIndicator={false} scrollEnabled={false} style={[styles.list]} initialNumToRender={tiles.length} />
