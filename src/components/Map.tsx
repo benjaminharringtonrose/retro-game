@@ -1,180 +1,14 @@
 // components/Map.tsx
 import React, { useMemo, useState, useEffect } from "react";
-import { StyleSheet, View, FlatList, TouchableOpacity, Text } from "react-native";
-import { Image } from "expo-image";
+import { StyleSheet, View, FlatList, TouchableOpacity, Text, Image } from "react-native";
 import { MapProps, Tile } from "../types";
 import { DebugRenderer } from "./DebugRenderer";
 import { DevMenu } from "./DevMenu";
 import { logger } from "../utils/logger";
-
-const TREE_SCALE = 1.5; // Scale for tree sprites
-const CABIN_SCALE = 3.5; // Scale for cabin sprite
-const TREE_1 = require("../assets/tree.png");
-const TREE_2 = require("../assets/tree-2.png");
-const FLOWER = require("../assets/flowers.png");
-const CABIN = require("../assets/cabin.png");
-
-// Separate component for ground tiles
-const GroundTile: React.FC<{ tile: number; tileSize: number }> = React.memo(({ tile, tileSize }) => {
-  return (
-    <View
-      style={[
-        styles.tile,
-        {
-          width: tileSize,
-          height: tileSize,
-        },
-      ]}
-    >
-      <View
-        style={[
-          styles.tileOverlay,
-          {
-            backgroundColor: getTileColor(tile),
-          },
-        ]}
-      />
-    </View>
-  );
-});
-
-// Separate component for trees
-const TreeTile: React.FC<{ tile: number; tileSize: number; onImageLoad?: (assetId?: string) => void }> = React.memo(({ tile, tileSize, onImageLoad }) => {
-  const [hasLoaded, setHasLoaded] = useState(false);
-  if (tile !== Tile.Tree && tile !== Tile.Tree2) return null;
-
-  const treeSource = tile === Tile.Tree2 ? TREE_2 : TREE_1;
-  const scaledSize = tileSize * TREE_SCALE;
-  const assetId = tile === Tile.Tree2 ? "tree-2" : "tree-1";
-
-  const handleLoadEnd = () => {
-    if (!hasLoaded) {
-      logger.log("Map", `Tree loaded: ${assetId}`);
-      onImageLoad?.(assetId);
-      setHasLoaded(true);
-    }
-  };
-
-  return (
-    <View
-      style={[
-        styles.tile,
-        {
-          width: tileSize,
-          height: tileSize,
-          position: "absolute",
-        },
-      ]}
-    >
-      <Image
-        source={treeSource}
-        style={[
-          styles.tileImage,
-          {
-            width: scaledSize,
-            height: scaledSize,
-            position: "absolute",
-            left: -((scaledSize - tileSize) / 2),
-            top: -(scaledSize - tileSize),
-          },
-        ]}
-        contentFit="contain"
-        cachePolicy={"memory-disk"}
-        onLoadEnd={handleLoadEnd}
-      />
-    </View>
-  );
-});
-
-// Separate component for flowers
-const FlowerTile: React.FC<{ tile: number; tileSize: number; onImageLoad?: (assetId?: string) => void }> = React.memo(({ tile, tileSize, onImageLoad }) => {
-  const [hasLoaded, setHasLoaded] = useState(false);
-  if (tile !== Tile.Flower) return null;
-
-  const handleLoadEnd = () => {
-    if (!hasLoaded) {
-      logger.log("Map", "Flower loaded");
-      onImageLoad?.("flower");
-      setHasLoaded(true);
-    }
-  };
-
-  return (
-    <View
-      style={[
-        styles.tile,
-        {
-          width: tileSize,
-          height: tileSize,
-          position: "absolute",
-        },
-      ]}
-    >
-      <Image
-        source={FLOWER}
-        style={[
-          styles.tileImage,
-          {
-            width: tileSize,
-            height: tileSize,
-            position: "absolute",
-          },
-        ]}
-        contentFit="contain"
-        cachePolicy={"memory-disk"}
-        onLoadEnd={handleLoadEnd}
-      />
-    </View>
-  );
-});
-
-// Separate component for cabin
-const CabinTile: React.FC<{ tile: number; tileSize: number; onImageLoad?: (assetId?: string) => void }> = React.memo(({ tile, tileSize, onImageLoad }) => {
-  const [hasLoaded, setHasLoaded] = useState(false);
-  if (tile !== Tile.Cabin) return null;
-
-  const scaledSize = tileSize * CABIN_SCALE;
-  const offset = (scaledSize - tileSize) / 2;
-
-  const handleLoadEnd = () => {
-    if (!hasLoaded) {
-      logger.log("Map", "Cabin loaded");
-      onImageLoad?.("cabin");
-      setHasLoaded(true);
-    }
-  };
-
-  return (
-    <View
-      style={[
-        styles.tile,
-        {
-          width: tileSize,
-          height: tileSize,
-          position: "absolute",
-        },
-      ]}
-    >
-      <Image
-        source={CABIN}
-        style={[
-          styles.tileImage,
-          {
-            width: scaledSize,
-            height: scaledSize,
-            position: "absolute",
-            left: -offset,
-            bottom: 0, // Align to bottom of tile
-            zIndex: 2400, // Lower than portal (2750)
-          },
-        ]}
-        contentFit="contain"
-        cachePolicy={"memory-disk"}
-        onLoadEnd={handleLoadEnd}
-      />
-    </View>
-  );
-});
+import { GroundTile } from "./GroundTile";
+import { TreeTile } from "./TreeTile";
+import { FlowerTile } from "./FlowerTile";
+import { CabinTile } from "./CabinTile";
 
 interface RowData {
   rowIndex: number;
@@ -249,7 +83,7 @@ const GridOverlay: React.FC<{ tileSize: number; width: number; height: number }>
   );
 });
 
-export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileData, debug, onImageLoad }) => {
+export const Map: React.FC<MapProps> = ({ position, dimensions, tileData, debug, onImageLoad }) => {
   const [showGrid, setShowGrid] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
   const [showDevMenu, setShowDevMenu] = useState(false);
@@ -334,7 +168,7 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
                 left: 0,
               },
             ]}
-            contentFit="cover"
+            resizeMode="cover"
             onLoadEnd={() => {
               if (!backgroundLoaded) {
                 logger.log("Map", "Background loaded");
@@ -394,28 +228,6 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
       <DevMenu isVisible={showDevMenu} onClose={() => setShowDevMenu(false)} showGrid={showGrid} onToggleGrid={() => setShowGrid(!showGrid)} showDebug={showDebug} onToggleDebug={() => setShowDebug(!showDebug)} debugBoxCount={debugBoxes.length} />
     </>
   );
-});
-
-const getTileColor = (tile: number) => {
-  switch (tile) {
-    case Tile.Grass:
-      return "rgba(144, 238, 144, 0.1)";
-    case Tile.Path:
-      return "rgba(139, 69, 19, 0.3)";
-    case Tile.Water:
-      return "rgba(65, 105, 225, 0.4)";
-    case Tile.Tree:
-    case Tile.Tree2:
-      return "transparent";
-    case Tile.Rock:
-      return "transparent";
-    case Tile.Flower:
-      return "transparent";
-    case Tile.Cabin:
-      return "transparent";
-    default:
-      return "transparent";
-  }
 };
 
 const styles = StyleSheet.create({
