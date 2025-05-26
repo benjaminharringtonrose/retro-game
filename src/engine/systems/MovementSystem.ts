@@ -113,6 +113,7 @@ export const MovementSystem = (entities: { [key: string]: Entity }, { time, delt
         const newPlayerX = player.position.x + deltaX;
         const mapLeft = map.position.x;
         const mapRight = mapLeft + map.dimensions.width;
+        const playerWidth = player.dimensions?.width || 32;
 
         logger.log("Movement", `[X Movement] Current player X: ${player.position.x}, Attempting move to: ${newPlayerX}`);
         logger.log("Movement", `[X Movement] Map bounds - Left: ${mapLeft}, Right: ${mapRight}`);
@@ -131,26 +132,29 @@ export const MovementSystem = (entities: { [key: string]: Entity }, { time, delt
         // Calculate distance from center
         const distanceFromCenter = Math.abs(player.position.x - centerX);
 
-        // If we're at an edge, allow free movement
+        // If we're at an edge, allow free movement within bounds
         if (isAtLeftEdge || isAtRightEdge) {
-          logger.log("Movement", `[X Movement] At edge, allowing free movement to: ${newPlayerX}`);
-          player.position.x = newPlayerX;
+          const boundedX = Math.min(Math.max(newPlayerX, mapLeft + playerWidth / 2), mapRight - playerWidth / 2);
+          logger.log("Movement", `[X Movement] At edge, allowing bounded movement to: ${boundedX}`);
+          player.position.x = boundedX;
           return entities;
         }
 
-        // If we're moving towards the center, allow free movement
+        // If we're moving towards the center, allow free movement within bounds
         const isMovingTowardsCenter = (player.position.x > centerX && deltaX < 0) || (player.position.x < centerX && deltaX > 0);
 
         if (isMovingTowardsCenter) {
-          logger.log("Movement", `[X Movement] Moving towards center, allowing free movement to: ${newPlayerX}`);
-          player.position.x = newPlayerX;
+          const boundedX = Math.min(Math.max(newPlayerX, mapLeft + playerWidth / 2), mapRight - playerWidth / 2);
+          logger.log("Movement", `[X Movement] Moving towards center, allowing bounded movement to: ${boundedX}`);
+          player.position.x = boundedX;
           return entities;
         }
 
-        // If we're moving away from center and within dead zone, allow free movement
+        // If we're moving away from center and within dead zone, allow free movement within bounds
         if (distanceFromCenter >= screenWidth / 2) {
-          logger.log("Movement", `[X Movement] Within dead zone (${distanceFromCenter}px from center), allowing free movement to: ${newPlayerX}`);
-          player.position.x = newPlayerX;
+          const boundedX = Math.min(Math.max(newPlayerX, mapLeft + playerWidth / 2), mapRight - playerWidth / 2);
+          logger.log("Movement", `[X Movement] Within dead zone (${distanceFromCenter}px from center), allowing bounded movement to: ${boundedX}`);
+          player.position.x = boundedX;
           return entities;
         }
 
@@ -167,14 +171,16 @@ export const MovementSystem = (entities: { [key: string]: Entity }, { time, delt
           }
         } catch (error) {
           logger.error("Movement", `[X Movement] Error during map scroll: ${error}`);
-          // If scroll fails, allow free movement
-          player.position.x = newPlayerX;
+          // If scroll fails, allow free movement within bounds
+          const boundedX = Math.min(Math.max(newPlayerX, mapLeft + playerWidth / 2), mapRight - playerWidth / 2);
+          player.position.x = boundedX;
           return entities;
         }
 
-        // If map couldn't scroll, allow free movement
-        logger.log("Movement", `[X Movement] Map couldn't scroll, allowing free movement to: ${newPlayerX}`);
-        player.position.x = newPlayerX;
+        // If map couldn't scroll, allow free movement within bounds
+        const boundedX = Math.min(Math.max(newPlayerX, mapLeft + playerWidth / 2), mapRight - playerWidth / 2);
+        logger.log("Movement", `[X Movement] Map couldn't scroll, allowing bounded movement to: ${boundedX}`);
+        player.position.x = boundedX;
       }
 
       // Handle Y movement
@@ -201,26 +207,29 @@ export const MovementSystem = (entities: { [key: string]: Entity }, { time, delt
         // Calculate distance from center
         const distanceFromCenter = Math.abs(player.position.y - centerY);
 
-        // If we're at an edge, allow free movement
+        // If we're at an edge, allow free movement within bounds
         if (isAtTopEdge || isAtBottomEdge) {
-          logger.log("Movement", `[Y Movement] At edge, allowing free movement to: ${newPlayerY}`);
-          player.position.y = newPlayerY;
+          const boundedY = Math.min(Math.max(newPlayerY, mapTop + playerHeight / 2), mapBottom - playerHeight / 2);
+          logger.log("Movement", `[Y Movement] At edge, allowing bounded movement to: ${boundedY}`);
+          player.position.y = boundedY;
           return entities;
         }
 
-        // If we're moving towards the center, allow free movement
+        // If we're moving towards the center, allow free movement within bounds
         const isMovingTowardsCenter = (player.position.y > centerY && deltaY < 0) || (player.position.y < centerY && deltaY > 0);
 
         if (isMovingTowardsCenter) {
-          logger.log("Movement", `[Y Movement] Moving towards center, allowing free movement to: ${newPlayerY}`);
-          player.position.y = newPlayerY;
+          const boundedY = Math.min(Math.max(newPlayerY, mapTop + playerHeight / 2), mapBottom - playerHeight / 2);
+          logger.log("Movement", `[Y Movement] Moving towards center, allowing bounded movement to: ${boundedY}`);
+          player.position.y = boundedY;
           return entities;
         }
 
-        // If we're moving away from center and within dead zone, allow free movement
+        // If we're moving away from center and within dead zone, allow free movement within bounds
         if (distanceFromCenter >= screenHeight / 2) {
-          logger.log("Movement", `[Y Movement] Within dead zone (${distanceFromCenter}px from center), allowing free movement to: ${newPlayerY}`);
-          player.position.y = newPlayerY;
+          const boundedY = Math.min(Math.max(newPlayerY, mapTop + playerHeight / 2), mapBottom - playerHeight / 2);
+          logger.log("Movement", `[Y Movement] Within dead zone (${distanceFromCenter}px from center), allowing bounded movement to: ${boundedY}`);
+          player.position.y = boundedY;
           return entities;
         }
 
@@ -237,14 +246,16 @@ export const MovementSystem = (entities: { [key: string]: Entity }, { time, delt
           }
         } catch (error) {
           logger.error("Movement", `[Y Movement] Error during map scroll: ${error}`);
-          // If scroll fails, allow free movement
-          player.position.y = newPlayerY;
+          // If scroll fails, allow free movement within bounds
+          const boundedY = Math.min(Math.max(newPlayerY, mapTop + playerHeight / 2), mapBottom - playerHeight / 2);
+          player.position.y = boundedY;
           return entities;
         }
 
-        // If map couldn't scroll, allow free movement
-        logger.log("Movement", `[Y Movement] Map couldn't scroll, allowing free movement to: ${newPlayerY}`);
-        player.position.y = newPlayerY;
+        // If map couldn't scroll, allow free movement within bounds
+        const boundedY = Math.min(Math.max(newPlayerY, mapTop + playerHeight / 2), mapBottom - playerHeight / 2);
+        logger.log("Movement", `[Y Movement] Map couldn't scroll, allowing bounded movement to: ${boundedY}`);
+        player.position.y = boundedY;
       }
 
       // Log final position and movement state
