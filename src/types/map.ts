@@ -24,6 +24,13 @@ export interface MapData {
 
 export type MapConfig = Record<MapType, MapData>;
 
+export interface TileData {
+  tileSize: number;
+  tiles: number[][];
+  onImageLoad?: (assetId?: string) => void;
+  background: any;
+}
+
 export interface MapProps {
   position: {
     x: number;
@@ -36,7 +43,7 @@ export interface MapProps {
   tileData: {
     tileSize: number;
     tiles: number[][];
-    onImageLoad?: (assetId?: string) => void;
+
     background?: any;
   };
   boxes?: DebugBox[];
@@ -44,6 +51,7 @@ export interface MapProps {
     showDebug?: boolean;
     boxes: DebugBox[];
   };
+  onImageLoad?: (assetId?: string) => void;
 }
 
 export interface PortalConfig {

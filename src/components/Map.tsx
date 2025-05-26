@@ -247,13 +247,13 @@ const GridOverlay: React.FC<{ tileSize: number; width: number; height: number }>
   );
 });
 
-export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileData, debug }) => {
+export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileData, debug, onImageLoad }) => {
   const [showGrid, setShowGrid] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
   const [backgroundLoaded, setBackgroundLoaded] = useState(false);
   const { x, y } = position;
   const { width, height } = dimensions;
-  const { tileSize, tiles, onImageLoad, background } = tileData;
+  const { tileSize, tiles, background } = tileData;
 
   useEffect(() => {
     if (backgroundLoaded) {
@@ -278,7 +278,7 @@ export const Map: React.FC<MapProps> = React.memo(({ position, dimensions, tileD
       startCol: 0,
       endCol: row.length,
       tileSize,
-      onImageLoad,
+      onImageLoad: onImageLoad as (assetId?: string) => void,
     }));
   }, [tiles, tileSize, onImageLoad]);
 

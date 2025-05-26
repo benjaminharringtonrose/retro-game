@@ -4,7 +4,9 @@ import { GameEngine as RNGameEngine } from "react-native-game-engine";
 import { setupGameEntities } from "../../engine/entities";
 import { Systems } from "../../engine/systems";
 import { Pad } from "../../components/Pad";
-import { Direction, Entity, GameEngine, GameEvent } from "../../types";
+import { Direction } from "../../types/enums";
+import { Entity } from "../../types/entities";
+import { GameEngine, GameEvent } from "../../types/system";
 import { useGameAssets } from "../../hooks/useAssets";
 
 interface GameEngineType extends RNGameEngine {

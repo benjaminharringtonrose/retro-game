@@ -1,6 +1,7 @@
 import React from "react";
 import { StyleSheet, View, Pressable, Image } from "react-native";
-import { NPCProps, Direction } from "../types";
+import { Direction } from "../types/enums";
+import { NPCProps } from "../types/props";
 import { NPC_CONFIGS } from "../config/npcs";
 
 // Debug logging

@@ -1,6 +1,7 @@
 import React from "react";
 import { Dimensions } from "react-native";
-import { Direction, MapType, Entity } from "../types";
+import { Direction, MapType } from "../types/enums";
+import { Entity } from "../types/entities";
 import { Player } from "../components/Player";
 import { Map } from "../components/Map";
 import { NPC } from "../components/NPC";
@@ -8,7 +9,7 @@ import { Portal } from "../components/Portal";
 import { DialogBoxRenderer } from "../components/DialogBoxRenderer";
 import { DEFAULT_MAPS, TILE_SIZE } from "../constants/map";
 import { NPC_CONFIGS } from "../config/npcs";
-import { PORTAL_CONFIGS, getPortalsForMap } from "../config/portals";
+import { PORTAL_CONFIGS } from "../config/portals";
 import { mapManager } from "../managers/MapManager";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
