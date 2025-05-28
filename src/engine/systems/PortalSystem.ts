@@ -77,6 +77,7 @@ export const PortalSystem = (entities: { [key: string]: Entity }, { time, delta 
 
     // Check if player is within trigger distance
     if (distance <= portal.portal.triggerDistance) {
+      console.log(`Player entered portal ${portal.id}`);
       logger.log("Portal", `Player entered portal ${portal.id}`);
 
       // Activate portal

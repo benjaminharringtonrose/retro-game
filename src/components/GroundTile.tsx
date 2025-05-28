@@ -13,14 +13,7 @@ export const GroundTile: React.FC<{ tile: number; tileSize: number }> = ({ tile,
         },
       ]}
     >
-      <View
-        style={[
-          styles.tileOverlay,
-          {
-            backgroundColor: getTileColor(tile),
-          },
-        ]}
-      />
+      <View style={styles.tileOverlay} />
     </View>
   );
 };
@@ -36,7 +29,5 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.1)",
   },
 });

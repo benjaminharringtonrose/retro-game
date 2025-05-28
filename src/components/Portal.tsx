@@ -154,6 +154,7 @@ export const Portal: React.FC<PortalProps> = ({ id, position, dimensions, portal
               ],
             },
           ]}
+          resizeMode="cover"
           onError={(error) => {
             logger.error("Portal", `Failed to load sprite for ${id}:`, error);
           }}

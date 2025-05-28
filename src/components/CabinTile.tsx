@@ -6,7 +6,12 @@ import { View, Image, StyleSheet } from "react-native";
 const CABIN_SCALE = 3.5;
 const CABIN = require("../assets/cabin.png");
 
-export const CabinTile: React.FC<{ tile: number; tileSize: number; onImageLoad?: (assetId?: string) => void }> = ({ tile, tileSize, onImageLoad }) => {
+export const CabinTile: React.FC<{
+  tile: number;
+  tileSize: number;
+  onImageLoad?: (assetId?: string) => void;
+  zIndex?: number;
+}> = ({ tile, tileSize, onImageLoad, zIndex = 250 }) => {
   const [hasLoaded, setHasLoaded] = useState(false);
   if (tile !== Tile.Cabin) return null;
 
@@ -24,25 +29,25 @@ export const CabinTile: React.FC<{ tile: number; tileSize: number; onImageLoad?:
   return (
     <View
       style={[
-        styles.tile,
+        styles.container,
         {
           width: tileSize,
           height: tileSize,
           position: "absolute",
+          zIndex,
         },
       ]}
     >
       <Image
         source={CABIN}
         style={[
-          styles.tileImage,
+          styles.image,
           {
             width: scaledSize,
             height: scaledSize,
             position: "absolute",
             left: -offset,
-            bottom: 0, // Align to bottom of tile
-            zIndex: 2400, // Lower than portal (2750)
+            bottom: 0,
           },
         ]}
         resizeMode="contain"
@@ -53,11 +58,11 @@ export const CabinTile: React.FC<{ tile: number; tileSize: number; onImageLoad?:
 };
 
 const styles = StyleSheet.create({
-  tile: {
+  container: {
     position: "absolute",
     overflow: "visible",
   },
-  tileImage: {
+  image: {
     position: "absolute",
   },
 });

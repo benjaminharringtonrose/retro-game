@@ -6,8 +6,9 @@ const Z_INDEX = {
   GROUND: 1,
   TREES: 50,
   PORTALS: 100,
-  PLAYER: 200,
-  CABIN_FRONT: 300,
+  PLAYER_BEHIND: 200, // Player when behind cabin
+  CABIN: 250, // Base cabin z-index
+  PLAYER_FRONT: 300, // Player when in front of cabin
   NPCS: 400,
   DIALOG: 500,
 };
@@ -39,17 +40,24 @@ export const RenderingSystem = (entities: { [key: string]: Entity }, { time, del
 
   // For each cabin tile, determine if the player is behind or in front of it
   cabinTiles.forEach(({ y: cabinY }) => {
-    // The cabin's collision area starts a bit above its base
-    const cabinCollisionY = cabinY + tileSize * 0.4; // Adjust this value to match the cabin's visual base
+    // The cabin's base position (accounting for scale)
+    const CABIN_SCALE = 3.5; // Match the scale in CabinTile.tsx
+    const scaledTileSize = tileSize * CABIN_SCALE;
 
-    // If player is behind the cabin
-    if (playerMapY < cabinCollisionY) {
-      // Player should render below cabin
-      player.zIndex = Z_INDEX.PLAYER;
+    // Calculate the cabin's visual base (where the player would transition)
+    const cabinBaseY = cabinY + scaledTileSize * 0.75; // Transition point at 75% of cabin height
+
+    // If player is behind the cabin (above the base line)
+    if (playerMapY < cabinBaseY) {
+      // Player is behind cabin
+      player.zIndex = Z_INDEX.PLAYER_BEHIND;
     } else {
-      // Player should render above cabin
-      player.zIndex = Z_INDEX.CABIN_FRONT + 1;
+      // Player is in front of cabin
+      player.zIndex = Z_INDEX.PLAYER_FRONT;
     }
+
+    // Update cabin z-index in the map component
+    map.cabinZIndex = Z_INDEX.CABIN;
   });
 
   // Update z-indices for all entities

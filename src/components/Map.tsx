@@ -1,5 +1,5 @@
 // components/Map.tsx
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 import { StyleSheet, View, FlatList, TouchableOpacity, Text, Image } from "react-native";
 import { MapProps, Tile } from "../types";
 import { DebugRenderer } from "./DebugRenderer";
@@ -13,14 +13,12 @@ import { CabinTile } from "./CabinTile";
 interface RowData {
   rowIndex: number;
   tiles: number[];
-  startCol: number;
-  endCol: number;
   tileSize: number;
   onImageLoad?: (assetId?: string) => void;
 }
 
 const MapRow: React.FC<{ item: RowData }> = React.memo(({ item }) => {
-  const { rowIndex, tiles, startCol, endCol, tileSize, onImageLoad } = item;
+  const { rowIndex, tiles, tileSize, onImageLoad } = item;
 
   return (
     <View style={[styles.row, { height: tileSize }]}>
@@ -87,17 +85,9 @@ export const Map: React.FC<MapProps> = ({ position, dimensions, tileData, debug,
   const [showGrid, setShowGrid] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
   const [showDevMenu, setShowDevMenu] = useState(false);
-  const [backgroundLoaded, setBackgroundLoaded] = useState(false);
   const { x, y } = position;
   const { width, height } = dimensions;
   const { tileSize, tiles, background } = tileData;
-
-  useEffect(() => {
-    if (backgroundLoaded) {
-      logger.log("Map", "Background loaded");
-      onImageLoad?.("background");
-    }
-  }, [backgroundLoaded, onImageLoad]);
 
   // Get debug boxes if they exist
   const debugBoxes = debug?.boxes || [];
@@ -112,8 +102,6 @@ export const Map: React.FC<MapProps> = ({ position, dimensions, tileData, debug,
     return tiles.map((row, index) => ({
       rowIndex: index,
       tiles: row,
-      startCol: 0,
-      endCol: row.length,
       tileSize,
       onImageLoad: onImageLoad as (assetId?: string) => void,
     }));
@@ -194,7 +182,7 @@ export const Map: React.FC<MapProps> = ({ position, dimensions, tileData, debug,
             width,
             height,
             pointerEvents: "none",
-            zIndex: 2400, // Lower than portal (2750)
+            zIndex: 250, // Base cabin layer z-index
           },
         ]}
       >
@@ -209,7 +197,7 @@ export const Map: React.FC<MapProps> = ({ position, dimensions, tileData, debug,
               height: tileSize,
             }}
           >
-            <CabinTile tile={Tile.Cabin} tileSize={tileSize} onImageLoad={onImageLoad} />
+            <CabinTile tile={Tile.Cabin} tileSize={tileSize} onImageLoad={onImageLoad} zIndex={250} />
           </View>
         ))}
       </View>
