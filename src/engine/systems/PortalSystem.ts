@@ -33,9 +33,10 @@ export const PortalSystem = (entities: { [key: string]: Entity }, { time }: Syst
   const playerMapY = player.position.y - map.position.y;
 
   const playerHeight = player.dimensions?.height || TILE_SIZE * 0.8;
+  const playerWidth = player.dimensions?.width || TILE_SIZE * 0.8;
 
   // Player's feet position (bottom-center of player)
-  const playerFeetX = playerMapX;
+  const playerFeetX = playerMapX + playerWidth;
   const playerFeetY = playerMapY + playerHeight;
 
   // Get all portals
@@ -55,19 +56,30 @@ export const PortalSystem = (entities: { [key: string]: Entity }, { time }: Syst
     portal.position.x = portalMapX + map.position.x;
     portal.position.y = portalMapY + map.position.y;
 
+    // Update debug visualization
     portal.debug = {
       showDebug: map.debug?.showDebug || false,
       boxes: [
+        // Portal center point
         {
-          x: portalMapX,
-          y: portalMapY + portal.dimensions.height,
+          x: portalMapX - 5,
+          y: portalMapY - 5,
           width: 10,
           height: 10,
-          color: "red",
+          color: "blue",
         },
+        // Portal hitbox
+        {
+          x: portalMapX - portal.dimensions.width / 2,
+          y: portalMapY - portal.dimensions.height / 2,
+          width: portal.dimensions.width,
+          height: portal.dimensions.height,
+          color: "yellow",
+        },
+        // Trigger area
         {
           x: portalMapX - portal.portal.triggerDistance,
-          y: portalMapY + portal.dimensions.height - portal.portal.triggerDistance,
+          y: portalMapY - portal.portal.triggerDistance,
           width: portal.portal.triggerDistance * 2,
           height: portal.portal.triggerDistance * 2,
           color: "rgba(255, 0, 0, 0.2)",
@@ -94,27 +106,6 @@ export const PortalSystem = (entities: { [key: string]: Entity }, { time }: Syst
 
     // Use the smallest distance (most likely to trigger)
     const distance = Math.min(distanceFromCenter, distanceFromFeet);
-
-    // Update debug visualization to show entrance point
-    portal.debug = {
-      showDebug: map.debug?.showDebug || false,
-      boxes: [
-        {
-          x: portalMapX - 5, // Center the debug point
-          y: portalMapY - 5, // Center the debug point
-          width: 10,
-          height: 10,
-          color: "red",
-        },
-        {
-          x: portalMapX - portal.portal.triggerDistance,
-          y: portalMapY - portal.portal.triggerDistance,
-          width: portal.portal.triggerDistance * 2,
-          height: portal.portal.triggerDistance * 2,
-          color: "rgba(255, 0, 0, 0.2)",
-        },
-      ],
-    };
 
     // Check if player is within trigger distance
     if (distance <= portal.portal.triggerDistance) {

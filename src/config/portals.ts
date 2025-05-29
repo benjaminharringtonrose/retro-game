@@ -34,8 +34,8 @@ export const PORTAL_CONFIGS: { [key: string]: PortalConfig } = {
   [Portals.HomeExit]: {
     id: Portals.HomeExit,
     position: {
-      x: 2 * TILE_SIZE + TILE_SIZE / 2,
-      y: 3 * TILE_SIZE + TILE_SIZE / 2,
+      x: 2.3 * TILE_SIZE + TILE_SIZE / 2,
+      y: 4.2 * TILE_SIZE + TILE_SIZE / 2,
     },
     dimensions: {
       width: PORTAL_ANIMATION.spriteWidth * PORTAL_ANIMATION.scale,
