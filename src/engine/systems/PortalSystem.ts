@@ -124,6 +124,7 @@ export const PortalSystem = (entities: { [key: string]: Entity }, { time }: Syst
         playerFeetX,
         playerFeetY,
         distanceFromFeet,
+        distanceFromCenter,
         triggerDistance: portal.portal.triggerDistance,
       });
 

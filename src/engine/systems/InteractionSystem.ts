@@ -148,7 +148,7 @@ export const InteractionSystem = (entities: { [key: string]: Entity }, { events 
 
         // Target the bottom center of the portal using its fixed map position
         player.interaction.targetX = config.position.x + portal.dimensions.width / 2;
-        player.interaction.targetY = config.position.y + portal.dimensions.height;
+        player.interaction.targetY = config.position.y + portal.dimensions.height / 2;
         player.interaction.isMovingToTarget = true;
         player.interaction.currentPath = findPath(player.position.x - map.position.x, player.position.y - map.position.y, player.interaction.targetX, player.interaction.targetY, map.tileData.tiles);
         player.interaction.currentPathIndex = 0;

@@ -23,7 +23,7 @@ export const PORTAL_CONFIGS: { [key: string]: PortalConfig } = {
       height: PORTAL_ANIMATION.spriteHeight * PORTAL_ANIMATION.scale,
     },
     targetMapType: MapType.CABIN_INTERIOR,
-    triggerDistance: TILE_SIZE * 0.75,
+    triggerDistance: TILE_SIZE / 2,
     sprite: PORTAL_SPRITE,
     sourceMapType: MapType.FOREST,
     animation: {
