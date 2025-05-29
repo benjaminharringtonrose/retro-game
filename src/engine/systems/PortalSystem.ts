@@ -38,24 +38,36 @@ export const PortalSystem = (entities: { [key: string]: Entity }, { time }: Syst
   const playerFeetX = playerMapX;
   const playerFeetY = playerMapY + playerHeight;
 
-  // Update portal positions based on map movement
+  // Get all portals
   const portals = Object.values(entities).filter((entity) => entity.id.startsWith("portal-"));
 
   // Sync debug state from map to portals
   portals.forEach((portal) => {
+    // Get the portal's fixed position from its config
+    const config = PORTAL_CONFIGS[portal.id];
+    if (!config) return;
+
+    // Calculate portal's position relative to the map
+    const portalMapX = config.position.x;
+    const portalMapY = config.position.y;
+
+    // Update portal's screen position based on map position
+    portal.position.x = portalMapX + map.position.x;
+    portal.position.y = portalMapY + map.position.y;
+
     portal.debug = {
       showDebug: map.debug?.showDebug || false,
       boxes: [
         {
-          x: portal.absolutePosition.x,
-          y: portal.absolutePosition.y + portal.dimensions.height,
+          x: portalMapX,
+          y: portalMapY + portal.dimensions.height,
           width: 10,
           height: 10,
           color: "red",
         },
         {
-          x: portal.absolutePosition.x - portal.portal.triggerDistance,
-          y: portal.absolutePosition.y + portal.dimensions.height - portal.portal.triggerDistance,
+          x: portalMapX - portal.portal.triggerDistance,
+          y: portalMapY + portal.dimensions.height - portal.portal.triggerDistance,
           width: portal.portal.triggerDistance * 2,
           height: portal.portal.triggerDistance * 2,
           color: "rgba(255, 0, 0, 0.2)",
@@ -65,22 +77,21 @@ export const PortalSystem = (entities: { [key: string]: Entity }, { time }: Syst
   });
 
   for (const portal of portals) {
-    if (!portal.absolutePosition) continue;
-
-    // Update portal position based on map movement
-    portal.position.x = portal.absolutePosition.x + map.position.x;
-    portal.position.y = portal.absolutePosition.y + map.position.y;
-
-    if (!portal.portal || !portal.portal.isActive) {
+    if (!portal.position || !portal.portal || !portal.portal.isActive) {
       continue;
     }
 
-    const portalX = portal.absolutePosition.x;
-    const portalY = portal.absolutePosition.y + portal.dimensions.height;
+    // Get the portal's config for its fixed position
+    const config = PORTAL_CONFIGS[portal.id];
+    if (!config) continue;
+
+    // Use the portal's fixed map position for trigger checks
+    const portalMapX = config.position.x;
+    const portalMapY = config.position.y + portal.dimensions.height;
 
     // Try multiple points on the player for portal detection
-    const distanceFromCenter = calculateDistance(playerMapX, playerMapY, portalX, portalY);
-    const distanceFromFeet = calculateDistance(playerFeetX, playerFeetY, portalX, portalY);
+    const distanceFromCenter = calculateDistance(playerMapX, playerMapY, portalMapX, portalMapY);
+    const distanceFromFeet = calculateDistance(playerFeetX, playerFeetY, portalMapX, portalMapY);
 
     // Use the smallest distance (most likely to trigger)
     const distance = Math.min(distanceFromCenter, distanceFromFeet);
@@ -88,12 +99,12 @@ export const PortalSystem = (entities: { [key: string]: Entity }, { time }: Syst
     // Check if player is within trigger distance
     if (distance <= portal.portal.triggerDistance) {
       logger.log("Portal", `Player entered portal ${portal.id}`, {
-        portalX,
-        portalY,
+        portalMapX,
+        portalMapY,
         playerFeetX,
         playerFeetY,
         distanceFromFeet,
-        triggerDistance: distance,
+        triggerDistance: portal.portal.triggerDistance,
       });
 
       // Activate portal

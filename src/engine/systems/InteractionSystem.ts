@@ -3,6 +3,7 @@ import { TILE_SIZE } from "../../constants/map";
 import { findPath } from "../../utils/pathfinding";
 import { getTileCoords } from "../../utils/coordinates";
 import { logger } from "../../utils/logger";
+import { PORTAL_CONFIGS } from "../../config/portals";
 
 interface InteractionState {
   targetNPC: string | null;
@@ -136,16 +137,18 @@ export const InteractionSystem = (entities: { [key: string]: Entity }, { events 
     } else if (event.type === "portal-click") {
       const portalId = event.payload.portalId;
       const portal = entities[portalId];
+      const config = PORTAL_CONFIGS[portalId];
 
-      if (portal && portal.absolutePosition) {
-        logger.log("Portal", `Portal clicked: ${portalId} at position:`, portal.absolutePosition);
+      if (portal && config) {
+        logger.log("Portal", `Portal clicked: ${portalId} at position:`, config.position);
 
         // Clear any NPC target
         player.interaction.targetNPC = null;
         player.interaction.targetPortal = portalId;
-        // Target the bottom center of the portal
-        player.interaction.targetX = portal.absolutePosition.x + portal.dimensions.width / 2;
-        player.interaction.targetY = portal.absolutePosition.y + portal.dimensions.height;
+
+        // Target the bottom center of the portal using its fixed map position
+        player.interaction.targetX = config.position.x + portal.dimensions.width / 2;
+        player.interaction.targetY = config.position.y + portal.dimensions.height;
         player.interaction.isMovingToTarget = true;
         player.interaction.currentPath = findPath(player.position.x - map.position.x, player.position.y - map.position.y, player.interaction.targetX, player.interaction.targetY, map.tileData.tiles);
         player.interaction.currentPathIndex = 0;

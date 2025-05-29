@@ -14,7 +14,7 @@ interface DebugRendererProps {
 
 export const DebugRenderer: React.FC<DebugRendererProps> = (props) => {
   return (
-    <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, pointerEvents: "none" }}>
+    <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, pointerEvents: "none", zIndex: 3000 }}>
       {props.boxes?.map((box, index) => (
         <DebugCollision key={`debug-box-${index}`} x={box.x} y={box.y} width={box.width} height={box.height} color={box.color} />
       ))}

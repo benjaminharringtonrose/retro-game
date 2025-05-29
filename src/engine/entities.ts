@@ -128,18 +128,11 @@ export const createPortal = (id: string, mapPosition: { x: number; y: number }):
     } as Entity;
   }
 
-  // Store the absolute position on the map for collision detection
-  const absolutePosition = {
-    x: config.position.x,
-    y: config.position.y,
-  };
-
-  // For rendering, we need to offset the position by the map position
-  // This ensures the portal stays fixed relative to the map's position
+  // Initial screen position (will be updated by PortalSystem)
   const x = config.position.x + mapPosition.x;
   const y = config.position.y + mapPosition.y;
 
-  logger.log("Portal", `Creating portal ${id} at map position (${absolutePosition.x}, ${absolutePosition.y}), screen position (${x}, ${y}), map offset (${mapPosition.x}, ${mapPosition.y})`);
+  logger.log("Portal", `Creating portal ${id} at position (${config.position.x}, ${config.position.y})`);
 
   return {
     id,
@@ -159,11 +152,6 @@ export const createPortal = (id: string, mapPosition: { x: number; y: number }):
       isActive: true,
       triggerDistance: config.triggerDistance,
     },
-    // Store the absolute position for collision detection
-    absolutePosition,
-    // Include mapId for easier reference to the parent map
-    mapId: "map-1",
-    // Add debug property that will be updated by the map's debug state
     debug: {
       boxes: [],
     },

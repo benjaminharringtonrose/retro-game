@@ -1,13 +1,14 @@
 import { MapType, PortalConfig, Portals } from "../types";
 import { TILE_SIZE } from "../constants/map";
 
-const PORTAL_SPRITE = require("../assets/portal-5.png");
+const PORTAL_SPRITE = require("../assets/portal-7.png");
 
 const PORTAL_ANIMATION = {
   frameCount: 3,
   frameRate: 200,
-  spriteWidth: 80,
-  spriteHeight: 128,
+  spriteWidth: 88.6,
+  spriteHeight: 80,
+  scale: 0.9,
 };
 
 export const PORTAL_CONFIGS: { [key: string]: PortalConfig } = {
@@ -15,7 +16,7 @@ export const PORTAL_CONFIGS: { [key: string]: PortalConfig } = {
     id: Portals.HomeEntrance,
     position: {
       x: 16.3 * TILE_SIZE + TILE_SIZE / 2,
-      y: 14.4 * TILE_SIZE - TILE_SIZE / 2,
+      y: 15 * TILE_SIZE - TILE_SIZE / 2,
     },
     dimensions: {
       width: PORTAL_ANIMATION.spriteWidth,
