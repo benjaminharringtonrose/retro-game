@@ -18,15 +18,15 @@ export const RenderingSystem = (entities: { [key: string]: Entity }, { time }: S
     y: player.position.y - map.position.y,
   };
 
-  // Get all building (cabin) positions
+  // Get all object positions
   const { tiles, tileSize } = map.tileData;
-  const buildingPositions: { baseY: number }[] = [];
+  const objectPositions: { baseY: number }[] = [];
 
   // Find all building tiles and their positions
   tiles.forEach((row: number[], rowIndex: number) => {
     row.forEach((tile: number, colIndex: number) => {
       if (tile === Tile.Cabin) {
-        buildingPositions.push({
+        objectPositions.push({
           baseY: rowIndex * tileSize,
         });
       }
@@ -46,23 +46,23 @@ export const RenderingSystem = (entities: { [key: string]: Entity }, { time }: S
   // Clear previous rendering debug info
   map.debug.renderingDebug = [];
 
-  // Determine if player is behind any cabin
-  let isPlayerBehindAnyBuilding = false;
-  buildingPositions.forEach(({ baseY }) => {
+  // Determine if player is behind any object
+  let isPlayerBehindAnyObject = false;
+  objectPositions.forEach(({ baseY }) => {
     if (ZIndexService.isEntityBehindBuilding(playerMapPos, baseY)) {
-      isPlayerBehindAnyBuilding = true;
+      isPlayerBehindAnyObject = true;
     }
   });
 
   // Update player z-index
-  player.zIndex = isPlayerBehindAnyBuilding ? Z_INDEX.BUILDING_BEHIND : Z_INDEX.BUILDING_FRONT;
+  player.zIndex = isPlayerBehindAnyObject ? Z_INDEX.BUILDING_BEHIND : Z_INDEX.BUILDING_FRONT;
 
   // Set cabin z-index in map debug
   map.debug.cabinZIndex = Z_INDEX.BUILDINGS;
 
   // Debug logging
   if (time.current % 1000 < 16) {
-    buildingPositions.forEach(({ baseY }, index) => {
+    objectPositions.forEach(({ baseY }, index) => {
       const isBehind = ZIndexService.isEntityBehindBuilding(playerMapPos, baseY);
       logger.debug("RenderingSystem", `Building ${index}:`, {
         buildingBaseY: baseY,
