@@ -25,7 +25,7 @@ export const RenderingSystem = (entities: { [key: string]: Entity }, { time }: S
   // Find all building tiles and their positions
   tiles.forEach((row: number[], rowIndex: number) => {
     row.forEach((tile: number, colIndex: number) => {
-      if (tile === Tile.Cabin) {
+      if (tile === Tile.Cabin || tile === Tile.Tree || tile === Tile.Tree2) {
         objectPositions.push({
           baseY: rowIndex * tileSize,
         });

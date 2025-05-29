@@ -1,23 +1,6 @@
 import { Direction } from "./enums";
 import { GameEvent } from "./system";
 
-export interface PlayerProps {
-  position: {
-    x: number;
-    y: number;
-  };
-  movement: {
-    direction: Direction;
-    isMoving: boolean;
-    speed: number;
-  };
-  animation: {
-    currentFrame: number;
-    frameCount: number;
-    frameRate: number;
-  };
-}
-
 export interface NPCProps {
   id: string;
   position: {
