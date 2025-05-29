@@ -34,12 +34,12 @@ export const PORTAL_CONFIGS: { [key: string]: PortalConfig } = {
   [Portals.HomeExit]: {
     id: Portals.HomeExit,
     position: {
-      x: 3 * TILE_SIZE,
-      y: 4 * TILE_SIZE,
+      x: 2 * TILE_SIZE + TILE_SIZE / 2,
+      y: 3 * TILE_SIZE + TILE_SIZE / 2,
     },
     dimensions: {
-      width: PORTAL_ANIMATION.spriteWidth,
-      height: PORTAL_ANIMATION.spriteHeight,
+      width: PORTAL_ANIMATION.spriteWidth * PORTAL_ANIMATION.scale,
+      height: PORTAL_ANIMATION.spriteHeight * PORTAL_ANIMATION.scale,
     },
     targetMapType: MapType.FOREST,
     triggerDistance: TILE_SIZE / 2,
@@ -54,11 +54,11 @@ export const PORTAL_CONFIGS: { [key: string]: PortalConfig } = {
     id: Portals.ForestTownEntrance,
     position: {
       x: 28.4 * TILE_SIZE + TILE_SIZE / 2,
-      y: 15.6 * TILE_SIZE - TILE_SIZE / 2,
+      y: 17 * TILE_SIZE - TILE_SIZE / 2,
     },
     dimensions: {
-      width: PORTAL_ANIMATION.spriteWidth,
-      height: PORTAL_ANIMATION.spriteHeight,
+      width: PORTAL_ANIMATION.spriteWidth * PORTAL_ANIMATION.scale,
+      height: PORTAL_ANIMATION.spriteHeight * PORTAL_ANIMATION.scale,
     },
     targetMapType: MapType.CABIN_INTERIOR,
     triggerDistance: TILE_SIZE / 2,
