@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { StyleSheet, View, Image as RNImage, Text } from "react-native";
+import { StyleSheet, View, Image as RNImage, Text, Pressable } from "react-native";
 import { PORTAL_CONFIGS } from "../config/portals";
 import { logger } from "../utils/logger";
 
@@ -70,10 +70,19 @@ export const Portal: React.FC<PortalProps> = ({ id, position, dimensions, portal
     return null;
   }
 
+  const handlePortalClick = () => {
+    if (window.gameEngine?.dispatch) {
+      window.gameEngine.dispatch({
+        type: "portal-click",
+        payload: { portalId: id },
+      });
+    }
+  };
+
   // If there's no sprite defined, just render a placeholder
   if (!config.sprite) {
     return (
-      <View
+      <Pressable
         style={[
           styles.container,
           {
@@ -86,14 +95,15 @@ export const Portal: React.FC<PortalProps> = ({ id, position, dimensions, portal
           },
         ]}
         testID={`portal-${id}`}
+        onPress={handlePortalClick}
       >
         <Text style={styles.debugText}>{id}</Text>
-      </View>
+      </Pressable>
     );
   }
 
   return (
-    <View
+    <Pressable
       style={[
         styles.container,
         {
@@ -105,6 +115,7 @@ export const Portal: React.FC<PortalProps> = ({ id, position, dimensions, portal
         },
       ]}
       testID={`portal-${id}`}
+      onPress={handlePortalClick}
     >
       {debug?.showDebug && (
         <>
@@ -156,7 +167,7 @@ export const Portal: React.FC<PortalProps> = ({ id, position, dimensions, portal
         />
       </View>
       {debug?.showDebug && <Text style={styles.debugText}>{id}</Text>}
-    </View>
+    </Pressable>
   );
 };
 

@@ -6,6 +6,7 @@ import { logger } from "../../utils/logger";
 
 interface InteractionState {
   targetNPC: string | null;
+  targetPortal: string | null;
   targetX: number;
   targetY: number;
   isMovingToTarget: boolean;
@@ -15,7 +16,8 @@ interface InteractionState {
 }
 
 // Make interaction range smaller than dialog range to ensure we get close enough
-const INTERACTION_RANGE = TILE_SIZE * 0.5; // Half a tile distance
+const NPC_INTERACTION_RANGE = TILE_SIZE * 0.5; // Half a tile distance for NPCs
+const PORTAL_INTERACTION_RANGE = TILE_SIZE * 0.2; // Much closer for portals
 const MIN_RECALCULATION_DISTANCE = TILE_SIZE * 0.25; // Only recalculate path if we've moved at least 1/4 tile
 const CLOSE_TO_WAYPOINT_THRESHOLD = TILE_SIZE * 0.2; // Consider we've reached waypoint when within 1/5 tile
 
@@ -56,6 +58,7 @@ export const InteractionSystem = (entities: { [key: string]: Entity }, { events 
   if (!player.interaction) {
     player.interaction = {
       targetNPC: null,
+      targetPortal: null,
       targetX: 0,
       targetY: 0,
       isMovingToTarget: false,
@@ -64,7 +67,7 @@ export const InteractionSystem = (entities: { [key: string]: Entity }, { events 
     } as InteractionState;
   }
 
-  // Handle NPC click events
+  // Handle NPC and Portal click events
   events.forEach((event) => {
     if (event.type === "npc-click") {
       const npcId = event.payload.npcId;
@@ -120,6 +123,7 @@ export const InteractionSystem = (entities: { [key: string]: Entity }, { events 
         }
 
         // Set interaction target and path
+        player.interaction.targetPortal = null;
         player.interaction.targetNPC = npcId;
         player.interaction.targetX = npcMapX;
         player.interaction.targetY = npcMapY;
@@ -129,24 +133,44 @@ export const InteractionSystem = (entities: { [key: string]: Entity }, { events 
       } else {
         logger.error("Dialog", "Invalid NPC or missing absolutePosition:", npcId);
       }
+    } else if (event.type === "portal-click") {
+      const portalId = event.payload.portalId;
+      const portal = entities[portalId];
+
+      if (portal && portal.absolutePosition) {
+        logger.log("Portal", `Portal clicked: ${portalId} at position:`, portal.absolutePosition);
+
+        // Clear any NPC target
+        player.interaction.targetNPC = null;
+        player.interaction.targetPortal = portalId;
+        // Target the bottom center of the portal
+        player.interaction.targetX = portal.absolutePosition.x + portal.dimensions.width / 2;
+        player.interaction.targetY = portal.absolutePosition.y + portal.dimensions.height;
+        player.interaction.isMovingToTarget = true;
+        player.interaction.currentPath = findPath(player.position.x - map.position.x, player.position.y - map.position.y, player.interaction.targetX, player.interaction.targetY, map.tileData.tiles);
+        player.interaction.currentPathIndex = 0;
+      }
     }
   });
 
   // Handle movement to target
-  if (player.interaction.isMovingToTarget && player.interaction.targetNPC) {
+  if (player.interaction.isMovingToTarget) {
     const playerMapX = player.position.x - map.position.x;
     const playerMapY = player.position.y - map.position.y;
 
     const distance = calculateDistance(playerMapX, playerMapY, player.interaction.targetX, player.interaction.targetY);
 
-    if (distance <= INTERACTION_RANGE) {
+    // Use different interaction ranges for NPCs vs portals
+    const interactionRange = player.interaction.targetPortal ? PORTAL_INTERACTION_RANGE : NPC_INTERACTION_RANGE;
+
+    if (distance <= interactionRange) {
       logger.log("Dialog", "Reached interaction range");
       // We've reached interaction range
       player.interaction.isMovingToTarget = false;
       player.interaction.currentPath = [];
       player.interaction.currentPathIndex = 0;
 
-      // Face the NPC
+      // Face the target
       const direction = getDirectionToTarget(playerMapX, playerMapY, player.interaction.targetX, player.interaction.targetY);
       player.movement.direction = direction;
 
@@ -157,8 +181,8 @@ export const InteractionSystem = (entities: { [key: string]: Entity }, { events 
       player.controls.right = false;
       player.movement.isMoving = false;
 
-      // Trigger dialog
-      if (window.gameEngine?.dispatch) {
+      // Trigger appropriate interaction based on target type
+      if (player.interaction.targetNPC && window.gameEngine?.dispatch) {
         window.gameEngine.dispatch({
           type: "npc-click",
           payload: { npcId: player.interaction.targetNPC },

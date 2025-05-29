@@ -19,7 +19,7 @@ const checkCollision = (playerLeft: number, playerRight: number, playerTop: numb
   return playerRight > tileLeft && playerLeft < tileRight && playerBottom > tileTop && playerTop < tileBottom;
 };
 
-export const CollisionSystem = (entities: { [key: string]: Entity }, { delta = 16.666 }: SystemProps) => {
+export const CollisionSystem = (entities: { [key: string]: Entity }, { time }: SystemProps) => {
   const player = entities["player-1"];
   const map = entities["map-1"];
   const npcs = Object.values(entities).filter((entity) => entity.id.startsWith("npc"));
@@ -78,7 +78,7 @@ export const CollisionSystem = (entities: { [key: string]: Entity }, { delta = 1
   });
 
   // Calculate next position based on current controls
-  const speed = player.movement.speed * (delta / 1000);
+  const speed = player.movement.speed * (time.delta / 1000);
   let nextX = playerMapX;
   let nextY = playerMapY;
 
@@ -191,12 +191,11 @@ export const CollisionSystem = (entities: { [key: string]: Entity }, { delta = 1
         const cabinScale = 2.5; // Reduced from 3 to 2.5 for collision
         const cabinSize = tileSize * cabinScale;
         const cabinOffset = (cabinSize - tileSize) / 2;
-        const collisionHeight = cabinSize * 0.6; // Reduced height for better gameplay
-        const verticalOffset = (cabinSize - collisionHeight) / 2; // Center the collision box vertically
-
+        const collisionHeight = cabinSize * 0.5; // Reduced height for better door access
+        const verticalOffset = (cabinSize - collisionHeight) * 0.3; // Move collision box up to leave space at the bottom
         const tileLeft = checkX * tileSize - cabinOffset;
         const tileRight = tileLeft + cabinSize;
-        const tileTop = checkY * tileSize - cabinSize + tileSize + verticalOffset; // Center vertically
+        const tileTop = checkY * tileSize - cabinSize + tileSize + verticalOffset;
         const tileBottom = tileTop + collisionHeight;
 
         // Add cabin collision box
@@ -205,7 +204,7 @@ export const CollisionSystem = (entities: { [key: string]: Entity }, { delta = 1
           y: tileTop,
           width: cabinSize,
           height: collisionHeight,
-          color: "#ff0000",
+          color: "rgba(255, 0, 0, 0.5)", // Made semi-transparent for better visualization
         });
 
         // Check if the next position would result in a collision
