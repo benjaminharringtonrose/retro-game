@@ -1,10 +1,9 @@
 // components/Map.tsx
 import React, { useMemo, useState } from "react";
 import { StyleSheet, View, FlatList, TouchableOpacity, Text, Image } from "react-native";
-import { MapProps, Tile } from "../types";
+import { MapProps, Tile, DebugBox } from "../types";
 import { DebugRenderer } from "./DebugRenderer";
 import { DevMenu } from "./DevMenu";
-import { logger } from "../utils/logger";
 import { GroundTile } from "./GroundTile";
 import { TreeTile } from "./TreeTile";
 import { FlowerTile } from "./FlowerTile";
@@ -13,12 +12,14 @@ import { CabinTile } from "./CabinTile";
 interface RowData {
   rowIndex: number;
   tiles: number[];
+  startCol: number;
+  endCol: number;
   tileSize: number;
   onImageLoad?: (assetId?: string) => void;
 }
 
 const MapRow: React.FC<{ item: RowData }> = React.memo(({ item }) => {
-  const { rowIndex, tiles, tileSize, onImageLoad } = item;
+  const { rowIndex, tiles, startCol, endCol, tileSize, onImageLoad } = item;
 
   return (
     <View style={[styles.row, { height: tileSize }]}>
@@ -89,21 +90,15 @@ export const Map: React.FC<MapProps> = ({ position, dimensions, tileData, debug,
   const { width, height } = dimensions;
   const { tileSize, tiles, background } = tileData;
 
-  // Get debug boxes if they exist
-  const debugBoxes = debug?.boxes || [];
-
-  // Update debug prop with showDebug state
-  if (debug) {
-    debug.showDebug = showDebug;
-  }
-
-  // Prepare data for FlatList - render all tiles without slicing
+  // Prepare data for FlatList
   const rowData = useMemo(() => {
     return tiles.map((row, index) => ({
       rowIndex: index,
       tiles: row,
+      startCol: 0,
+      endCol: row.length,
       tileSize,
-      onImageLoad: onImageLoad as (assetId?: string) => void,
+      onImageLoad,
     }));
   }, [tiles, tileSize, onImageLoad]);
 
@@ -122,8 +117,6 @@ export const Map: React.FC<MapProps> = ({ position, dimensions, tileData, debug,
     });
     return cabins;
   }, [tiles]);
-
-  logger.log("Map", "Rendering with position:", { x, y, width, height });
 
   return (
     <>
@@ -163,9 +156,9 @@ export const Map: React.FC<MapProps> = ({ position, dimensions, tileData, debug,
           />
           <FlatList data={rowData} renderItem={renderItem} keyExtractor={keyExtractor} showsVerticalScrollIndicator={false} scrollEnabled={false} style={[styles.list]} initialNumToRender={tiles.length} />
           {showGrid && <GridOverlay tileSize={tileSize} width={width} height={height} />}
-          {showDebug && debugBoxes.length > 0 && (
+          {showDebug && debug?.boxes && debug.boxes.length > 0 && (
             <View style={StyleSheet.absoluteFill}>
-              <DebugRenderer boxes={debugBoxes} />
+              <DebugRenderer boxes={debug.boxes} />
             </View>
           )}
         </View>
@@ -182,7 +175,7 @@ export const Map: React.FC<MapProps> = ({ position, dimensions, tileData, debug,
             width,
             height,
             pointerEvents: "none",
-            zIndex: 250, // Base cabin layer z-index
+            zIndex: debug?.cabinZIndex,
           },
         ]}
       >
@@ -195,9 +188,10 @@ export const Map: React.FC<MapProps> = ({ position, dimensions, tileData, debug,
               top: row * tileSize,
               width: tileSize,
               height: tileSize,
+              zIndex: debug?.cabinZIndex || 250,
             }}
           >
-            <CabinTile tile={Tile.Cabin} tileSize={tileSize} onImageLoad={onImageLoad} zIndex={250} />
+            <CabinTile tile={Tile.Cabin} tileSize={tileSize} onImageLoad={onImageLoad} zIndex={debug?.cabinZIndex || 250} />
           </View>
         ))}
       </View>
@@ -210,7 +204,15 @@ export const Map: React.FC<MapProps> = ({ position, dimensions, tileData, debug,
       </View>
 
       {/* Dev Menu Modal */}
-      <DevMenu isVisible={showDevMenu} onClose={() => setShowDevMenu(false)} showGrid={showGrid} onToggleGrid={() => setShowGrid(!showGrid)} showDebug={showDebug} onToggleDebug={() => setShowDebug(!showDebug)} debugBoxCount={debugBoxes.length} />
+      <DevMenu
+        isVisible={showDevMenu}
+        onClose={() => setShowDevMenu(false)}
+        showGrid={showGrid}
+        onToggleGrid={() => setShowGrid(!showGrid)}
+        showDebug={showDebug}
+        onToggleDebug={() => setShowDebug(!showDebug)}
+        debugBoxCount={(debug?.boxes || []).length}
+      />
     </>
   );
 };
@@ -253,35 +255,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     overflow: "visible",
   },
-  tile: {
-    position: "absolute",
-    overflow: "visible",
-  },
-  tileOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.1)",
-  },
-  tileImage: {
-    position: "absolute",
-  },
-  gridOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    zIndex: 2000,
-    pointerEvents: "none",
-  },
-  gridLine: {
-    position: "absolute",
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
-    width: 1,
-    height: 1,
-  },
   devControls: {
     position: "absolute",
     bottom: 20,
@@ -299,5 +272,18 @@ const styles = StyleSheet.create({
   },
   devButtonText: {
     fontSize: 24,
+  },
+  gridOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    zIndex: 2000,
+    pointerEvents: "none",
+  },
+  gridLine: {
+    position: "absolute",
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    width: 1,
+    height: 1,
   },
 });

@@ -1,12 +1,9 @@
-import { Entity, SystemProps, MapType } from "../../types";
+import { Entity, SystemProps } from "../../types";
 import { TILE_SIZE } from "../../constants/map";
 import { PORTAL_CONFIGS } from "../../config/portals";
 import { mapManager } from "../../managers/MapManager";
-import { Dimensions } from "react-native";
 import { createPortal } from "../entities";
 import { logger } from "../../utils/logger";
-
-const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 // Delay before portal can be used again (prevents immediate teleport back)
 const PORTAL_COOLDOWN = 1000; // 1 second
@@ -18,7 +15,7 @@ const calculateDistance = (x1: number, y1: number, x2: number, y2: number): numb
   return Math.sqrt(dx * dx + dy * dy);
 };
 
-export const PortalSystem = (entities: { [key: string]: Entity }, { time, delta = 16.666 }: SystemProps) => {
+export const PortalSystem = (entities: { [key: string]: Entity }, { time }: SystemProps) => {
   const player = entities["player-1"];
   const map = entities["map-1"];
 
@@ -35,13 +32,11 @@ export const PortalSystem = (entities: { [key: string]: Entity }, { time, delta 
   const playerMapX = player.position.x - map.position.x;
   const playerMapY = player.position.y - map.position.y;
 
-  // Get player size for more precise collision detection
-  const playerWidth = player.dimensions?.width || TILE_SIZE * 0.6;
   const playerHeight = player.dimensions?.height || TILE_SIZE * 0.8;
 
   // Player's feet position (bottom-center of player)
   const playerFeetX = playerMapX;
-  const playerFeetY = playerMapY + playerHeight / 4;
+  const playerFeetY = playerMapY + playerHeight;
 
   // Update portal positions based on map movement
   const portals = Object.values(entities).filter((entity) => entity.id.startsWith("portal-"));
@@ -50,7 +45,22 @@ export const PortalSystem = (entities: { [key: string]: Entity }, { time, delta 
   portals.forEach((portal) => {
     portal.debug = {
       showDebug: map.debug?.showDebug || false,
-      boxes: [],
+      boxes: [
+        {
+          x: portal.absolutePosition.x,
+          y: portal.absolutePosition.y + portal.dimensions.height,
+          width: 10,
+          height: 10,
+          color: "red",
+        },
+        {
+          x: portal.absolutePosition.x - portal.portal.triggerDistance,
+          y: portal.absolutePosition.y + portal.dimensions.height - portal.portal.triggerDistance,
+          width: portal.portal.triggerDistance * 2,
+          height: portal.portal.triggerDistance * 2,
+          color: "rgba(255, 0, 0, 0.2)",
+        },
+      ],
     };
   });
 
@@ -66,7 +76,7 @@ export const PortalSystem = (entities: { [key: string]: Entity }, { time, delta 
     }
 
     const portalX = portal.absolutePosition.x;
-    const portalY = portal.absolutePosition.y;
+    const portalY = portal.absolutePosition.y + portal.dimensions.height;
 
     // Try multiple points on the player for portal detection
     const distanceFromCenter = calculateDistance(playerMapX, playerMapY, portalX, portalY);
@@ -77,8 +87,14 @@ export const PortalSystem = (entities: { [key: string]: Entity }, { time, delta 
 
     // Check if player is within trigger distance
     if (distance <= portal.portal.triggerDistance) {
-      console.log(`Player entered portal ${portal.id}`);
-      logger.log("Portal", `Player entered portal ${portal.id}`);
+      logger.log("Portal", `Player entered portal ${portal.id}`, {
+        portalX,
+        portalY,
+        playerFeetX,
+        playerFeetY,
+        distanceFromFeet,
+        triggerDistance: distance,
+      });
 
       // Activate portal
       lastPortalUse = Date.now();

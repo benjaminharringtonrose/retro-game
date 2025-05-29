@@ -1,11 +1,26 @@
 import { Entity } from "./entities";
 
 export interface SystemProps {
-  time: number;
-  delta: number;
+  time: {
+    current: number;
+    delta: number;
+    previous: number;
+    previousDelta: number;
+  };
   touches: Touch[];
   events?: GameEvent[];
-  screen: { width: number; height: number };
+  layout: {
+    width: number;
+    height: number;
+    x: number;
+    y: number;
+  };
+  screen: {
+    width: number;
+    height: number;
+    fontScale: number;
+    scale: number;
+  };
   dispatch: (event: GameEvent) => void;
 }
 

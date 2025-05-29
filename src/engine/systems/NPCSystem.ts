@@ -47,9 +47,9 @@ const isOnScreen = (npcX: number, npcY: number, npcWidth: number, npcHeight: num
   return npcX + npcWidth / 2 > -buffer && npcX - npcWidth / 2 < screenWidth + buffer && npcY + npcHeight / 2 > -buffer && npcY - npcHeight / 2 < screenHeight + buffer;
 };
 
-export const NPCSystem = (entities: { [key: string]: Entity }, { time, delta = 16.666 }: SystemProps) => {
+export const NPCSystem = (entities: { [key: string]: Entity }, { time }: SystemProps) => {
   // Ensure delta is a valid number
-  const deltaMs = typeof delta === "number" && !isNaN(delta) ? delta : 16.666;
+  const deltaMs = typeof time.delta === "number" && !isNaN(time.delta) ? time.delta : 16.666;
 
   // Get the map first - we need it to position NPCs
   const map = entities["map-1"];
@@ -59,7 +59,7 @@ export const NPCSystem = (entities: { [key: string]: Entity }, { time, delta = 1
   }
 
   // Every 5 seconds, log all NPCs for debugging
-  if (time % 5000 < 20) {
+  if (time.current % 5000 < 20) {
     const npcsInEntities = Object.keys(entities).filter((id) => id.startsWith("npc"));
     debugLog(`Active NPCs: ${npcsInEntities.join(", ")}`, true);
   }
@@ -147,7 +147,7 @@ export const NPCSystem = (entities: { [key: string]: Entity }, { time, delta = 1
           const directions = [Direction.Up, Direction.Down, Direction.Left, Direction.Right];
           npc.movement.direction = directions[Math.floor(Math.random() * directions.length)];
         }
-      } else if (time - state.lastMoveTime >= state.moveInterval) {
+      } else if (time.current - state.lastMoveTime >= state.moveInterval) {
         const currentTile = getTileCoords(npc.absolutePosition.x, npc.absolutePosition.y);
         const possibleDirections: Direction[] = [];
 
@@ -246,7 +246,7 @@ export const NPCSystem = (entities: { [key: string]: Entity }, { time, delta = 1
     npc.position.y = npc.absolutePosition.y + map.position.y;
 
     // Check if NPC is on screen and log it every so often
-    if (time % 5000 < 20) {
+    if (time.current % 5000 < 20) {
       const isNpcOnScreen = isOnScreen(npc.position.x, npc.position.y, config.sprite.width * config.sprite.scale, config.sprite.height * config.sprite.scale);
 
       debugLog(`NPC ${npc.id} visibility check - on screen: ${isNpcOnScreen}. Position: (${npc.position.x}, ${npc.position.y})`, true);

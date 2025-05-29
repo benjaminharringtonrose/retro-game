@@ -10,9 +10,26 @@ interface DevMenuProps {
   showDebug: boolean;
   onToggleDebug: () => void;
   debugBoxCount?: number;
+  renderingDebug?: Array<{
+    cabin: {
+      position: { row: number; col: number; y: number };
+      baseY: number;
+      scale: number;
+      zIndex: number;
+    };
+    player: {
+      screenPosition: { x: number; y: number };
+      mapPosition: { x: number; y: number };
+      isBehindCabin: boolean;
+    };
+    zIndices: {
+      player: number;
+      cabin: number;
+    };
+  }>;
 }
 
-export const DevMenu: React.FC<DevMenuProps> = ({ isVisible, onClose, showGrid, onToggleGrid, showDebug, onToggleDebug, debugBoxCount = 0 }) => {
+export const DevMenu: React.FC<DevMenuProps> = ({ isVisible, onClose, showGrid, onToggleGrid, showDebug, onToggleDebug, debugBoxCount = 0, renderingDebug }) => {
   const [activeTab, setActiveTab] = useState<"general" | "logging">("general");
   const [isTogglingSystem, setIsTogglingSystem] = useState<LogSystem | null>(null);
   const [enabledSystems, setEnabledSystems] = useState<Set<LogSystem>>(new Set());
@@ -111,6 +128,30 @@ export const DevMenu: React.FC<DevMenuProps> = ({ isVisible, onClose, showGrid, 
               </View>
 
               {activeTab === "general" ? renderGeneralTab() : renderLoggingTab()}
+
+              {/* Rendering Debug Info */}
+              {renderingDebug && renderingDebug.length > 0 && (
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Rendering Debug</Text>
+                  {renderingDebug.map((debug, index) => (
+                    <View key={index} style={styles.debugItem}>
+                      <Text style={styles.debugText}>Cabin {index + 1}:</Text>
+                      <Text style={styles.debugText}>
+                        Position: ({debug.cabin.position.row}, {debug.cabin.position.col})
+                      </Text>
+                      <Text style={styles.debugText}>Base Y: {Math.round(debug.cabin.baseY)}</Text>
+                      <Text style={styles.debugText}>Scale: {debug.cabin.scale}x</Text>
+                      <Text style={styles.debugText}>
+                        Player Map Position: ({Math.round(debug.player.mapPosition.x)}, {Math.round(debug.player.mapPosition.y)})
+                      </Text>
+                      <Text style={[styles.debugText, { color: debug.player.isBehindCabin ? "#ff6b6b" : "#51cf66" }]}>Player is {debug.player.isBehindCabin ? "BEHIND" : "IN FRONT OF"} cabin</Text>
+                      <Text style={styles.debugText}>Z-Indices:</Text>
+                      <Text style={styles.debugText}> • Player: {debug.zIndices.player}</Text>
+                      <Text style={styles.debugText}> • Cabin: {debug.zIndices.cabin}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
             </View>
           </TouchableWithoutFeedback>
         </View>
@@ -203,5 +244,24 @@ const styles = StyleSheet.create({
   },
   loader: {
     marginLeft: 10,
+  },
+  section: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#ffffff",
+    marginBottom: 10,
+  },
+  debugItem: {
+    backgroundColor: "#3d3d3d",
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 10,
+  },
+  debugText: {
+    color: "#ffffff",
+    marginBottom: 5,
   },
 });

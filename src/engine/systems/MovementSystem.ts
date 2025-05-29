@@ -1,14 +1,10 @@
-import { Entity, SystemProps, Direction, MapType } from "../../types";
+import { Entity, SystemProps, Direction } from "../../types";
 import { Dimensions } from "react-native";
 import { DEFAULT_MAPS } from "../../constants/map";
 import { mapManager } from "../../managers/MapManager";
 import { logger } from "../../utils/logger";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
-
-// Screen edge margins - now based on screen dimensions
-const EDGE_MARGIN_X = screenWidth / 2;
-const EDGE_MARGIN_Y = screenHeight / 2;
 
 // Helper to get the closest cardinal direction based on movement deltas
 const getClosestDirection = (deltaX: number, deltaY: number): Direction => {
@@ -19,7 +15,7 @@ const getClosestDirection = (deltaX: number, deltaY: number): Direction => {
   }
 };
 
-export const MovementSystem = (entities: { [key: string]: Entity }, { time, delta = 16.666 }: SystemProps) => {
+export const MovementSystem = (entities: { [key: string]: Entity }, props: SystemProps) => {
   const player = entities["player-1"];
   const map = entities["map-1"];
 
@@ -32,7 +28,7 @@ export const MovementSystem = (entities: { [key: string]: Entity }, { time, delt
   const isFixedMap = mapData?.movementType === "fixed";
 
   // Ensure delta is a valid number and convert to seconds
-  const deltaSeconds = (typeof delta === "number" && delta > 0 ? delta : 16.666) / 1000;
+  const deltaSeconds = (typeof props.time.delta === "number" && props.time.delta > 0 ? props.time.delta : 16.666) / 1000;
 
   let deltaX = 0;
   let deltaY = 0;
@@ -103,7 +99,7 @@ export const MovementSystem = (entities: { [key: string]: Entity }, { time, delt
       }
 
       // Log position occasionally for debugging
-      if (time % 1000 < 16) {
+      if (props.time.current % 1000 < 16) {
         logger.log("Movement", `[Movement] Fixed map bounds: left=${mapLeft}, right=${mapRight}, top=${mapTop}, bottom=${mapBottom}`);
         logger.log("Movement", `[Movement] Player position: x=${player.position.x}, y=${player.position.y}`);
       }

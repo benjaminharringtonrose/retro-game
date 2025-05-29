@@ -156,7 +156,6 @@ export const createPortal = (id: string, mapPosition: { x: number; y: number }):
     portal: {
       id: `${id}-portal`,
       targetMapType: config.targetMapType,
-      targetPosition: config.targetPosition,
       isActive: true,
       triggerDistance: config.triggerDistance,
     },

@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export type LogSystem = "Map" | "NPC" | "Player" | "Assets" | "Game" | "Dialog" | "Collision" | "Portal" | "Movement" | "Animation" | "Performance";
+export type LogSystem = "Game" | "Map" | "Player" | "Portal" | "Dialog" | "NPC" | "Assets" | "Collision" | "Movement" | "Animation" | "Performance" | "RenderingSystem";
 
 interface LoggerState {
   enabledSystems: Set<LogSystem>;
@@ -93,7 +93,7 @@ class Logger {
   }
 
   getAllSystems(): LogSystem[] {
-    return ["Map", "NPC", "Player", "Assets", "Game", "Dialog", "Collision", "Portal", "Movement", "Animation", "Performance"];
+    return ["Map", "NPC", "Player", "Assets", "Game", "Dialog", "Collision", "Portal", "Movement", "Animation", "Performance", "RenderingSystem"];
   }
 }
 

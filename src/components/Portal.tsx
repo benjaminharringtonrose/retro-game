@@ -65,11 +65,6 @@ export const Portal: React.FC<PortalProps> = ({ id, position, dimensions, portal
     };
   }, [isActive, FRAME_COUNT, FRAME_RATE]);
 
-  // Log position when the component mounts or position changes
-  useEffect(() => {
-    logger.log("Portal", `Rendering portal ${id} at (${x}, ${y}) with active=${isActive}, frame=${currentFrame}`);
-  }, [id, x, y, isActive, currentFrame]);
-
   // Skip rendering inactive portals
   if (!isActive) {
     return null;

@@ -48,6 +48,7 @@ export const CabinTile: React.FC<{
             position: "absolute",
             left: -offset,
             bottom: 0,
+            zIndex,
           },
         ]}
         resizeMode="contain"

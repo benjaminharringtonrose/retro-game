@@ -61,10 +61,6 @@ export interface DialogComponent extends Component {
 
 export interface PortalComponent extends Component {
   targetMapType: MapType;
-  targetPosition: {
-    x: number;
-    y: number;
-  };
   isActive: boolean;
   triggerDistance: number;
 }

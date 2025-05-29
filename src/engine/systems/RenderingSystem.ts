@@ -1,5 +1,6 @@
 import { Entity, SystemProps } from "../../types";
 import { Tile } from "../../types/enums";
+import { logger } from "../../utils/logger";
 
 // Z-index constants
 const Z_INDEX = {
@@ -13,7 +14,7 @@ const Z_INDEX = {
   DIALOG: 500,
 };
 
-export const RenderingSystem = (entities: { [key: string]: Entity }, { time, delta = 16.666 }: SystemProps) => {
+export const RenderingSystem = (entities: { [key: string]: Entity }, { time }: SystemProps) => {
   const player = entities["player-1"];
   const map = entities["map-1"];
 
@@ -38,26 +39,81 @@ export const RenderingSystem = (entities: { [key: string]: Entity }, { time, del
     });
   });
 
+  // Initialize debug object if it doesn't exist
+  if (!map.debug) {
+    map.debug = {
+      showDebug: false,
+      boxes: [],
+      renderingDebug: [],
+    };
+  }
+
+  // Clear previous rendering debug info
+  map.debug.renderingDebug = [];
+
   // For each cabin tile, determine if the player is behind or in front of it
-  cabinTiles.forEach(({ y: cabinY }) => {
+  cabinTiles.forEach(({ y: cabinY, row, col }) => {
     // The cabin's base position (accounting for scale)
     const CABIN_SCALE = 3.5; // Match the scale in CabinTile.tsx
     const scaledTileSize = tileSize * CABIN_SCALE;
 
     // Calculate the cabin's visual base (where the player would transition)
-    const cabinBaseY = cabinY + scaledTileSize * 0.75; // Transition point at 75% of cabin height
+    // Moved transition point to 25% of cabin height to be closer to the front
+    const cabinBaseY = cabinY;
+
+    // Since Y increases downward in our coordinate system,
+    // player is behind cabin when their Y is less than the cabin's base Y
+    const isBehindCabin = playerMapY < cabinBaseY;
+
+    // Log the current state
+    const debugInfo = {
+      cabin: {
+        position: { row, col, y: cabinY },
+        baseY: cabinBaseY,
+        scale: CABIN_SCALE,
+        zIndex: Z_INDEX.CABIN,
+      },
+      player: {
+        screenPosition: { x: player.position.x, y: player.position.y },
+        mapPosition: { x: player.position.x - map.position.x, y: playerMapY },
+        isBehindCabin,
+      },
+      zIndices: {
+        player: isBehindCabin ? Z_INDEX.PLAYER_BEHIND : Z_INDEX.PLAYER_FRONT,
+        cabin: Z_INDEX.CABIN,
+      },
+    };
+
+    // Store debug info
+    map.debug.renderingDebug.push(debugInfo);
+
+    if (time.current % 1000 < 16) {
+      // Log to console
+      logger.debug("RenderingSystem", `Cabin at (${row}, ${col}):`, {
+        cabinBaseY,
+        playerMapY,
+        isBehindCabin,
+        playerZIndex: debugInfo.zIndices.player,
+        cabinZIndex: Z_INDEX.CABIN,
+      });
+    }
 
     // If player is behind the cabin (above the base line)
-    if (playerMapY < cabinBaseY) {
+    if (isBehindCabin) {
       // Player is behind cabin
       player.zIndex = Z_INDEX.PLAYER_BEHIND;
+      map.debug.cabinZIndex = Z_INDEX.CABIN;
+      if (time.current % 1000 < 16) {
+        logger.debug("RenderingSystem", "Player is BEHIND cabin");
+      }
     } else {
       // Player is in front of cabin
       player.zIndex = Z_INDEX.PLAYER_FRONT;
+      map.debug.cabinZIndex = Z_INDEX.CABIN;
+      if (time.current % 1000 < 16) {
+        logger.debug("RenderingSystem", "Player is IN FRONT OF cabin");
+      }
     }
-
-    // Update cabin z-index in the map component
-    map.cabinZIndex = Z_INDEX.CABIN;
   });
 
   // Update z-indices for all entities

@@ -26,3 +26,9 @@ export enum MapType {
   FOREST = "FOREST",
   CABIN_INTERIOR = "CABIN_INTERIOR",
 }
+
+export enum Portals {
+  HomeEntrance = "portal-cabin-entrance",
+  HomeExit = "portal-cabin-exit",
+  ForestTownEntrance = "portal-forest-town-entrance",
+}

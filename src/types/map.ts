@@ -50,6 +50,7 @@ export interface MapProps {
   debug?: {
     showDebug?: boolean;
     boxes: DebugBox[];
+    cabinZIndex?: number;
   };
   onImageLoad?: (assetId?: string) => void;
 }
@@ -65,10 +66,6 @@ export interface PortalConfig {
     height: number;
   };
   targetMapType: MapType;
-  targetPosition: {
-    x: number;
-    y: number;
-  };
   triggerDistance: number;
   sprite?: any;
   sourceMapType: MapType;
