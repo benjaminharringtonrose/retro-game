@@ -55,7 +55,6 @@ export const RenderingSystem = (entities: { [key: string]: Entity }, { time }: S
   cabinTiles.forEach(({ y: cabinY, row, col }) => {
     // The cabin's base position (accounting for scale)
     const CABIN_SCALE = 3.5; // Match the scale in CabinTile.tsx
-    const scaledTileSize = tileSize * CABIN_SCALE;
 
     // Calculate the cabin's visual base (where the player would transition)
     // Moved transition point to 25% of cabin height to be closer to the front

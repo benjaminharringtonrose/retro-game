@@ -19,11 +19,11 @@ export const PORTAL_CONFIGS: { [key: string]: PortalConfig } = {
       y: 15 * TILE_SIZE - TILE_SIZE / 2,
     },
     dimensions: {
-      width: PORTAL_ANIMATION.spriteWidth,
-      height: PORTAL_ANIMATION.spriteHeight,
+      width: PORTAL_ANIMATION.spriteWidth * PORTAL_ANIMATION.scale,
+      height: PORTAL_ANIMATION.spriteHeight * PORTAL_ANIMATION.scale,
     },
     targetMapType: MapType.CABIN_INTERIOR,
-    triggerDistance: TILE_SIZE / 2,
+    triggerDistance: TILE_SIZE * 0.75,
     sprite: PORTAL_SPRITE,
     sourceMapType: MapType.FOREST,
     animation: {

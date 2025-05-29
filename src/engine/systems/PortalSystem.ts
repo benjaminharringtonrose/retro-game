@@ -85,9 +85,8 @@ export const PortalSystem = (entities: { [key: string]: Entity }, { time }: Syst
     const config = PORTAL_CONFIGS[portal.id];
     if (!config) continue;
 
-    // Use the portal's fixed map position for trigger checks
-    const portalMapX = config.position.x;
-    const portalMapY = config.position.y + portal.dimensions.height;
+    const portalMapX = config.position.x + portal.dimensions.width / 2; // Center horizontally
+    const portalMapY = config.position.y + portal.dimensions.height / 2; // Center vertically
 
     // Try multiple points on the player for portal detection
     const distanceFromCenter = calculateDistance(playerMapX, playerMapY, portalMapX, portalMapY);
@@ -95,6 +94,27 @@ export const PortalSystem = (entities: { [key: string]: Entity }, { time }: Syst
 
     // Use the smallest distance (most likely to trigger)
     const distance = Math.min(distanceFromCenter, distanceFromFeet);
+
+    // Update debug visualization to show entrance point
+    portal.debug = {
+      showDebug: map.debug?.showDebug || false,
+      boxes: [
+        {
+          x: portalMapX - 5, // Center the debug point
+          y: portalMapY - 5, // Center the debug point
+          width: 10,
+          height: 10,
+          color: "red",
+        },
+        {
+          x: portalMapX - portal.portal.triggerDistance,
+          y: portalMapY - portal.portal.triggerDistance,
+          width: portal.portal.triggerDistance * 2,
+          height: portal.portal.triggerDistance * 2,
+          color: "rgba(255, 0, 0, 0.2)",
+        },
+      ],
+    };
 
     // Check if player is within trigger distance
     if (distance <= portal.portal.triggerDistance) {
@@ -117,6 +137,26 @@ export const PortalSystem = (entities: { [key: string]: Entity }, { time }: Syst
       if (map.mapType !== targetMapType) {
         // Use MapManager to handle the transition
         mapManager.updateMapForType(map, targetMapType, player);
+
+        // Clear player's interaction state
+        if (player.interaction) {
+          player.interaction.targetNPC = null;
+          player.interaction.targetPortal = null;
+          player.interaction.isMovingToTarget = false;
+          player.interaction.currentPath = [];
+          player.interaction.currentPathIndex = 0;
+        }
+
+        // Stop player movement
+        if (player.controls) {
+          player.controls.up = false;
+          player.controls.down = false;
+          player.controls.left = false;
+          player.controls.right = false;
+        }
+        if (player.movement) {
+          player.movement.isMoving = false;
+        }
 
         // Remove all existing portals
         Object.keys(entities).forEach((key) => {
