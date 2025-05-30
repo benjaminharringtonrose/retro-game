@@ -70,6 +70,17 @@ export const InteractionSystem = (entities: { [key: string]: Entity }, { events 
 
   // Handle NPC and Portal click events
   events.forEach((event) => {
+    // Check for manual movement input from the Pad
+    // If any direction is being pressed, cancel auto-walking
+    if (event.type === "move") {
+      player.interaction.isMovingToTarget = false;
+      player.interaction.currentPath = [];
+      player.interaction.currentPathIndex = 0;
+      player.interaction.targetNPC = null;
+      player.interaction.targetPortal = null;
+      return entities;
+    }
+
     if (event.type === "npc-click") {
       const npcId = event.payload.npcId;
       const npc = entities[npcId];
