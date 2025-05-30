@@ -15,6 +15,7 @@ export const useGameAssets = () => {
     require("../assets/cabin.png"),
     require("../assets/cabin-background.png"),
     require("../assets/portal.png"),
+    require("../assets/ben-lilly-start.png"),
   ];
 
   // Collect NPC sprites

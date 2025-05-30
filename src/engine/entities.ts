@@ -18,7 +18,7 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 // Constants for sizes
 const PLAYER_WIDTH = 32;
 const PLAYER_HEIGHT = 40;
-const MOVEMENT_SPEED = 200; // Increased for smoother movement
+const MOVEMENT_SPEED = 150;
 
 const createPlayer = (id: string, x: number, y: number): Entity => ({
   id,

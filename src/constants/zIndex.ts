@@ -4,18 +4,13 @@ export const Z_INDEX = {
   TREES: 50,
   PORTALS: 100,
 
-  // Buildings and structures
-  BUILDING_BEHIND: 200, // Entities when behind buildings
-  BUILDINGS: 250, // Base building z-index
-  BUILDING_FRONT: 300, // Entities when in front of buildings
+  // Player and buildings
+  PLAYER: 200,
+  CABIN_FRONT: 300,
 
   // Characters and interactive elements
   NPCS: 400,
-  ITEMS: 450,
-
-  // UI and overlay elements
   DIALOG: 500,
-  UI_OVERLAY: 600,
 } as const;
 
 // Type for valid z-index values

@@ -120,41 +120,35 @@ export const Map: React.FC<MapProps> = ({ position, dimensions, tileData, debug,
 
   return (
     <>
-      {/* Base map layer */}
-      <View
-        style={[
-          styles.map,
-          {
-            position: "absolute",
-            left: x,
-            top: y,
-            width,
-            height,
-            zIndex: 1,
-            overflow: "visible",
-          },
-        ]}
-      >
-        <View style={[styles.mapContainer, { width, height }]}>
-          <Image
-            source={background}
-            style={[
-              styles.background,
-              {
-                width: width,
-                height: height,
-                opacity: 1,
-                position: "absolute",
-                top: 0,
-                left: 0,
-              },
-            ]}
-            resizeMode="cover"
-            onLoadEnd={() => {
-              onImageLoad?.("background");
-            }}
-          />
+      {/* Main game container */}
+      <View style={[styles.map, { left: x, top: y, width, height }]}>
+        {/* Background layer */}
+        <Image source={background} style={[styles.background, { width, height }]} resizeMode="cover" onLoadEnd={() => onImageLoad?.("background")} />
+
+        {/* Game content container */}
+        <View style={[styles.contentContainer, { width, height }]}>
+          {/* Ground tiles */}
           <FlatList data={rowData} renderItem={renderItem} keyExtractor={keyExtractor} showsVerticalScrollIndicator={false} scrollEnabled={false} style={[styles.list]} initialNumToRender={tiles.length} />
+
+          {/* Objects layer (includes cabins) */}
+          <View style={styles.objectsLayer}>
+            {cabinTiles.map(({ row, col }) => (
+              <View
+                key={`cabin-${row}-${col}`}
+                style={{
+                  position: "absolute",
+                  left: col * tileSize,
+                  top: row * tileSize,
+                  width: tileSize,
+                  height: tileSize,
+                }}
+              >
+                <CabinTile tile={Tile.Cabin} tileSize={tileSize} onImageLoad={onImageLoad} zIndex={debug?.objectZIndex || 250} />
+              </View>
+            ))}
+          </View>
+
+          {/* Debug overlays */}
           {showGrid && <GridOverlay tileSize={tileSize} width={width} height={height} />}
           {showDebug && debug?.boxes && debug.boxes.length > 0 && (
             <View style={StyleSheet.absoluteFill}>
@@ -164,46 +158,13 @@ export const Map: React.FC<MapProps> = ({ position, dimensions, tileData, debug,
         </View>
       </View>
 
-      {/* Cabin layer */}
-      <View
-        style={[
-          styles.map,
-          {
-            position: "absolute",
-            left: x,
-            top: y,
-            width,
-            height,
-            pointerEvents: "none",
-            zIndex: debug?.cabinZIndex,
-          },
-        ]}
-      >
-        {cabinTiles.map(({ row, col }) => (
-          <View
-            key={`cabin-${row}-${col}`}
-            style={{
-              position: "absolute",
-              left: col * tileSize,
-              top: row * tileSize,
-              width: tileSize,
-              height: tileSize,
-              zIndex: debug?.cabinZIndex || 250,
-            }}
-          >
-            <CabinTile tile={Tile.Cabin} tileSize={tileSize} onImageLoad={onImageLoad} zIndex={debug?.cabinZIndex || 250} />
-          </View>
-        ))}
-      </View>
-
-      {/* Dev Menu Button */}
+      {/* Dev controls - kept outside game container */}
       <View style={[styles.devControls, { zIndex: 4000 }]}>
         <TouchableOpacity style={styles.devButton} onPress={() => setShowDevMenu(true)}>
           <Text style={styles.devButtonText}>⚙️</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Dev Menu Modal */}
       <DevMenu
         isVisible={showDevMenu}
         onClose={() => setShowDevMenu(false)}
@@ -220,25 +181,33 @@ export const Map: React.FC<MapProps> = ({ position, dimensions, tileData, debug,
 const styles = StyleSheet.create({
   map: {
     position: "absolute",
-    overflow: "visible",
-  },
-  mapContainer: {
-    position: "relative",
-    overflow: "visible",
   },
   background: {
     position: "absolute",
-    width: "100%",
-    height: "100%",
     top: 0,
     left: 0,
     zIndex: 1,
+    opacity: 1,
+  },
+  contentContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    overflow: "visible",
   },
   list: {
     position: "absolute",
     width: "100%",
     height: "100%",
     zIndex: 2,
+  },
+  objectsLayer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: "visible",
   },
   row: {
     flexDirection: "row",

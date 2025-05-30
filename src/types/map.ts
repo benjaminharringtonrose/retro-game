@@ -50,7 +50,7 @@ export interface MapProps {
   debug?: {
     showDebug?: boolean;
     boxes: DebugBox[];
-    cabinZIndex?: number;
+    objectZIndex?: number;
   };
   onImageLoad?: (assetId?: string) => void;
 }

@@ -27,8 +27,8 @@ export const MovementSystem = (entities: { [key: string]: Entity }, props: Syste
   const mapData = DEFAULT_MAPS[map.mapType as keyof typeof DEFAULT_MAPS];
   const isFixedMap = mapData?.movementType === "fixed";
 
-  // Ensure delta is a valid number and convert to seconds
-  const deltaSeconds = (typeof props.time.delta === "number" && props.time.delta > 0 ? props.time.delta : 16.666) / 1000;
+  // Delta convert to seconds
+  const deltaSeconds = props.time.delta / 1000;
 
   let deltaX = 0;
   let deltaY = 0;

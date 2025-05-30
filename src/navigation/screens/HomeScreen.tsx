@@ -1,7 +1,8 @@
 import React from "react";
-import { View, Text, StyleSheet, useWindowDimensions, Pressable } from "react-native";
+import { View, Text, StyleSheet, useWindowDimensions, Pressable, Image } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming, withDelay, Easing, withSpring } from "react-native-reanimated";
 
+const background = require("../../assets/ben-lilly-start.png");
 export interface HomeScreenProps {
   onStart: () => void;
 }
@@ -69,6 +70,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onStart }) => {
 
   return (
     <View style={[styles.container, { width, height }]}>
+      <Image source={background} style={{ position: "absolute", left: -width / 4 - 20 }} resizeMode="contain" width={width} height={height} />
       <View style={styles.content}>
         <Animated.View style={[styles.titleContainer, titleStyle]}>
           <Text style={styles.title}>THE LEGEND OF{"\n"}LILLY</Text>
@@ -94,7 +96,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.85)",
-    alignItems: "center",
+    alignItems: "flex-end",
     justifyContent: "center",
   },
   content: {
@@ -103,11 +105,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   titleContainer: {
-    backgroundColor: "#000",
     padding: 30,
-    borderWidth: 2,
-    borderColor: "#ffffff",
-    marginBottom: 40,
   },
   title: {
     fontFamily: "PressStart2P",

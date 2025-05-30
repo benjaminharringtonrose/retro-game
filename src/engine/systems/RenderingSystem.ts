@@ -1,7 +1,6 @@
 import { Entity, SystemProps } from "../../types";
 import { Tile } from "../../types/enums";
 import { logger } from "../../utils/logger";
-import { ZIndexService } from "../../services/ZIndexService";
 import { Z_INDEX } from "../../constants/zIndex";
 
 export const RenderingSystem = (entities: { [key: string]: Entity }, { time }: SystemProps) => {
@@ -18,17 +17,16 @@ export const RenderingSystem = (entities: { [key: string]: Entity }, { time }: S
     y: player.position.y - map.position.y,
   };
 
-  // Get all object positions
+  // Get all cabin tiles
   const { tiles, tileSize } = map.tileData;
-  const objectPositions: { baseY: number }[] = [];
+  const cabinTiles: { row: number; col: number; y: number }[] = [];
 
-  // Find all building tiles and their positions
+  // Find all cabin tiles and their positions
   tiles.forEach((row: number[], rowIndex: number) => {
     row.forEach((tile: number, colIndex: number) => {
-      if (tile === Tile.Cabin || tile === Tile.Tree || tile === Tile.Tree2) {
-        objectPositions.push({
-          baseY: rowIndex * tileSize,
-        });
+      if (tile === Tile.Cabin) {
+        const tileY = rowIndex * tileSize;
+        cabinTiles.push({ row: rowIndex, col: colIndex, y: tileY });
       }
     });
   });
@@ -39,40 +37,46 @@ export const RenderingSystem = (entities: { [key: string]: Entity }, { time }: S
       showDebug: false,
       boxes: [],
       renderingDebug: [],
-      cabinZIndex: Z_INDEX.BUILDINGS,
+      objectZIndex: Z_INDEX.CABIN_FRONT,
     };
   }
 
-  // Clear previous rendering debug info
-  map.debug.renderingDebug = [];
+  // For each cabin tile, determine if the player is behind or in front of it
+  cabinTiles.forEach(({ y: cabinY }, index) => {
+    // The cabin's collision area starts a bit above its base
 
-  // Determine if player is behind any object
-  let isPlayerBehindAnyObject = false;
-  objectPositions.forEach(({ baseY }) => {
-    if (ZIndexService.isEntityBehindBuilding(playerMapPos, baseY)) {
-      isPlayerBehindAnyObject = true;
+    // If player is behind the cabin
+    if (playerMapPos.y < cabinY) {
+      // Player should render below cabin
+      player.zIndex = Z_INDEX.PLAYER;
+    } else {
+      // Player should render above cabin
+      player.zIndex = Z_INDEX.CABIN_FRONT + 1;
+    }
+
+    // Debug logging
+    if (time.current % 1000 < 16) {
+      logger.debug("RenderingSystem", `Building ${index}:`, {
+        buildingBaseY: cabinY,
+        playerMapY: playerMapPos.y,
+        isBehind: playerMapPos.y < cabinY,
+        playerZIndex: player.zIndex,
+        objectZIndex: map.debug.objectZIndex,
+        tile: "Cabin",
+      });
     }
   });
 
-  // Update player z-index
-  player.zIndex = isPlayerBehindAnyObject ? Z_INDEX.BUILDING_BEHIND : Z_INDEX.BUILDING_FRONT;
-
-  // Set cabin z-index in map debug
-  map.debug.cabinZIndex = Z_INDEX.BUILDINGS;
-
-  // Debug logging
-  if (time.current % 1000 < 16) {
-    objectPositions.forEach(({ baseY }, index) => {
-      const isBehind = ZIndexService.isEntityBehindBuilding(playerMapPos, baseY);
-      logger.debug("RenderingSystem", `Building ${index}:`, {
-        buildingBaseY: baseY,
-        playerMapY: playerMapPos.y,
-        isBehind,
-        playerZIndex: player.zIndex,
-        cabinZIndex: map.debug.cabinZIndex,
-      });
-    });
-  }
+  // Update z-indices for all other entities
+  Object.entries(entities).forEach(([id, entity]) => {
+    if (id.startsWith("portal-")) {
+      entity.zIndex = Z_INDEX.PORTALS;
+    } else if (id.startsWith("npc-")) {
+      entity.zIndex = Z_INDEX.NPCS;
+    } else if (id === "dialog-1") {
+      entity.zIndex = Z_INDEX.DIALOG;
+    }
+  });
 
   return entities;
 };

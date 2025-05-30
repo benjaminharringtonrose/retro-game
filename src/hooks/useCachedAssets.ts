@@ -20,6 +20,7 @@ export function useCachedAssets(): boolean {
         require("../assets/cabin.png"),
         require("../assets/cabin-interior-1.png"),
         require("../assets/rosie-spritesheet.png"),
+        require("../assets/ben-lilly-start.png"),
       ];
       const tasks = images.map((img) => Asset.fromModule(img).downloadAsync());
       await Promise.all(tasks);

@@ -3,7 +3,7 @@ import { Tile } from "../types/enums";
 import { logger } from "../utils/logger";
 import { View, Image, StyleSheet } from "react-native";
 
-const CABIN_SCALE = 3.5;
+export const CABIN_SCALE = 3.5;
 const CABIN = require("../assets/cabin.png");
 
 export const CabinTile: React.FC<{
