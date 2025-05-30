@@ -49,14 +49,7 @@ export const RenderingSystem = (entities: { [key: string]: Entity }, { time }: S
     });
   });
 
-  // Initialize debug object if it doesn't exist
-
-  map.debug = {
-    showDebug: false,
-    boxes: [],
-    renderingDebug: [],
-    objectZIndex: Z_INDEX.OBJECT_FRONT,
-  };
+  map.objectZIndex = Z_INDEX.OBJECT_FRONT;
 
   // Default player z-index when not near any object
   player.zIndex = Z_INDEX.OBJECT_FRONT + 1;
@@ -92,7 +85,7 @@ export const RenderingSystem = (entities: { [key: string]: Entity }, { time }: S
           isNearObject,
           isBehind: playerMapPos.y < objectY,
           playerZIndex: player.zIndex,
-          objectZIndex: map.debug.objectZIndex,
+          objectZIndex: map.objectZIndex,
           type: objectProps.name,
         });
       }

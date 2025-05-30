@@ -98,7 +98,7 @@ const GridOverlay: React.FC<{ tileSize: number; width: number; height: number }>
   );
 });
 
-export const Map: React.FC<MapProps> = ({ position, dimensions, tileData, debug, onImageLoad }) => {
+export const Map: React.FC<MapProps> = ({ position, dimensions, tileData, debug, onImageLoad, objectZIndex }) => {
   const [showGrid, setShowGrid] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
   const [showDevMenu, setShowDevMenu] = useState(false);
@@ -115,9 +115,9 @@ export const Map: React.FC<MapProps> = ({ position, dimensions, tileData, debug,
       endCol: row.length,
       tileSize,
       onImageLoad,
-      zIndex: debug?.objectZIndex,
+      zIndex: objectZIndex,
     }));
-  }, [tiles, tileSize, onImageLoad, debug?.objectZIndex]);
+  }, [tiles, tileSize, onImageLoad, objectZIndex]);
 
   const keyExtractor = (item: RowData) => `row-${item.rowIndex}`;
   const renderItem = ({ item }: { item: RowData }) => <MapRow item={item} />;
@@ -145,12 +145,12 @@ export const Map: React.FC<MapProps> = ({ position, dimensions, tileData, debug,
         {/* Game content container */}
         <View style={[styles.contentContainer, { width, height }]}>
           {/* Ground and tree tiles */}
-          <View style={[styles.list, { zIndex: debug?.objectZIndex }]}>
+          <View style={[styles.list, { zIndex: objectZIndex }]}>
             <FlatList data={rowData} renderItem={renderItem} keyExtractor={keyExtractor} showsVerticalScrollIndicator={false} scrollEnabled={false} initialNumToRender={tiles.length} />
           </View>
 
           {/* Objects layer (includes cabins) */}
-          <View style={[styles.objectsLayer, { zIndex: debug?.objectZIndex }]}>
+          <View style={[styles.objectsLayer, { zIndex: objectZIndex }]}>
             {cabinTiles.map(({ row, col }) => (
               <View
                 key={`cabin-${row}-${col}`}
@@ -160,10 +160,10 @@ export const Map: React.FC<MapProps> = ({ position, dimensions, tileData, debug,
                   top: row * tileSize,
                   width: tileSize,
                   height: tileSize,
-                  zIndex: debug?.objectZIndex,
+                  zIndex: objectZIndex,
                 }}
               >
-                <CabinTile tile={Tile.Cabin} tileSize={tileSize} onImageLoad={onImageLoad} zIndex={debug?.objectZIndex} />
+                <CabinTile tile={Tile.Cabin} tileSize={tileSize} onImageLoad={onImageLoad} zIndex={objectZIndex} />
               </View>
             ))}
           </View>
