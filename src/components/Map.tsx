@@ -16,10 +16,11 @@ interface RowData {
   endCol: number;
   tileSize: number;
   onImageLoad?: (assetId?: string) => void;
+  zIndex?: number;
 }
 
 const MapRow: React.FC<{ item: RowData }> = React.memo(({ item }) => {
-  const { rowIndex, tiles, startCol, endCol, tileSize, onImageLoad } = item;
+  const { rowIndex, tiles, startCol, endCol, tileSize, onImageLoad, zIndex } = item;
 
   return (
     <View style={[styles.row, { height: tileSize }]}>
@@ -53,9 +54,10 @@ const MapRow: React.FC<{ item: RowData }> = React.memo(({ item }) => {
                 width: tileSize,
                 height: tileSize,
                 position: "relative",
+                zIndex,
               }}
             >
-              <TreeTile key={`tree-${rowIndex}-${colIndex}`} tile={tile} tileSize={tileSize} onImageLoad={onImageLoad} />
+              <TreeTile key={`tree-${rowIndex}-${colIndex}`} tile={tile} tileSize={tileSize} onImageLoad={onImageLoad} zIndex={zIndex} />
               <FlowerTile key={`flower-${rowIndex}-${colIndex}`} tile={tile} tileSize={tileSize} onImageLoad={onImageLoad} />
             </View>
           );
@@ -99,8 +101,9 @@ export const Map: React.FC<MapProps> = ({ position, dimensions, tileData, debug,
       endCol: row.length,
       tileSize,
       onImageLoad,
+      zIndex: debug?.objectZIndex,
     }));
-  }, [tiles, tileSize, onImageLoad]);
+  }, [tiles, tileSize, onImageLoad, debug?.objectZIndex]);
 
   const keyExtractor = (item: RowData) => `row-${item.rowIndex}`;
   const renderItem = ({ item }: { item: RowData }) => <MapRow item={item} />;

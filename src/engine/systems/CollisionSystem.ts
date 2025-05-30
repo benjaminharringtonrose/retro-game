@@ -188,10 +188,10 @@ export const CollisionSystem = (entities: { [key: string]: Entity }, { time }: S
         }
       } else if (isCabinTile(tile)) {
         // Calculate cabin boundaries (slightly smaller than visual size for better gameplay)
-        const cabinScale = 2.5; // Reduced from 3 to 2.5 for collision
+        const cabinScale = 3.5; // Reduced from 3 to 2.5 for collision
         const cabinSize = tileSize * cabinScale;
         const cabinOffset = (cabinSize - tileSize) / 2;
-        const collisionHeight = cabinSize * 0.5; // Reduced height for better door access
+        const collisionHeight = cabinSize * 0.6; // Reduced height for better door access
         const verticalOffset = (cabinSize - collisionHeight) * 0.3; // Move collision box up to leave space at the bottom
         const tileLeft = checkX * tileSize - cabinOffset;
         const tileRight = tileLeft + cabinSize;

@@ -6,7 +6,7 @@ export const Z_INDEX = {
 
   // Player and buildings
   PLAYER: 200,
-  CABIN_FRONT: 300,
+  OBJECT_FRONT: 300,
 
   // Characters and interactive elements
   NPCS: 400,

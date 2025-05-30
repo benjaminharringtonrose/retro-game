@@ -7,7 +7,12 @@ const TREE_SCALE = 1.5;
 const TREE_1 = require("../assets/tree.png");
 const TREE_2 = require("../assets/tree-2.png");
 
-export const TreeTile: React.FC<{ tile: number; tileSize: number; onImageLoad?: (assetId?: string) => void }> = ({ tile, tileSize, onImageLoad }) => {
+export const TreeTile: React.FC<{
+  tile: number;
+  tileSize: number;
+  onImageLoad?: (assetId?: string) => void;
+  zIndex?: number;
+}> = ({ tile, tileSize, onImageLoad, zIndex }) => {
   const [hasLoaded, setHasLoaded] = useState(false);
   if (tile !== Tile.Tree && tile !== Tile.Tree2) return null;
 
@@ -31,6 +36,7 @@ export const TreeTile: React.FC<{ tile: number; tileSize: number; onImageLoad?: 
           width: tileSize,
           height: tileSize,
           position: "absolute",
+          zIndex,
         },
       ]}
     >
@@ -44,6 +50,7 @@ export const TreeTile: React.FC<{ tile: number; tileSize: number; onImageLoad?: 
             position: "absolute",
             left: -((scaledSize - tileSize) / 2),
             top: -(scaledSize - tileSize),
+            zIndex,
           },
         ]}
         resizeMode="contain"
