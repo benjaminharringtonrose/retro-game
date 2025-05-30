@@ -159,7 +159,7 @@ export const CollisionSystem = (entities: { [key: string]: Entity }, { time }: S
         const tileLeft = checkX * tileSize;
         const tileRight = tileLeft + tileSize;
         const tileTop = checkY * tileSize;
-        const tileBottom = tileTop + tileSize;
+        const tileBottom = tileTop + tileSize / 2;
 
         // Add collision box
         debugBoxes.push({

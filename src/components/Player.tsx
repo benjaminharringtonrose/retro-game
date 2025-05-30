@@ -19,7 +19,7 @@ const SPRITE_ROWS = {
   [Direction.DownRight]: 3, // Use right-facing sprite
 };
 
-export const Player: React.FC<PlayerProps> = ({ position, movement, animation, zIndex = 2000 }) => {
+export const Player: React.FC<PlayerProps> = ({ position, movement, animation, zIndex }) => {
   const { x, y } = position;
   const { direction } = movement;
   const { currentFrame } = animation;

@@ -30,37 +30,51 @@ const MapRow: React.FC<{ item: RowData }> = React.memo(({ item }) => {
           <GroundTile key={`ground-${rowIndex}-${colIndex}`} tile={tile} tileSize={tileSize} />
         ))}
       </View>
+
       {/* Tree and Object layer */}
-      <View style={styles.layerContainer}>
+      <View style={[styles.layerContainer]}>
         {tiles.map((tile: number, colIndex: number) => {
           // Skip cabin tiles as they're rendered in a separate layer
           if (tile === Tile.Cabin) {
+            return null;
+          }
+
+          if (tile === Tile.Tree || tile === Tile.Tree2) {
             return (
               <View
                 key={`tree-container-${rowIndex}-${colIndex}`}
                 style={{
+                  position: "absolute",
+                  left: colIndex * tileSize,
+                  top: 0,
                   width: tileSize,
                   height: tileSize,
-                  position: "relative",
+                  zIndex,
                 }}
-              />
+              >
+                <TreeTile tile={tile} tileSize={tileSize} onImageLoad={onImageLoad} zIndex={zIndex} />
+              </View>
             );
           }
 
-          return (
-            <View
-              key={`tree-container-${rowIndex}-${colIndex}`}
-              style={{
-                width: tileSize,
-                height: tileSize,
-                position: "relative",
-                zIndex,
-              }}
-            >
-              <TreeTile key={`tree-${rowIndex}-${colIndex}`} tile={tile} tileSize={tileSize} onImageLoad={onImageLoad} zIndex={zIndex} />
-              <FlowerTile key={`flower-${rowIndex}-${colIndex}`} tile={tile} tileSize={tileSize} onImageLoad={onImageLoad} />
-            </View>
-          );
+          if (tile === Tile.Flower) {
+            return (
+              <View
+                key={`flower-container-${rowIndex}-${colIndex}`}
+                style={{
+                  position: "absolute",
+                  left: colIndex * tileSize,
+                  top: 0,
+                  width: tileSize,
+                  height: tileSize,
+                }}
+              >
+                <FlowerTile tile={tile} tileSize={tileSize} onImageLoad={onImageLoad} />
+              </View>
+            );
+          }
+
+          return null;
         })}
       </View>
     </View>
@@ -130,11 +144,13 @@ export const Map: React.FC<MapProps> = ({ position, dimensions, tileData, debug,
 
         {/* Game content container */}
         <View style={[styles.contentContainer, { width, height }]}>
-          {/* Ground tiles */}
-          <FlatList data={rowData} renderItem={renderItem} keyExtractor={keyExtractor} showsVerticalScrollIndicator={false} scrollEnabled={false} style={[styles.list]} initialNumToRender={tiles.length} />
+          {/* Ground and tree tiles */}
+          <View style={[styles.list, { zIndex: debug?.objectZIndex }]}>
+            <FlatList data={rowData} renderItem={renderItem} keyExtractor={keyExtractor} showsVerticalScrollIndicator={false} scrollEnabled={false} initialNumToRender={tiles.length} />
+          </View>
 
           {/* Objects layer (includes cabins) */}
-          <View style={styles.objectsLayer}>
+          <View style={[styles.objectsLayer, { zIndex: debug?.objectZIndex }]}>
             {cabinTiles.map(({ row, col }) => (
               <View
                 key={`cabin-${row}-${col}`}
@@ -144,9 +160,10 @@ export const Map: React.FC<MapProps> = ({ position, dimensions, tileData, debug,
                   top: row * tileSize,
                   width: tileSize,
                   height: tileSize,
+                  zIndex: debug?.objectZIndex,
                 }}
               >
-                <CabinTile tile={Tile.Cabin} tileSize={tileSize} onImageLoad={onImageLoad} zIndex={debug?.objectZIndex || 250} />
+                <CabinTile tile={Tile.Cabin} tileSize={tileSize} onImageLoad={onImageLoad} zIndex={debug?.objectZIndex} />
               </View>
             ))}
           </View>
@@ -202,7 +219,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     width: "100%",
     height: "100%",
-    zIndex: 2,
   },
   objectsLayer: {
     position: "absolute",
@@ -226,6 +242,8 @@ const styles = StyleSheet.create({
     bottom: 0,
     flexDirection: "row",
     overflow: "visible",
+    width: "100%",
+    height: "100%",
   },
   devControls: {
     position: "absolute",
