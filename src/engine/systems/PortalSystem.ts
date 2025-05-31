@@ -15,7 +15,7 @@ const calculateDistance = (x1: number, y1: number, x2: number, y2: number): numb
   return Math.sqrt(dx * dx + dy * dy);
 };
 
-export const PortalSystem = (entities: { [key: string]: Entity }, { time }: SystemProps) => {
+export const PortalSystem = (entities: { [key: string]: Entity }, { time, dispatch }: SystemProps) => {
   const player = entities["player-1"];
   const map = entities["map-1"];
 
@@ -129,6 +129,13 @@ export const PortalSystem = (entities: { [key: string]: Entity }, { time }: Syst
       if (map.mapType !== targetMapType) {
         // Use MapManager to handle the transition
         mapManager.updateMapForType(map, targetMapType, player);
+
+        dispatch({
+          type: "map-transition-start",
+          payload: {
+            mapType: targetMapType,
+          },
+        });
 
         // Clear player's interaction state
         if (player.interaction) {
