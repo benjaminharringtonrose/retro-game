@@ -3,7 +3,7 @@ import { StyleSheet, View, ActivityIndicator, Text } from "react-native";
 import { GameEngine as RNGameEngine } from "react-native-game-engine";
 import { setupGameEntities } from "../../engine/entities";
 import { Systems } from "../../engine/systems";
-import { Pad } from "../../components/Pad";
+import { Joystick } from "../../components/Joystick";
 import { Direction } from "../../types/enums";
 import { Entity } from "../../types/entities";
 import { GameEngine, GameEvent } from "../../types/system";
@@ -170,7 +170,7 @@ const GameScreen: React.FC = () => {
     <View style={styles.container}>
       {shouldRenderGame && <RNGameEngine ref={engineRef} style={StyleSheet.absoluteFill} systems={Systems} entities={entities} running={gameRunning && isFullyLoaded} onEvent={handleEvent} />}
       {!isFullyLoaded && <LoadingOverlay totalAssets={100} loadedAssets={totalProgress} />}
-      {isFullyLoaded && <Pad onDirectionChange={handleDirectionChange} />}
+      {isFullyLoaded && <Joystick onDirectionChange={handleDirectionChange} />}
     </View>
   );
 };

@@ -4,7 +4,7 @@ import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { Direction } from "../types";
 
-interface PadProps {
+interface JoystickProps {
   onDirectionChange: (direction: Direction | null, angle?: number) => void;
 }
 
@@ -17,7 +17,7 @@ const springConfig = {
   stiffness: 400,
 };
 
-export const Pad: React.FC<PadProps> = memo(({ onDirectionChange }) => {
+export const Joystick: React.FC<JoystickProps> = memo(({ onDirectionChange }) => {
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
   const currentDirection = useSharedValue<Direction | null>(null);

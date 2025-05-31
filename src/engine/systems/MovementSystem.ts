@@ -119,13 +119,6 @@ export const MovementSystem = (entities: { [key: string]: Entity }, props: Syste
         logger.log("Movement", `[Movement] Current position: (${player.position.x}, ${player.position.y}), Attempting move to: (${newPlayerX}, ${newPlayerY})`);
         logger.log("Movement", `[Movement] Map bounds - Left: ${mapLeft}, Right: ${mapRight}, Top: ${mapTop}, Bottom: ${mapBottom}`);
 
-        // Check if we're at the absolute edges of the map with a more forgiving threshold
-        const EDGE_THRESHOLD = 60;
-        const isAtLeftEdge = Math.abs(map.position.x - (-map.dimensions.width + screenWidth)) < EDGE_THRESHOLD;
-        const isAtRightEdge = Math.abs(map.position.x) < EDGE_THRESHOLD;
-        const isAtTopEdge = Math.abs(map.position.y - (-map.dimensions.height + screenHeight)) < EDGE_THRESHOLD;
-        const isAtBottomEdge = Math.abs(map.position.y) < EDGE_THRESHOLD;
-
         // Check if we can scroll in either direction
         const canScrollLeft = map.position.x < 0;
         const canScrollRight = map.position.x > -(map.dimensions.width - screenWidth);
@@ -133,10 +126,6 @@ export const MovementSystem = (entities: { [key: string]: Entity }, props: Syste
         const canScrollDown = map.position.y > -(map.dimensions.height - screenHeight);
 
         logger.log("Movement", `[Movement] Can scroll? Left: ${canScrollLeft}, Right: ${canScrollRight}, Up: ${canScrollUp}, Down: ${canScrollDown}`);
-
-        // Calculate distance from center
-        const distanceFromCenterX = Math.abs(player.position.x - centerX);
-        const distanceFromCenterY = Math.abs(player.position.y - centerY);
 
         // Try to scroll the map first
         let mapScrolledX = false;

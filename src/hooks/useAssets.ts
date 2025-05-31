@@ -13,8 +13,8 @@ export const useGameAssets = () => {
     require("../assets/tree-2.png"),
     require("../assets/flowers.png"),
     require("../assets/cabin.png"),
-    require("../assets/cabin-background.png"),
-    require("../assets/portal.png"),
+    require("../assets/cabin-interior-1.png"),
+    require("../assets/portal-7.png"),
     require("../assets/ben-lilly-start.png"),
   ];
 
