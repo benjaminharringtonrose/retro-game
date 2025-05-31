@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
-import { StyleSheet, View, ActivityIndicator, Text } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { GameEngine as RNGameEngine } from "react-native-game-engine";
 import { setupGameEntities } from "../../engine/entities";
 import { Systems } from "../../engine/systems";

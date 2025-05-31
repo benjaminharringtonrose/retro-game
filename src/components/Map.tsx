@@ -1,6 +1,6 @@
 // components/Map.tsx
 import React, { useMemo, useState } from "react";
-import { StyleSheet, View, FlatList, TouchableOpacity, Text, Image } from "react-native";
+import { StyleSheet, View, FlatList, TouchableOpacity, Text, Image as RNImage } from "react-native";
 import { MapProps, Tile, DebugBox } from "../types";
 import { DebugRenderer } from "./DebugRenderer";
 import { DevMenu } from "./DevMenu";
@@ -8,6 +8,8 @@ import { GroundTile } from "./GroundTile";
 import { TreeTile } from "./TreeTile";
 import { FlowerTile } from "./FlowerTile";
 import { CabinTile } from "./CabinTile";
+import { logger } from "../utils/logger";
+import { Z_INDEX } from "../constants/zIndex";
 
 interface RowData {
   rowIndex: number;
@@ -104,7 +106,7 @@ export const Map: React.FC<MapProps> = ({ position, dimensions, tileData, debug,
   const [showDevMenu, setShowDevMenu] = useState(false);
   const { x, y } = position;
   const { width, height } = dimensions;
-  const { tileSize, tiles, background } = tileData;
+  const { tiles, tileSize, background } = tileData;
 
   // Prepare data for FlatList
   const rowData = useMemo(() => {
@@ -138,14 +140,24 @@ export const Map: React.FC<MapProps> = ({ position, dimensions, tileData, debug,
   return (
     <>
       {/* Main game container */}
-      <View style={[styles.map, { left: x, top: y, width, height }]}>
-        {/* Background layer */}
-        <Image source={background} style={[styles.background, { width, height }]} resizeMode="cover" onLoadEnd={() => onImageLoad?.("background")} />
+      <View
+        style={[
+          styles.container,
+          {
+            width,
+            height,
+            left: x,
+            top: y,
+          },
+        ]}
+        testID="map-container"
+      >
+        <RNImage source={background} style={[styles.background, { width, height }]} onLoadEnd={() => onImageLoad?.("background")} testID="map-background" />
 
         {/* Game content container */}
         <View style={[styles.contentContainer, { width, height }]}>
           {/* Ground and tree tiles */}
-          <View style={[styles.list, { zIndex: objectZIndex }]}>
+          <View style={[styles.list, { zIndex: objectZIndex ?? Z_INDEX.OBJECT_FRONT }]}>
             <FlatList data={rowData} renderItem={renderItem} keyExtractor={keyExtractor} showsVerticalScrollIndicator={false} scrollEnabled={false} initialNumToRender={tiles.length} />
           </View>
 
@@ -170,7 +182,7 @@ export const Map: React.FC<MapProps> = ({ position, dimensions, tileData, debug,
 
           {/* Debug overlays */}
           {showGrid && <GridOverlay tileSize={tileSize} width={width} height={height} />}
-          {showDebug && debug?.boxes && debug.boxes.length > 0 && (
+          {showDebug && debug?.showDebug && (
             <View style={StyleSheet.absoluteFill}>
               <DebugRenderer boxes={debug.boxes} />
             </View>
@@ -199,15 +211,11 @@ export const Map: React.FC<MapProps> = ({ position, dimensions, tileData, debug,
 };
 
 const styles = StyleSheet.create({
-  map: {
+  container: {
     position: "absolute",
   },
   background: {
     position: "absolute",
-    top: 0,
-    left: 0,
-    zIndex: 1,
-    opacity: 1,
   },
   contentContainer: {
     position: "absolute",
@@ -267,13 +275,11 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 0,
     left: 0,
-    zIndex: 2000,
-    pointerEvents: "none",
   },
   gridLine: {
     position: "absolute",
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
-    width: 1,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
     height: 1,
+    width: 1,
   },
 });
