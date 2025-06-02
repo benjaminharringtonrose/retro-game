@@ -3,7 +3,7 @@ import { StyleSheet, View } from "react-native";
 import { GameEngine as RNGameEngine } from "react-native-game-engine";
 import { setupGameEntities } from "../../engine/entities";
 import { Systems } from "../../engine/systems";
-import { Direction, MapType } from "../../types/enums";
+import { MapType } from "../../types/enums";
 import { Entity } from "../../types/entities";
 import { GameEngine, GameEvent } from "../../types/system";
 import { useGameAssets } from "../../hooks/useAssets";
@@ -21,9 +21,6 @@ declare global {
     gameEngine: GameEngine | null;
   }
 }
-
-// Define expected asset types
-// const EXPECTED_ASSETS = ["tree-1", "tree-2", "flower", "cabin", "background"];
 
 const GameScreen: React.FC = () => {
   const engineRef = useRef<GameEngineType>(null);
@@ -44,10 +41,9 @@ const GameScreen: React.FC = () => {
 
   const onImageLoad = useCallback((assetId?: string) => {
     if (assetId) {
-      // Add to unique assets set
-      uniqueAssetsRef.current.add(assetId);
-
       logger.log("Game", `Image rendered: ${assetId} (${uniqueAssetsRef.current.size} unique assets so far)`);
+
+      uniqueAssetsRef.current.add(assetId);
       lastRenderedAssetTimeRef.current = Date.now();
       setRenderedAssets((prev) => {
         const newSet = new Set(prev);
@@ -69,12 +65,8 @@ const GameScreen: React.FC = () => {
 
     // Also add any entity-specific assets
     Object.values(gameEntities).forEach((entity) => {
-      if ("assetId" in entity && entity.assetId && typeof entity.assetId === "string") {
+      if (entity.assetId) {
         newExpectedAssets.add(entity.assetId);
-      }
-      // Check for background assets in map entities
-      if (entity.tileData?.background) {
-        newExpectedAssets.add(entity.tileData.background);
       }
     });
 
