@@ -49,10 +49,10 @@ export const RenderingSystem = (entities: { [key: string]: Entity }, { time }: S
     });
   });
 
-  map.objectZIndex = Z_INDEX.OBJECT_FRONT;
+  map.objectZIndex = Z_INDEX.OBJECT;
 
   // Default player z-index when not near any object
-  player.zIndex = Z_INDEX.OBJECT_FRONT + 1;
+  player.zIndex = Z_INDEX.OBJECT + 1;
 
   // For each object tile, determine if the player is behind or in front of it
   objectTiles.forEach(({ y: objectY, x: objectX, type }, index) => {
@@ -70,12 +70,12 @@ export const RenderingSystem = (entities: { [key: string]: Entity }, { time }: S
       if (playerMapPos.y < objectY) {
         player.zIndex = Z_INDEX.PLAYER;
       } else {
-        player.zIndex = Z_INDEX.OBJECT_FRONT + 1;
+        player.zIndex = Z_INDEX.OBJECT + 1;
       }
 
       // Debug logging
       if (time.current % 1000 < 16) {
-        logger.debug("RenderingSystem", `${objectProps.name} ${index}:`, {
+        logger.debug("Rendering", `${objectProps.name} ${index}:`, {
           objectBaseY: objectY,
           objectX,
           playerMapY: playerMapPos.y,
@@ -95,7 +95,7 @@ export const RenderingSystem = (entities: { [key: string]: Entity }, { time }: S
   // Update z-indices for all other entities
   Object.entries(entities).forEach(([id, entity]) => {
     if (id.startsWith("portal-")) {
-      entity.zIndex = Z_INDEX.PORTALS;
+      entity.zIndex = Z_INDEX.OBJECT;
     } else if (id.startsWith("npc-")) {
       entity.zIndex = Z_INDEX.NPCS;
     } else if (id === "dialog-1") {

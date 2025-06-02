@@ -157,7 +157,7 @@ export const Map: React.FC<MapProps> = ({ position, dimensions, tileData, debug,
         {/* Game content container */}
         <View style={[styles.contentContainer, { width, height }]}>
           {/* Ground and tree tiles */}
-          <View style={[styles.list, { zIndex: objectZIndex ?? Z_INDEX.OBJECT_FRONT }]}>
+          <View style={[styles.list, { zIndex: objectZIndex ?? Z_INDEX.OBJECT }]}>
             <FlatList data={rowData} renderItem={renderItem} keyExtractor={keyExtractor} showsVerticalScrollIndicator={false} scrollEnabled={false} initialNumToRender={tiles.length} />
           </View>
 

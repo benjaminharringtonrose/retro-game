@@ -1,14 +1,6 @@
 export const Z_INDEX = {
-  // World elements
-  GROUND: 1,
-  TREES: 50,
-  PORTALS: 100,
-
-  // Player and buildings
   PLAYER: 200,
-  OBJECT_FRONT: 300,
-
-  // Characters and interactive elements
+  OBJECT: 300,
   NPCS: 400,
   DIALOG: 500,
 } as const;

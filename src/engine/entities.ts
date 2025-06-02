@@ -12,6 +12,7 @@ import { NPC_CONFIGS } from "../config/npcs";
 import { PORTAL_CONFIGS } from "../config/portals";
 import { mapManager } from "../managers/MapManager";
 import { logger } from "../utils/logger";
+import { Joystick } from "../components/Joystick";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -211,6 +212,19 @@ const createDialog = (id: string): Entity => ({
   renderer: DialogBoxRenderer,
 });
 
+const createJoystick = (id: string): Entity => ({
+  id,
+  onDirectionChange: (direction: Direction | null) => {
+    if (window.gameEngine?.dispatch) {
+      window.gameEngine.dispatch({
+        type: "move",
+        payload: { direction },
+      });
+    }
+  },
+  renderer: Joystick,
+});
+
 export const setupGameEntities = (onImageLoad: (assetId?: string) => void): { [key: string]: Entity } => {
   // Position player in a clear area in the middle of the map
   const playerX = screenWidth / 2;
@@ -229,6 +243,7 @@ export const setupGameEntities = (onImageLoad: (assetId?: string) => void): { [k
     "map-1": map,
     "player-1": player,
     "dialog-1": createDialog("dialog-1"),
+    "joystick-1": createJoystick("joystick-1"),
   };
 
   // Dynamically add all NPCs from config

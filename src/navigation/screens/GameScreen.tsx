@@ -3,7 +3,6 @@ import { StyleSheet, View } from "react-native";
 import { GameEngine as RNGameEngine } from "react-native-game-engine";
 import { setupGameEntities } from "../../engine/entities";
 import { Systems } from "../../engine/systems";
-import { Joystick } from "../../components/Joystick";
 import { Direction, MapType } from "../../types/enums";
 import { Entity } from "../../types/entities";
 import { GameEngine, GameEvent } from "../../types/system";
@@ -125,32 +124,10 @@ const GameScreen: React.FC = () => {
     };
   }, [isFullyLoaded, gameRunning]);
 
-  const handleDirectionChange = useCallback(
-    (direction: Direction | null) => {
-      if (!engineRef.current) return;
-
-      engineRef.current.dispatch({
-        type: "move",
-        payload: { direction },
-      });
-    },
-    [engineRef]
-  );
-
   const handleEvent = (event: GameEvent) => {
     logger.log("Game", "Game Event:", event);
 
-    // Make sure we have access to entities
-
-    const dialog = engineRef.current?.entities?.["dialog-1"];
-
-    if (event.type === "dialog-close") {
-      if (dialog) {
-        dialog.isVisible = false;
-        dialog.message = "";
-        dialog.inRange = false;
-      }
-    } else if (event.type === "map-transition-start") {
+    if (event.type === "map-transition-start") {
       setSelectedMap(event.payload.mapType);
       setMapTransitionLoading(true);
       uniqueAssetsRef.current = new Set();
@@ -175,7 +152,6 @@ const GameScreen: React.FC = () => {
     <View style={styles.container}>
       {shouldRenderGame && <RNGameEngine ref={engineRef} style={StyleSheet.absoluteFill} systems={Systems} entities={entities} running={gameRunning && isFullyLoaded} onEvent={handleEvent} />}
       {(!isFullyLoaded || mapTransitionLoading) && <LoadingOverlay totalAssets={100} loadedAssets={totalProgress} />}
-      {isFullyLoaded && !mapTransitionLoading && <Joystick onDirectionChange={handleDirectionChange} />}
     </View>
   );
 };

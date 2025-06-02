@@ -1,4 +1,4 @@
-import React, { memo, useCallback } from "react";
+import React, { memo, useCallback, useState } from "react";
 import { View, StyleSheet } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
@@ -10,7 +10,7 @@ interface JoystickProps {
 
 const STICK_RADIUS = 25;
 const BASE_RADIUS = 50;
-const DEAD_ZONE = 10; // Minimum distance to trigger movement
+const DEAD_ZONE = 10;
 
 const springConfig = {
   damping: 15,
@@ -22,6 +22,9 @@ export const Joystick: React.FC<JoystickProps> = memo(({ onDirectionChange }) =>
   const translateY = useSharedValue(0);
   const currentDirection = useSharedValue<Direction | null>(null);
 
+  const [joystickPosition, setJoystickPosition] = useState({ x: 0, y: 0 });
+  const [joystickVisible, setJoystickVisible] = useState(false);
+
   const updateDirection = useCallback(
     (x: number, y: number) => {
       const distance = Math.sqrt(x * x + y * y);
@@ -31,7 +34,6 @@ export const Joystick: React.FC<JoystickProps> = memo(({ onDirectionChange }) =>
         const degrees = angle * (180 / Math.PI);
 
         let newDirection: Direction;
-        // Split into 8 directions (45 degree segments)
         if (degrees > -22.5 && degrees <= 22.5) {
           newDirection = Direction.Right;
         } else if (degrees > 22.5 && degrees <= 67.5) {
@@ -62,10 +64,12 @@ export const Joystick: React.FC<JoystickProps> = memo(({ onDirectionChange }) =>
     [onDirectionChange]
   );
 
-  const gesture = Gesture.Pan()
-    .onBegin(() => {
+  const pan = Gesture.Pan()
+    .onStart((e) => {
       translateX.value = 0;
       translateY.value = 0;
+      runOnJS(setJoystickPosition)({ x: e.absoluteX, y: e.absoluteY });
+      runOnJS(setJoystickVisible)(true);
     })
     .onUpdate((e) => {
       const distance = Math.sqrt(e.translationX * e.translationX + e.translationY * e.translationY);
@@ -82,6 +86,7 @@ export const Joystick: React.FC<JoystickProps> = memo(({ onDirectionChange }) =>
       translateY.value = withSpring(0, springConfig);
       currentDirection.value = null;
       runOnJS(onDirectionChange)(null);
+      runOnJS(setJoystickVisible)(false);
     });
 
   const stickStyle = useAnimatedStyle(() => {
@@ -91,25 +96,34 @@ export const Joystick: React.FC<JoystickProps> = memo(({ onDirectionChange }) =>
   });
 
   return (
-    <View style={styles.container}>
-      {/* Base circle */}
-      <View style={styles.base}>
-        {/* Stick */}
-        <GestureDetector gesture={gesture}>
-          <Animated.View style={[styles.stick, stickStyle]} />
-        </GestureDetector>
+    <GestureDetector gesture={pan}>
+      <View style={[StyleSheet.absoluteFill, { zIndex: 999 }]}>
+        {joystickVisible && (
+          <View
+            style={[
+              styles.container,
+              {
+                left: joystickPosition.x - BASE_RADIUS,
+                top: joystickPosition.y - BASE_RADIUS,
+              },
+            ]}
+          >
+            <View style={styles.base}>
+              <Animated.View style={[styles.stick, stickStyle]} />
+            </View>
+          </View>
+        )}
       </View>
-    </View>
+    </GestureDetector>
   );
 });
 
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    bottom: 40,
-    left: 40,
     width: BASE_RADIUS * 2,
     height: BASE_RADIUS * 2,
+    zIndex: 1000,
   },
   base: {
     width: BASE_RADIUS * 2,
