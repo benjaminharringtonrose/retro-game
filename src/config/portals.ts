@@ -54,7 +54,7 @@ export const PORTAL_CONFIGS: { [key: string]: PortalConfig } = {
     id: Portals.ForestTownEntrance,
     position: {
       x: 28.4 * TILE_SIZE + TILE_SIZE / 2,
-      y: 17 * TILE_SIZE - TILE_SIZE / 2,
+      y: 16.5 * TILE_SIZE - TILE_SIZE / 2,
     },
     dimensions: {
       width: PORTAL_ANIMATION.spriteWidth * PORTAL_ANIMATION.scale,

@@ -13,7 +13,7 @@ const debugNPC = (message: string, data?: any) => {
 export const NPC: React.FC<NPCProps> = ({ position, movement, animation, onInteract, id }) => {
   const { x, y } = position;
   const { direction, isMoving } = movement;
-  const { currentFrame } = animation;
+  const { currentFrame, frameCount } = animation;
 
   // Get NPC config
   const config = NPC_CONFIGS[id];
@@ -29,7 +29,10 @@ export const NPC: React.FC<NPCProps> = ({ position, movement, animation, onInter
   const row = spriteRow ?? 0;
 
   // Calculate frame position
-  const frameX = isMoving ? currentFrame : 1;
+  const frameX = isMoving ? currentFrame : 0;
+
+  const spriteWidth = sprite.width * sprite.scale;
+  const spriteHeight = sprite.height * sprite.scale;
 
   const handlePress = () => {
     debugNPC(`NPC ${id} clicked`);
@@ -48,37 +51,31 @@ export const NPC: React.FC<NPCProps> = ({ position, movement, animation, onInter
       style={[
         styles.container,
         {
-          transform: [{ translateX: x - (sprite.width * sprite.scale) / 2 }, { translateY: y - (sprite.height * sprite.scale) / 2 }],
+          left: x - spriteWidth / 2,
+          top: y - spriteHeight / 2,
+          width: spriteWidth,
+          height: spriteHeight,
+          backgroundColor: "transparent",
         },
       ]}
       testID={`npc-${id}`}
       hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
     >
-      <View
-        style={[
-          styles.spriteContainer,
-          {
-            width: sprite.width * sprite.scale,
-            height: sprite.height * sprite.scale,
-          },
-        ]}
-      >
+      <View style={[styles.spriteContainer]}>
         <Image
           source={sprite.source}
           style={[
             styles.sprite,
             {
-              position: "absolute",
-              left: -(frameX * sprite.width),
-              top: -(row * sprite.height || 0),
-              width: sprite.width * sprite.frameCount,
-              height: sprite.height * 4,
-              transform: [{ scale: sprite.scale }],
+              width: spriteWidth * frameCount,
+              height: spriteHeight * 4,
+              transform: [{ translateX: -frameX * spriteWidth }, { translateY: -row * spriteHeight }],
             },
           ]}
           onError={(error) => {
             console.error(`[NPC] Failed to load sprite for ${id}:`, error);
           }}
+          resizeMode="cover"
         />
       </View>
     </Pressable>
@@ -93,9 +90,13 @@ const styles = StyleSheet.create({
     zIndex: 1000, // Ensure NPCs are above everything
   },
   spriteContainer: {
+    width: "100%",
+    height: "100%",
     overflow: "hidden",
   },
   sprite: {
     position: "absolute",
+    left: 0,
+    top: 0,
   },
 });

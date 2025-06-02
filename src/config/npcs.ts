@@ -2,22 +2,22 @@ import { Direction, Tile } from "../types";
 import { TILE_SIZE } from "../constants/map";
 import { NPCConfig } from "../types/npc";
 
-const lillySprite = require("../assets/lilly-spritesheet.png");
+const lillySprite = require("../assets/lilly-walk.png");
 const willowSprite = require("../assets/willow-spritesheet.png");
 const rosieSprite = require("../assets/rosie-spritesheet.png");
 
 // Sprite configurations
 const LILLY_SPRITE = {
   source: lillySprite,
-  width: 32,
-  height: 41,
-  scale: 1.0,
-  frameCount: 3,
+  width: 64,
+  height: 64,
+  scale: 0.9,
+  frameCount: 9,
   frameRate: 12,
   rows: {
-    [Direction.Down]: 0,
+    [Direction.Up]: 0,
     [Direction.Left]: 1,
-    [Direction.Up]: 2,
+    [Direction.Down]: 2,
     [Direction.Right]: 3,
     [Direction.UpLeft]: 1,
     [Direction.UpRight]: 3,

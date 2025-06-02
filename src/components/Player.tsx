@@ -3,15 +3,15 @@ import React from "react";
 import { View, Image, StyleSheet } from "react-native";
 import { Direction, PlayerProps } from "../types";
 
-const SPRITE_W = 32;
-const SPRITE_H = 40;
-const SPRITE_SCALE = 1.0; // Reverted back to normal scale
-const characterSprite = require("../assets/character-spritesheet.png");
+const SPRITE_W = 64;
+const SPRITE_H = 64;
+const SPRITE_SCALE = 0.9; // Reverted back to normal scale
+const characterSprite = require("../assets/player-walk.png");
 
 const SPRITE_ROWS = {
-  [Direction.Down]: 0,
+  [Direction.Up]: 0,
   [Direction.Left]: 1,
-  [Direction.Up]: 2,
+  [Direction.Down]: 2,
   [Direction.Right]: 3,
   [Direction.UpLeft]: 1, // Use left-facing sprite
   [Direction.UpRight]: 3, // Use right-facing sprite
@@ -48,7 +48,7 @@ export const Player: React.FC<PlayerProps> = ({ position, movement, animation, z
           style={[
             styles.sprite,
             {
-              width: spriteWidth * 3,
+              width: spriteWidth * 9,
               height: spriteHeight * 4,
               transform: [{ translateX: -currentFrame * spriteWidth }, { translateY: -row * spriteHeight }],
             },

@@ -1,4 +1,3 @@
-import React from "react";
 import { Dimensions } from "react-native";
 import { Direction, MapType } from "../types/enums";
 import { Entity } from "../types/entities";
@@ -18,7 +17,7 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 // Constants for sizes
 const PLAYER_WIDTH = 32;
-const PLAYER_HEIGHT = 40;
+const PLAYER_HEIGHT = 32;
 const MOVEMENT_SPEED = 150;
 
 const createPlayer = (id: string, x: number, y: number): Entity => ({
@@ -42,7 +41,7 @@ const createPlayer = (id: string, x: number, y: number): Entity => ({
   animation: {
     id: `${id}-animation`,
     currentFrame: 1,
-    frameCount: 3,
+    frameCount: 9,
     frameRate: 12, // Increased for smoother animation
   },
   controls: {
